@@ -121,6 +121,14 @@ class Measurement(models.Model):
         on_delete=models.RESTRICT,
     )
 
+    ulp = models.ForeignKey(
+        "Ulp",
+        help_text="The ULP for to which this measurement applies",
+        related_name="measurements",
+        on_delete=models.RESTRICT,
+        verbose_name="ULP",
+    )
+
     quantity = models.DecimalField(
         decimal_places=20,
         max_digits=40,
@@ -130,6 +138,13 @@ class Measurement(models.Model):
     power_of_10 = models.IntegerField(
         default=0,
         help_text="The true quantity is multiplied by this power of 10. Same with the errors.",
+    )
+
+    sigfig = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="The number of significant figures to display",
+        verbose_name="Significant figures",
     )
 
     err = models.DecimalField(
@@ -156,6 +171,16 @@ class Measurement(models.Model):
         help_text="The (asymmetrical) lower uncertainty on the quantity",
     )
 
+    lower_limit = models.BooleanField(
+        default=False,
+        help_text="Is this an lower limit?",
+    )
+
+    upper_limit = models.BooleanField(
+        default=False,
+        help_text="Is this an upper limit?",
+    )
+
     error_is_range = models.BooleanField(
         default=False,
         help_text="Display the error as a range, e.g. '1 - 5' instead of '3 ± 2'",
@@ -169,16 +194,10 @@ class Measurement(models.Model):
     article = models.ForeignKey(
         "Article",
         help_text="The article in which this measurement is published",
+        null=True,
+        blank=True,
         related_name="measurements",
         on_delete=models.RESTRICT,
-    )
-
-    ulp = models.ForeignKey(
-        "Ulp",
-        help_text="The ULP for to which this measurement applies",
-        related_name="measurements",
-        on_delete=models.RESTRICT,
-        verbose_name="ULP",
     )
 
     date = models.DateTimeField(
@@ -208,3 +227,6 @@ class Measurement(models.Model):
 
     def __str__(self):
         return self.formatted_quantity
+
+    class Meta:
+        ordering = ['ulp', 'article', 'parameter']
