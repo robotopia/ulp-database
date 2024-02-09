@@ -257,7 +257,14 @@ class Measurement(models.Model):
     def formatted_quantity(self):
 
         retstr = ""
-        precision = Decimal(f"0.{'0'*((self.precision - 1) if self.precision else 19)}1")
+        if self.precision is None:
+            precision = Decimal(f"0.00000000000000000001")
+        elif self.precision > 0:
+            precision = Decimal(f"0.{'0'*((self.precision - 1) if self.precision else 19)}1")
+        elif self.precision < 0:
+            precision = Decimal(f"1{'0'*self.precision}")
+        else:
+            precision = Decimal("1")
         quantity = self.quantity.quantize(precision)
 
         if self.approximation:
