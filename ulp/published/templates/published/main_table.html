@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Ultra-long period transients</title>
+    </head>
+    <body>
+        <h1>Table</h1>
+        <table>
+            <tr>
+                <th>ULP</th>
+                {% for parameter in parameter_set.parameters.all %}
+                <th>{{ parameter }}</th>
+                {% endfor %}
+            </tr>
+            {% for measurement in measurements.all %}
+            <tr>
+                <td>{{ measurement.formatted_quantity }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>
