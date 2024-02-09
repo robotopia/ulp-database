@@ -3,19 +3,23 @@ from .models import *
 
 # Register your models here.
 
+@admin.register(Article)
+class ArticleAdmin(admin.ModelAdmin):
+    list_display = ['citet_text', 'doi']
+
+@admin.register(Measurement)
+class MeasurementAdmin(admin.ModelAdmin):
+    list_display = ['ulp', 'article', 'parameter', 'formatted_quantity']
+
+@admin.register(Parameter)
+class ParameterAdmin(admin.ModelAdmin):
+    list_display = ['name', 'ascii_symbol', 'astropy_unit']
+
+@admin.register(ParameterSet)
+class ParameterSetAdmin(admin.ModelAdmin):
+    list_display = ['name']
+
 @admin.register(Ulp)
 class UlpAdmin(admin.ModelAdmin):
     list_display = ['name', 'abbr']
-
-@admin.register(Article)
-class UlpAdmin(admin.ModelAdmin):
-    list_display = ['citet_text', 'doi']
-
-@admin.register(Parameter)
-class UlpAdmin(admin.ModelAdmin):
-    list_display = ['name', 'ascii_symbol', 'unit']
-
-@admin.register(Measurement)
-class UlpAdmin(admin.ModelAdmin):
-    list_display = ['ulp', 'article', 'parameter', 'formatted_quantity']
 

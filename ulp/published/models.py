@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
+import astropy.units as u
 
 # Create your models here.
 class Ulp(models.Model):
@@ -96,7 +97,7 @@ class Parameter(models.Model):
         help_text="The symbol used for this parameter, expressed as a LaTeX expression",
     )
 
-    unit = models.CharField(
+    astropy_unit = models.CharField(
         max_length=31,
         blank=True,
         null=True,
@@ -109,10 +110,14 @@ class Parameter(models.Model):
     )
 
     def __str__(self):
-        return f"{self.name} ({self.unit})"
+        return f"{self.name} ({u.Unit(self.astropy_unit).to_string(format='unicode')})"
 
 
 class Measurement(models.Model):
+
+    ACCESS_PUBLIC = 'P'
+    ACCESS_GROUP = 'G'
+    ACCESS_PRIVATE = 'O'
 
     parameter = models.ForeignKey(
         "Parameter",
@@ -217,12 +222,36 @@ class Measurement(models.Model):
         help_text="True: 3x10²; False: 300",
     )
 
+    owner = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        related_name="made_measurements",
+        on_delete=models.RESTRICT,
+        help_text="The user who made this measurement, if not a published measurement",
+    )
+
+    access = models.CharField(
+        max_length=1,
+        choices=[
+            (ACCESS_PUBLIC, 'Public'),
+            (ACCESS_GROUP, 'Group'),
+            (ACCESS_PRIVATE, 'Only me'),
+        ],
+        default=ACCESS_PRIVATE,
+        help_text="If published, everyone can access. If unpublished, this setting chooses who can see this measurement.",
+    )
+
+    updated = models.DateTimeField(
+        auto_now=True,
+    )
+
     @property
     def formatted_quantity(self):
         retstr = f"{self.quantity}"
         if self.power_of_10 != 0:
             retstr += f" × 10^{self.power_of_10}"
-        retstr += f" {self.parameter.unit}"
+        retstr += f" {self.parameter.astropy_unit}"
         return retstr
 
     def __str__(self):
@@ -230,3 +259,30 @@ class Measurement(models.Model):
 
     class Meta:
         ordering = ['ulp', 'article', 'parameter']
+
+
+class ParameterSet(models.Model):
+
+    name = models.CharField(
+        max_length=63,
+        unique=True,
+        help_text="A name for the parameter set (e.g. 'ephemeris', 'main_table', 'viewing_geometry')",
+    )
+
+    description = models.TextField(
+        blank=True,
+        null=True,
+        help_text="A helpful description of the parameter set",
+    )
+
+    parameters = models.ManyToManyField(
+        "Parameter",
+        blank=True,
+        related_name="sets",
+    )
+
+    def __str__(self):
+        return f"{self.name}"
+
+    class Meta:
+        ordering = ['name']
