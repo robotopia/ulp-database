@@ -22,18 +22,19 @@ def main_table(request):
     )
 
     # Build query to construct final display table
-    query = Q()
+    #query = Q()
     ulps = list({measurement.ulp for measurement in measurements})
     parameters = [parameter for parameter in parameter_set.parameters.all()]
 
-    rows = [
-        measurements.filter(ulp=ulp).values('ulp__name', 'parameter__name', 'quantity').annotate(updated=Max('updated')) for ulp in ulps
-    ]
-    print(rows)
+    rows = []
+    for ulp in ulps:
+        rows.append([ulp.name])
+        for parameter in parameters:
+            rows[-1].append(measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last())
 
     context = {
         'parameter_set': parameter_set,
-        'measurements': measurements,
+        'rows': rows,
     }
 
     return render(request, 'published/main_table.html', context)
