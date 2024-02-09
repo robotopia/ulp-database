@@ -111,7 +111,10 @@ class Parameter(models.Model):
     )
 
     def __str__(self):
-        return f"{self.name} ({u.Unit(self.astropy_unit).to_string(format='unicode')})"
+        if self.astropy_unit is not None:
+            return f"{self.name} ({u.Unit(self.astropy_unit).to_string(format='unicode')})"
+        else:
+            return f"{self.name}"
 
 
 class Measurement(models.Model):
@@ -251,6 +254,36 @@ class Measurement(models.Model):
 
     updated = models.DateTimeField(
         auto_now=True,
+    )
+
+    freq_ctr = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The centre frequency at which this measurement was made.",
+    )
+
+    freq_hi = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The top of the frequency range at which this measurement was made.",
+    )
+
+    freq_lo = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The bottom of the frequency range at which this measurement was made.",
+    )
+
+    freq_astropy_units = models.CharField(
+        max_length=31,
+        default="MHz",
+        help_text="An astropy-conversant unit string that applies to the frequencies.",
+    )
+
+    notes = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Extra notes about this measurement.",
     )
 
     @property

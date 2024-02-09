@@ -35,6 +35,4 @@ def main_table(request):
         'rows': rows,
     }
 
-    print(context)
-
     return render(request, 'published/main_table.html', context)
