@@ -11,6 +11,9 @@ def index(request):
 def main_table(request):
 
     parameter_set = get_object_or_404(models.ParameterSet, name='main_table')
+
+    #measurements = models.Measurement.objects.filter(
+
     context = {
         'parameter_set': parameter_set,
     }

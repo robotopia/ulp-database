@@ -9,7 +9,7 @@ class ArticleAdmin(admin.ModelAdmin):
 
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
-    list_display = ['ulp', 'article', 'parameter', 'formatted_quantity']
+    list_display = ['ulp', 'article', 'parameter', 'formatted_quantity', 'access']
 
 @admin.register(Parameter)
 class ParameterAdmin(admin.ModelAdmin):

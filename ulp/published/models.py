@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
 import astropy.units as u
+from decimal import Decimal
 
 # Create your models here.
 class Ulp(models.Model):
@@ -145,11 +146,10 @@ class Measurement(models.Model):
         help_text="The true quantity is multiplied by this power of 10. Same with the errors.",
     )
 
-    sigfig = models.IntegerField(
+    precision = models.IntegerField(
         null=True,
         blank=True,
-        help_text="The number of significant figures to display",
-        verbose_name="Significant figures",
+        help_text="The number of decimal places to display",
     )
 
     err = models.DecimalField(
@@ -248,10 +248,52 @@ class Measurement(models.Model):
 
     @property
     def formatted_quantity(self):
-        retstr = f"{self.quantity}"
+
+        retstr = ""
+        precision = Decimal(f"0.{'0'*((self.precision - 1) if self.precision else 19)}1")
+        quantity = self.quantity.quantize(precision)
+
+        if self.approximation:
+            if self.upper_limit:
+                retstr += "≲ "
+            elif self.lower_limit:
+                retstr += "≳ "
+            else:
+                retstr += "~ "
+        else:
+            if self.upper_limit:
+                retstr += "< "
+            elif self.lower_limit:
+                retstr += "> "
+
+        if self.error_is_range == True and self.err is not None:
+            lower_limit = (self.quantity - self.err).quantize(precision)
+            upper_limit = (self.quantity + self.err).quantize(precision)
+
+            quantity_str = f"{lower_limit} - {upper_limit}"
+
+            if self.power_of_10 != 0:
+                quantity_str = f"({quantity_str})"
+
+        elif self.err:
+            err = self.err.quantize(precision)
+            quantity_str = f"{quantity} ± {err}"
+        else:
+            quantity_str = f"{quantity}"
+            if self.err_hi:
+                err_hi = self.err_hi.quantize(precision)
+                quantity_str += f"^+{err_hi}"
+            if self.err_lo:
+                err_lo = self.err_lo.quantize(precision)
+                quantity_str += f"^+{err_lo}"
+
         if self.power_of_10 != 0:
-            retstr += f" × 10^{self.power_of_10}"
-        retstr += f" {self.parameter.astropy_unit}"
+            if self.err or self.err_hi or self.err_lo:
+                quantity_str = f"({quantity_str})"
+            quantity_str = f"{quantity_str} × 10^{self.power_of_10}"
+
+        retstr += f"{quantity_str} {self.parameter.astropy_unit}"
+
         return retstr
 
     def __str__(self):
