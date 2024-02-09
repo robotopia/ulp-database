@@ -21,20 +21,21 @@ def main_table(request):
          Q(access_groups__in=request.user.groups.all()))  # ...then the user must be in of the allowed groups.
     )
 
-    # Build query to construct final display table
-    #query = Q()
     ulps = list({measurement.ulp for measurement in measurements})
     parameters = [parameter for parameter in parameter_set.parameters.all()]
 
-    rows = []
+    rows = {}
     for ulp in ulps:
-        rows.append([ulp.name])
+        rows[ulp.name] = {}
         for parameter in parameters:
-            rows[-1].append(measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last())
+            rows[ulp.name][parameter.name] = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
 
     context = {
-        'parameter_set': parameter_set,
+        'ulps': ulps,
+        'parameters': parameters,
         'rows': rows,
     }
+
+    print(context)
 
     return render(request, 'published/main_table.html', context)

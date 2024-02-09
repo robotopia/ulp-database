@@ -1,20 +1,26 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html>
     <head>
         <title>Ultra-long period transients</title>
+        <link rel="stylesheet" href="{% static 'published/style.css' %}">
     </head>
     <body>
-        <h1>Table</h1>
+        <h1>ULP parameters</h1>
         <table>
             <tr>
                 <th>ULP</th>
-                {% for parameter in parameter_set.parameters.all %}
+                {% for parameter in parameters %}
                 <th>{{ parameter }}</th>
                 {% endfor %}
             </tr>
-            {% for measurement in measurements.all %}
+            {% for ulp, parameters in rows.items %}
             <tr>
-                <td>{{ measurement.formatted_quantity }}</td>
+                <td>{{ ulp }}</td>
+                {% for parameter, measurement in parameters.items %}
+                <td>{{ measurement }}</td>
+                {% endfor %}
             </tr>
             {% endfor %}
         </table>
