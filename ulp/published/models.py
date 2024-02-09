@@ -242,6 +242,13 @@ class Measurement(models.Model):
         help_text="If published, everyone can access. If unpublished, this setting chooses who can see this measurement.",
     )
 
+    access_groups = models.ManyToManyField(
+        Group,
+        blank=True,
+        related_name="measurements",
+        help_text="Which groups can view this measurement",
+    )
+
     updated = models.DateTimeField(
         auto_now=True,
     )
