@@ -19,7 +19,7 @@
             <tr>
                 <td>{{ ulp }}</td>
                 {% for parameter, measurement in parameters.items %}
-                <td>{{ measurement }}</td>
+                <td>{{ measurement.formatted_quantity }}</td>
                 {% endfor %}
             </tr>
             {% endfor %}

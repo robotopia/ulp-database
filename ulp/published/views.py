@@ -31,7 +31,6 @@ def main_table(request):
             rows[ulp.name][parameter.name] = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
 
     context = {
-        'ulps': ulps,
         'parameters': parameters,
         'rows': rows,
     }

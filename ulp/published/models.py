@@ -299,12 +299,17 @@ class Measurement(models.Model):
                 quantity_str = f"({quantity_str})"
             quantity_str = f"{quantity_str} × 10^{self.power_of_10}"
 
-        retstr += f"{quantity_str} {self.parameter.astropy_unit}"
+        retstr += f"{quantity_str}"
 
         return retstr
 
+    @property
+    def formatted_quantity_with_units(self):
+
+        return f"{self.formatted_quantity} {self.parameter.astropy_unit}"
+
     def __str__(self):
-        return self.formatted_quantity
+        return self.formatted_quantity_with_units
 
     class Meta:
         ordering = ['ulp', 'article', 'parameter']
