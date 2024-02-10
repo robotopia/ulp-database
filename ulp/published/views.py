@@ -88,7 +88,6 @@ def galactic_view(request):
         # Update the distance according to the method and the model
         if method == 'DM' and dm is not None:
             pygedm_dist, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm, method=model)
-            print(coord.galactic.l, coord.galactic.b, dm, " -> ", pygedm_dist)
             if dm_dist_frac_err <= 0:
                 pygedm_dist_lo, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm - dm_err, method=model)
                 pygedm_dist_hi, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm + dm_err, method=model)
@@ -105,7 +104,5 @@ def galactic_view(request):
         'model': model,
         'dm_dist_frac_err': dm_dist_frac_err,
     }
-
-    print(context)
 
     return render(request, 'published/galactic_view.html', context)
