@@ -197,6 +197,12 @@ class Measurement(models.Model):
         verbose_name="Error low (-)",
     )
 
+    error_sigma = models.FloatField(
+        default=1,
+        help_text="The sigma of the reported errors.",
+        verbose_name="Error significance, σ",
+    )
+
     lower_limit = models.BooleanField(
         default=False,
         help_text="Is this an lower limit?",

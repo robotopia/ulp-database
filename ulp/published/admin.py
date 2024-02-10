@@ -14,14 +14,14 @@ class CovarianceAdmin(admin.ModelAdmin):
 
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
-    list_display = ['ulp', 'parameter', 'formatted_quantity', 'access', 'article', 'updated']
+    list_display = ['ulp', 'parameter', 'formatted_quantity', 'article', 'updated']
     list_filter = ['ulp', 'parameter', 'access', 'article']
     fieldsets = (
         ('Main', {'fields': ('ulp', 'parameter', ('quantity', 'power_of_10'), 'article', 'date',)}),
-        ('Uncertainty', {'fields': ('err', ('err_lo', 'err_hi'), 'precision', ('chisq', 'reduced_chisq')), 'classes': ('collapse',)}),
+        ('Uncertainty', {'fields': ('err', ('err_lo', 'err_hi'), 'error_sigma', ('chisq', 'reduced_chisq')), 'classes': ('collapse',)}),
         ('Frequency', {'fields': (('freq_lo', 'freq_ctr', 'freq_hi'), 'freq_astropy_units'), 'classes': ('collapse',)}),
         ('Publish', {'fields': ('owner', 'access', 'access_groups'), 'classes': ('collapse',)}),
-        ('Display options', {'fields': (('lower_limit', 'upper_limit'), 'error_is_range', 'approximation', 'angle_display',), 'classes': ('collapse',)}),
+        ('Display options', {'fields': ('precision', ('lower_limit', 'upper_limit'), 'error_is_range', 'approximation', 'angle_display',), 'classes': ('collapse',)}),
         ('Other', {'fields': ('notes',)}),
     )
 
