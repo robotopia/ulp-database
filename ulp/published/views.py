@@ -9,9 +9,9 @@ from . import models
 def index(request):
     return HttpResponse("Hello, world. You're at the 'published' index.")
 
-def main_table(request):
+def parameter_set_table_view(request, pk):
 
-    parameter_set = get_object_or_404(models.ParameterSet, name='main_table')
+    parameter_set = get_object_or_404(models.ParameterSet, pk=pk)
 
     measurements = models.Measurement.objects.filter(parameter__in=parameter_set.parameters.all()).filter(
         Q(article__isnull=False) |  # It's published, and therefore automatically accessible by everyone

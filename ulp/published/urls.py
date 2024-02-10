@@ -1,8 +1,8 @@
-from django.urls import path
+from django.urls import re_path
 
 from . import views
 
 urlpatterns = [
-    path("", views.index, name="index"),
-    path("main_table", views.main_table, name="main_table"),
+    re_path('^$', views.index, name="index"),
+    re_path(r'^tables/(?P<pk>[0-9]+)$', views.parameter_set_table_view, name="parameter_set_table_view"),
 ]
