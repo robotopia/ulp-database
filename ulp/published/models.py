@@ -160,7 +160,8 @@ class Measurement(models.Model):
 
     power_of_10 = models.IntegerField(
         default=0,
-        help_text="The true quantity is multiplied by this power of 10. Same with the errors.",
+        #help_text="The true quantity is multiplied by this power of 10.",
+        verbose_name="× 10^",
     )
 
     precision = models.IntegerField(
@@ -174,7 +175,8 @@ class Measurement(models.Model):
         max_digits=40,
         null=True,
         blank=True,
-        help_text="The (symmetrical) uncertainty on the quantity",
+        help_text="The (symmetrical) uncertainty on the quantity.",
+        verbose_name="Error (±)",
     )
 
     err_hi = models.DecimalField(
@@ -182,7 +184,8 @@ class Measurement(models.Model):
         max_digits=40,
         null=True,
         blank=True,
-        help_text="The (asymmetrical) upper uncertainty on the quantity",
+        help_text="The (asymmetrical) upper uncertainty on the quantity.",
+        verbose_name="Error high (+)",
     )
 
     err_lo = models.DecimalField(
@@ -190,7 +193,8 @@ class Measurement(models.Model):
         max_digits=40,
         null=True,
         blank=True,
-        help_text="The (asymmetrical) lower uncertainty on the quantity",
+        help_text="The (asymmetrical) lower uncertainty on the quantity.",
+        verbose_name="Error low (-)",
     )
 
     lower_limit = models.BooleanField(
@@ -268,19 +272,19 @@ class Measurement(models.Model):
     freq_ctr = models.FloatField(
         null=True,
         blank=True,
-        help_text="The centre frequency at which this measurement was made.",
+        help_text="The centre frequency.",
     )
 
     freq_hi = models.FloatField(
         null=True,
         blank=True,
-        help_text="The top of the frequency range at which this measurement was made.",
+        help_text="The top of the frequency range.",
     )
 
     freq_lo = models.FloatField(
         null=True,
         blank=True,
-        help_text="The bottom of the frequency range at which this measurement was made.",
+        help_text="The bottom of the frequency range.",
     )
 
     freq_astropy_units = models.CharField(
