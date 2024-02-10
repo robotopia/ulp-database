@@ -82,6 +82,8 @@ def galactic_view(request):
 
             values[ulp.name]['Distance'] = dist
 
+        # TODO: Convert to galactic coordinates
+
     context = {
         'values': values,
         'method': method,
