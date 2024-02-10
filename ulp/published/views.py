@@ -83,16 +83,20 @@ def galactic_view(request):
         except:
             dm = None
             dm_err = None
-        dist = values[ulp.name]['Distance'].astropy_quantity
-        dist_err = values[ulp.name]['Distance'].astropy_err
 
-        # Convert to galactic coordinates
-        coord = SkyCoord(ra=ra, dec=dec, frame='icrs')
-        values[ulp.name]['gal_long'] = coord.galactic.l.value
-        values[ulp.name]['gal_lat'] = coord.galactic.b.value
-        values[ulp.name]['dist'] = dist.to('kpc').value
-        values[ulp.name]['near_dist'] = (dist - dist_err).to('kpc').value
-        values[ulp.name]['far_dist'] = (dist + dist_err).to('kpc').value
+        try:
+            dist = values[ulp.name]['Distance'].astropy_quantity
+            dist_err = values[ulp.name]['Distance'].astropy_err
+
+            # Convert to galactic coordinates
+            coord = SkyCoord(ra=ra, dec=dec, frame='icrs')
+            values[ulp.name]['gal_long'] = coord.galactic.l.value
+            values[ulp.name]['gal_lat'] = coord.galactic.b.value
+            values[ulp.name]['dist'] = dist.to('kpc').value
+            values[ulp.name]['near_dist'] = (dist - dist_err).to('kpc').value
+            values[ulp.name]['far_dist'] = (dist + dist_err).to('kpc').value
+        except:
+            pass
 
         # Update the distance according to the method and the model
         if method == 'DM' and dm is not None:

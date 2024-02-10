@@ -327,6 +327,19 @@ class Measurement(models.Model):
         help_text="If an angle, display in the chosen sexagesimal format.",
     )
 
+    stokes = models.CharField(
+        max_length=2,
+        choices=[
+            ['I', 'I'],
+            ['Q', 'Q'],
+            ['U', 'U'],
+            ['V', 'V'],
+        ],
+        null=True,
+        blank=True,
+        help_text="The Stokes parameter associated with this measurement.",
+    )
+
     notes = models.TextField(
         null=True,
         blank=True,
