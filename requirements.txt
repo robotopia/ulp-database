@@ -2,3 +2,4 @@ django
 numpy
 scipy
 astropy
+pygedm

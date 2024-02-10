@@ -1,0 +1,30 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Ultra-long period transients</title>
+        <link rel="stylesheet" href="{% static 'published/style.css' %}">
+    </head>
+    <body>
+        <h1>Galactic view</h1>
+        {% comment %}
+        <table>
+            <tr>
+                <th>ULP</th>
+                {% for parameter in parameters %}
+                <th>{{ parameter }}</th>
+                {% endfor %}
+            </tr>
+            {% for ulp, parameters in rows.items %}
+            <tr>
+                <td>{{ ulp }}</td>
+                {% for parameter, measurement in parameters.items %}
+                <td>{{ measurement.formatted_quantity }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        {% endcomment %}
+    </body>
+</html>
