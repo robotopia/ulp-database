@@ -41,3 +41,22 @@ th {
     color: white;
 }
 
+.galactic-map {
+    position: relative;
+    display: inline-block; /* shrinks container to image size */
+    width: 800px;
+    max-width: 90%;
+}
+
+.galactic-map img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.galactic-map svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
