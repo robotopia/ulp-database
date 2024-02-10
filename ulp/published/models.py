@@ -338,6 +338,10 @@ class Measurement(models.Model):
         return self.quantity * 10**(self.power_of_10) * u.Unit(self.parameter.astropy_unit)
 
     @property
+    def astropy_err(self):
+        return self.err * 10**(self.power_of_10) * u.Unit(self.parameter.astropy_unit)
+
+    @property
     def formatted_quantity(self):
 
         if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):

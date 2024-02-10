@@ -6,6 +6,7 @@ from . import models
 from decimal import Decimal
 
 import pygedm
+from astropy.coordinates import SkyCoord
 
 # Create your views here.
 
@@ -47,7 +48,11 @@ def galactic_view(request):
 
     method = request.GET.get('method') or 'DM'
     model = request.GET.get('model') or 'ne2001'
-    dm_dist_frac_err = float(request.GET.get('dm_dist_frac_err') or 0.5)
+    dm_dist_frac_err = request.GET.get('dm_dist_frac_err') or None
+    try:
+        dm_dist_frac_err = float(dm_dist_frac_err)
+    except:
+        pass
 
     parameter_set = get_object_or_404(models.ParameterSet, name="position")
     measurements = get_accessible_measurements(request, parameter_set)
@@ -64,25 +69,39 @@ def galactic_view(request):
         for parameter in parameters:
             values[ulp.name][parameter.name] = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
 
+        # Pull out some quantities for future convenience
+        ra = values[ulp.name]['Right ascension'].astropy_quantity
+        dec = values[ulp.name]['Declination'].astropy_quantity
+        try:
+            dm = values[ulp.name]['Dispersion measure'].astropy_quantity
+            dm_err = values[ulp.name]['Dispersion measure'].astropy_err
+        except:
+            dm = None
+            dm_err = None
+        dist = values[ulp.name]['Distance'].astropy_quantity
+        dist_err = values[ulp.name]['Distance'].astropy_err
+
+        # Convert to galactic coordinates
+        coord = SkyCoord(ra=ra, dec=dec, frame='icrs')
+        values[ulp.name]['gal_long'] = coord.galactic.l.value
+        values[ulp.name]['gal_lat'] = coord.galactic.b.value
+        values[ulp.name]['dist'] = dist.to('kpc').value
+        values[ulp.name]['near_dist'] = (dist - dist_err).to('kpc').value
+        values[ulp.name]['far_dist'] = (dist + dist_err).to('kpc').value
+
         # Update the distance according to the method and the model
-        if method == 'DM':
-            ra = values[ulp.name]['Right ascension'].astropy_quantity.to('deg').value
-            dec = values[ulp.name]['Declination'].astropy_quantity.to('deg').value
-            dm = values[ulp.name]['Dispersion measure'].astropy_quantity.to('pc/cm3').value
-            pygedm_dist, _ = pygedm.dm_to_dist(ra, dec, dm, method=model)
-            quantity = Decimal(pygedm_dist.to('kpc').value)
-            err = Decimal(dm_dist_frac_err * pygedm_dist.to('kpc').value)
-
-            dist = models.Measurement(
-                quantity=quantity,
-                ulp=ulp,
-                parameter=distance_parameter,
-                err=err,
-            )
-
-            values[ulp.name]['Distance'] = dist
-
-        # TODO: Convert to galactic coordinates
+        if method == 'DM' and dm is not None:
+            pygedm_dist, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm, method=model)
+            print(coord.galactic.l, coord.galactic.b, dm, " -> ", pygedm_dist)
+            if dm_dist_frac_err is None:
+                pygedm_dist_lo, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm - dm_err, method=model)
+                pygedm_dist_hi, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm + dm_err, method=model)
+            else:
+                pygedm_dist_lo = pygedm_dist * (1 - dm_dist_frac_err)
+                pygedm_dist_hi = pygedm_dist * (1 + dm_dist_frac_err)
+            values[ulp.name]['dist'] = pygedm_dist.to('kpc').value
+            values[ulp.name]['near_dist'] = pygedm_dist_lo.to('kpc').value
+            values[ulp.name]['far_dist'] = pygedm_dist_hi.to('kpc').value
 
     context = {
         'values': values,
