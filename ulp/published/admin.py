@@ -5,11 +5,12 @@ from .models import *
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ['citet_text', 'doi']
+    list_display = ['citet_text', 'title', 'doi']
 
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
-    list_display = ['ulp', 'article', 'parameter', 'formatted_quantity', 'access', 'updated']
+    list_display = ['ulp', 'parameter', 'formatted_quantity', 'access', 'article', 'updated']
+    list_filter = ['ulp', 'parameter', 'access', 'article']
 
 @admin.register(Parameter)
 class ParameterAdmin(admin.ModelAdmin):

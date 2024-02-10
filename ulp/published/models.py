@@ -46,6 +46,7 @@ class Ulp(models.Model):
     class Meta:
         verbose_name = "ULP"
         verbose_name_plural = "ULPs"
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -60,6 +61,13 @@ class Article(models.Model):
         help_text="The display text when this is cited inline, e.g., Smith et. al (1900)",
     )
 
+    title = models.CharField(
+        max_length=1023,
+        blank=True,
+        null=True,
+        help_text="The title of the paper",
+    )
+
     doi = models.CharField(
         max_length=1023,
         blank=True,
@@ -68,8 +76,15 @@ class Article(models.Model):
         verbose_name="DOI",
     )
 
+    @property
+    def doi_url(self):
+        return "https://doi.org/" + self.doi
+
     def __str__(self):
         return self.citet_text
+
+    class Meta:
+        ordering = ['citet_text']
 
 
 class Parameter(models.Model):
@@ -105,16 +120,14 @@ class Parameter(models.Model):
         help_text="The (astropy-conversant) unit of this parameter (e.g. 's', 'lightyear')",
     )
 
-    prefer_scientific_notation = models.BooleanField(
-        default=False,
-        help_text="True: 3x10²; False: 300",
-    )
-
     def __str__(self):
         if self.astropy_unit is not None:
             return f"{self.name} ({u.Unit(self.astropy_unit).to_string(format='unicode')})"
         else:
             return f"{self.name}"
+
+    class Meta:
+        ordering = ['name']
 
 
 class Measurement(models.Model):
@@ -220,11 +233,6 @@ class Measurement(models.Model):
         help_text="Any extra notes on this measurement",
     )
 
-    prefer_scientific_notation = models.BooleanField(
-        default=False,
-        help_text="True: 3x10²; False: 300",
-    )
-
     owner = models.ForeignKey(
         User,
         null=True,
@@ -325,6 +333,7 @@ class Measurement(models.Model):
         elif self.err:
             err = self.err.quantize(precision)
             quantity_str = f"{quantity} ± {err}"
+
         else:
             quantity_str = f"{quantity}"
             if self.err_hi:
@@ -337,7 +346,10 @@ class Measurement(models.Model):
         if self.power_of_10 != 0:
             if self.err or self.err_hi or self.err_lo:
                 quantity_str = f"({quantity_str})"
-            quantity_str = f"{quantity_str} × 10^{self.power_of_10}"
+            elif quantity != Decimal('1'):
+                quantity_str += f" × 10^{self.power_of_10}"
+            else:
+                quantity_str = f"10^{self.power_of_10}"
 
         retstr += f"{quantity_str}"
 
