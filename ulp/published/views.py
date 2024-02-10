@@ -48,11 +48,7 @@ def galactic_view(request):
 
     method = request.GET.get('method') or 'DM'
     model = request.GET.get('model') or 'ne2001'
-    dm_dist_frac_err = request.GET.get('dm_dist_frac_err') or None
-    try:
-        dm_dist_frac_err = float(dm_dist_frac_err)
-    except:
-        pass
+    dm_dist_frac_err = float(request.GET.get('dm_dist_frac_err') or 0)
 
     parameter_set = get_object_or_404(models.ParameterSet, name="position")
     measurements = get_accessible_measurements(request, parameter_set)
@@ -93,12 +89,12 @@ def galactic_view(request):
         if method == 'DM' and dm is not None:
             pygedm_dist, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm, method=model)
             print(coord.galactic.l, coord.galactic.b, dm, " -> ", pygedm_dist)
-            if dm_dist_frac_err is None:
+            if dm_dist_frac_err <= 0:
                 pygedm_dist_lo, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm - dm_err, method=model)
                 pygedm_dist_hi, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm + dm_err, method=model)
             else:
-                pygedm_dist_lo = pygedm_dist * (1 - dm_dist_frac_err)
-                pygedm_dist_hi = pygedm_dist * (1 + dm_dist_frac_err)
+                pygedm_dist_lo = pygedm_dist * (1 - dm_dist_frac_err/100) # dm_dist_frac_err are %'s
+                pygedm_dist_hi = pygedm_dist * (1 + dm_dist_frac_err/100) # dm_dist_frac_err are %'s
             values[ulp.name]['dist'] = pygedm_dist.to('kpc').value
             values[ulp.name]['near_dist'] = pygedm_dist_lo.to('kpc').value
             values[ulp.name]['far_dist'] = pygedm_dist_hi.to('kpc').value
@@ -107,6 +103,7 @@ def galactic_view(request):
         'values': values,
         'method': method,
         'model': model,
+        'dm_dist_frac_err': dm_dist_frac_err,
     }
 
     print(context)

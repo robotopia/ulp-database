@@ -18,6 +18,9 @@
                     <option value="yt2020">YT2020</option>
                     {% endcomment %}
                 </select><br>
+                <label for="dm_dist_frac_err">Display fractional error (%):</label>
+                <input type="range" id="dm_dist_frac_err" name="dm_dist_frac_err" value="{{ dm_dist_frac_err }}" min="0" max="100"/>
+                <label for="dm_dist_frac_err">(Set to 0 to use DM-derived errors)</label><br>
                 <input type="submit" value="Update"></input>
             </form>
         </div>
