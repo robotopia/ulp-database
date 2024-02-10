@@ -15,13 +15,22 @@ def index(request):
 
 def get_accessible_measurements(request, parameter_set):
 
-    return models.Measurement.objects.filter(parameter__in=parameter_set.parameters.all()).filter(
-        Q(article__isnull=False) |  # It's published, and therefore automatically accessible by everyone
-        Q(owner=request.user) |  # The owner can always see their own measurements
-        Q(access=models.Measurement.ACCESS_PUBLIC) |  # Include measurements explicitly marked as public
-        (Q(access=models.Measurement.ACCESS_GROUP) &  # But if it's marked as group-accessible...
-         Q(access_groups__in=request.user.groups.all()))  # ...then the user must be in of the allowed groups.
-    )
+    print("--------------", request.user.is_authenticated)
+
+    if request.user.is_authenticated:
+        return models.Measurement.objects.filter(parameter__in=parameter_set.parameters.all()).filter(
+            Q(article__isnull=False) |  # It's published, and therefore automatically accessible by everyone
+            Q(owner=request.user) |  # The owner can always see their own measurements
+            Q(access=models.Measurement.ACCESS_PUBLIC) |  # Include measurements explicitly marked as public
+            (Q(access=models.Measurement.ACCESS_GROUP) &  # But if it's marked as group-accessible...
+             Q(access_groups__in=request.user.groups.all()))  # ...then the user must be in of the allowed groups.
+        )
+    else:
+        return models.Measurement.objects.filter(parameter__in=parameter_set.parameters.all()).filter(
+            Q(article__isnull=False) |  # It's published, and therefore automatically accessible by everyone
+            Q(access=models.Measurement.ACCESS_PUBLIC)  # Include measurements explicitly marked as public
+        )
+
 
 def parameter_set_table_view(request, pk):
 
