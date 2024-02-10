@@ -7,6 +7,11 @@ from .models import *
 class ArticleAdmin(admin.ModelAdmin):
     list_display = ['citet_text', 'title', 'doi']
 
+@admin.register(Covariance)
+class CovarianceAdmin(admin.ModelAdmin):
+    list_display = ['measurement1', 'measurement2', 'covariance']
+    #list_filter = ['measurement
+
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
     list_display = ['ulp', 'parameter', 'formatted_quantity', 'access', 'article', 'updated']

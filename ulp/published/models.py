@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
 import astropy.units as u
+from astropy.coordinates import Angle
 from decimal import Decimal
 
 # Create your models here.
@@ -288,6 +289,34 @@ class Measurement(models.Model):
         help_text="An astropy-conversant unit string that applies to the frequencies.",
     )
 
+    chisq = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name='χ²',
+        help_text="The chi-squared of the fit.",
+    )
+
+    reduced_chisq = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name='Reduced χ²',
+        help_text="The reduced chi-squared of the fit.",
+    )
+
+    ANGLE_DDMMSS = 'D'
+    ANGLE_HHMMSS = 'H'
+
+    angle_display = models.CharField(
+        max_length=1,
+        null=True,
+        blank=True,
+        choices=[
+            [ANGLE_DDMMSS, 'DDMMSS'],
+            [ANGLE_HHMMSS, 'HHMMSS'],
+        ],
+        help_text="If an angle, display in the chosen sexagesimal format.",
+    )
+
     notes = models.TextField(
         null=True,
         blank=True,
@@ -296,6 +325,12 @@ class Measurement(models.Model):
 
     @property
     def formatted_quantity(self):
+
+        if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
+            if self.angle_display == self.ANGLE_DDMMSS:
+                return Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.deg, pad=True, format='unicode')
+            if self.angle_display == self.ANGLE_HHMMSS:
+                return Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.hourangle, pad=True, format='unicode')
 
         retstr = ""
         if self.precision is None:
@@ -392,3 +427,29 @@ class ParameterSet(models.Model):
 
     class Meta:
         ordering = ['name']
+
+class Covariance(models.Model):
+
+    measurement1 = models.ForeignKey(
+        "Measurement",
+        on_delete=models.CASCADE,
+        help_text="The first measurement in the pair.",
+        related_name="covariances_as_primary",
+    )
+
+    measurement2 = models.ForeignKey(
+        "Measurement",
+        on_delete=models.CASCADE,
+        help_text="The second measurement in the pair.",
+        related_name="covariances_as_secondary",
+    )
+
+    covariance = models.FloatField(
+        help_text="The covariance value.",
+    )
+
+    def __str__(self):
+        return f"{measurement1.parameter.name}, {measurement2.parameter.name}"
+
+    class Meta:
+        ordering = ['measurement1', 'measurement2']
