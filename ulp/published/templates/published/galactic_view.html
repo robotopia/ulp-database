@@ -8,6 +8,19 @@
     </head>
     <body>
         <h1>Galactic view</h1>
+        <div style="padding: 10px">
+            <form>
+                <label for="model">Electron density model:</label>
+                <select id="model" name="model">
+                    <option value="ne2001" {% if model == "ne2001" %}selected{% endif %}>NE2001</option>
+                    <option value="ymw16" {% if model == "ymw16" %}selected{% endif %}>YMW16</option>
+                    {% comment %}
+                    <option value="yt2020">YT2020</option>
+                    {% endcomment %}
+                </select><br>
+                <input type="submit" value="Update"></input>
+            </form>
+        </div>
         <div class="galactic-map">
             <img src="{% static 'published/milky-way-annotated-rot.jpg' %}"/>
             {% comment %}
