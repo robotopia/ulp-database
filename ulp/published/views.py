@@ -77,6 +77,11 @@ def galactic_view(request):
         # Pull out some quantities for future convenience
         ra = values[ulp.name]['Right ascension'].astropy_quantity
         dec = values[ulp.name]['Declination'].astropy_quantity
+
+        coord = SkyCoord(ra=ra, dec=dec, frame='icrs')
+        values[ulp.name]['gal_long'] = coord.galactic.l.value
+        values[ulp.name]['gal_lat'] = coord.galactic.b.value
+
         try:
             dm = values[ulp.name]['Dispersion measure'].astropy_quantity
             dm_err = values[ulp.name]['Dispersion measure'].astropy_err
@@ -89,9 +94,6 @@ def galactic_view(request):
             dist_err = values[ulp.name]['Distance'].astropy_err
 
             # Convert to galactic coordinates
-            coord = SkyCoord(ra=ra, dec=dec, frame='icrs')
-            values[ulp.name]['gal_long'] = coord.galactic.l.value
-            values[ulp.name]['gal_lat'] = coord.galactic.b.value
             values[ulp.name]['dist'] = dist.to('kpc').value
             values[ulp.name]['near_dist'] = (dist - dist_err).to('kpc').value
             values[ulp.name]['far_dist'] = (dist + dist_err).to('kpc').value
@@ -117,5 +119,7 @@ def galactic_view(request):
         'model': model,
         'dm_dist_frac_err': dm_dist_frac_err,
     }
+
+    print(context)
 
     return render(request, 'published/galactic_view.html', context)
