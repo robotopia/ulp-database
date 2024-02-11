@@ -55,8 +55,12 @@ def parameter_set_table_view(request, pk):
         for parameter in parameters:
             rows[ulp][parameter.name] = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
 
+    # Also get the list of parameter sets to populate the dropdown
+    parameter_sets = models.ParameterSet.objects.all()
+
     context = {
         'parameters': parameters,
+        'parameter_sets': parameter_sets,
         'rows': rows,
     }
 

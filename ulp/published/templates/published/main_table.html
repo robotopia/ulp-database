@@ -6,6 +6,15 @@
 
 <h1 class="visually-hidden">ULP parameters</h1>
 
+<p>
+    Choose a parameter set:
+    <ul>
+        {% for parameter_set in parameter_sets %}
+        <li><a href="{% url 'parameter_set_table_view' pk=parameter_set.pk %}">{{ parameter_set }}</a></li>
+        {% endfor %}
+    </ul>
+</p>
+
 <table class="parameter-set">
     <tr>
         <th>ULP</th>
@@ -15,7 +24,7 @@
     </tr>
     {% for ulp, parameters in rows.items %}
     <tr>
-        <td>{{ ulp }}</td>
+        <td><a href="{% url 'ulp' pk=ulp.pk %}">{{ ulp }}</a></td>
         {% for parameter, measurement in parameters.items %}
         <td>{{ measurement.formatted_quantity }}</td>
         {% endfor %}
