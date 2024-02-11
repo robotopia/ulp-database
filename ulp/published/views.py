@@ -47,6 +47,7 @@ def parameter_set_table_view(request, pk):
     measurements = get_accessible_measurements(request, parameter_set=parameter_set)
 
     ulps = list({measurement.ulp for measurement in measurements})
+    print(ulps)
     parameters = [parameter for parameter in parameter_set.parameters.all()]
 
     rows = {}

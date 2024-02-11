@@ -30,20 +30,6 @@ class Ulp(models.Model):
         related_name="ulps",
     )
 
-    readers = models.ManyToManyField(
-        User,
-        blank=True,
-        help_text="The users that have read access to this ULP",
-        related_name="readable_ulps",
-    )
-
-    editors = models.ManyToManyField(
-        User,
-        blank=True,
-        help_text="The users that have edit access to this ULP",
-        related_name="editable_ulps",
-    )
-
     class Meta:
         verbose_name = "ULP"
         verbose_name_plural = "ULPs"
