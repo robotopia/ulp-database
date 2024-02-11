@@ -1,0 +1,23 @@
+{% extends 'published/main.html' %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>{{ ulp }}</h1>
+<table class="parameter-set">
+    <tr>
+        <th>Parameter</th>
+        <th>Value</th>
+        <th>Source</th>
+    </tr>
+    {% for measurement in measurements.all %}
+    <tr>
+        <td>{{ measurement.parameter }}</td>
+        <td>{{ measurement.formatted_quantity_with_units }}</td>
+        <td><a href="https://doi.org/{{ measurement.article.doi }}">{{ measurement.article }}</a></td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

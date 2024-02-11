@@ -30,10 +30,12 @@
     <svg width="100%" height="100%" viewBox="-20.865 -27.25 41.73 38.52">
         <g transform="scale(1 -1)">
             {% for ulp, values in values.items %}
-            <g transform="rotate({{ values.gal_long }})">
+            <a href="{% url 'ulp' pk=ulp.pk %}">
+            <g id="{{ ulp }}" transform="rotate({{ values.gal_long }})">
                 <line x1="0" y1="{{ values.near_dist }}" x2="0" y2="{{ values.far_dist }}" stroke="white" stroke-width="0.1" />
                 <circle r="0.2" cx="0" cy="{{ values.dist }}" fill="white"/>
             </g>
+            </a>
             {% endfor %}
         </g>
     </svg>

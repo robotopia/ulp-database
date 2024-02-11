@@ -424,7 +424,13 @@ class Measurement(models.Model):
     @property
     def formatted_quantity_with_units(self):
 
-        return f"{self.formatted_quantity} {self.parameter.astropy_unit}"
+        if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
+            return f"{self.formatted_quantity}"
+
+        if self.parameter.astropy_unit is not None:
+            return f"{self.formatted_quantity} {self.parameter.astropy_unit}"
+
+        return f"{self.formatted_quantity}"
 
     def __str__(self):
         return self.formatted_quantity_with_units

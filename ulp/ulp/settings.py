@@ -27,6 +27,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+LOGIN_REDIRECT_URL = '/published/galactic_view'
+LOGIN_URL = '/published/login'
+LOGOUT_REDIRECT_URL = '/published/galactic_view'
 
 # Application definition
 

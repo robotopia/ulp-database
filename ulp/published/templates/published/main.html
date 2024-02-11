@@ -11,21 +11,20 @@
         {% block navbar %}
         <div class="navbar">
             <div class="navbar-left">
-                <a href="{% url 'index' %}" class="navbar-item">Home</a>
-                <a href="{% url 'galactic_view' %}" class="navmenu-item"><div>Galactic map</div></a>
+                <a href="{% url 'galactic_view' %}" class="navbar-item"><div>Galactic map</div></a>
             </div>
             <div class="navbar-right">
-                <button class="navbar-item" onclick="toggle_navmenu(this, 'navmenu-edit');">Edit</button>
-                <div id="navmenu-edit" class="navmenu navmenu-right">
-                    <a href="/login" class="navmenu-item"><div>Login</div></a>
-                </div>
                 {% if user.is_authenticated %}
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button class="navbar-item" type="submit">Logout</button>
+                </form>
                 <button class="navbar-item" onclick="toggle_navmenu(this, 'navmenu-account');">{{ user }}</button>
                 <div id="navmenu-account" class="navmenu">
-                    <a href="/profile" class="navmenu-item"><div>Profile</div></a>
+                    <a href="{% url 'password_change' %}" class="navmenu-item"><div>Change password</div></a>
                 </div>
                 {% else %}
-                <a href="/login" class="navmenu-item"><div>Login</div></a>
+                <a href="{% url 'login' %}" class="navbar-item"><div>Login</div></a>
                 {% endif %}
             </div>
         </div>

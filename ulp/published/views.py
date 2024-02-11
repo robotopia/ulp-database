@@ -1,6 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import authenticate, login, logout
 from django.db.models import Q, Max
 from . import models
 from decimal import Decimal
@@ -13,10 +14,18 @@ from astropy.coordinates import SkyCoord
 def index(request):
     return render(request, 'published/index.html')
 
-def get_accessible_measurements(request, parameter_set):
+def get_accessible_measurements(request, parameter_set=None, ulp=None):
+
+    queryset = models.Measurement.objects.all()
+
+    if parameter_set is not None:
+        queryset = queryset.filter(parameter__in=parameter_set.parameters.all())
+
+    if ulp is not None:
+        queryset = queryset.filter(ulp=ulp)
 
     if request.user.is_authenticated:
-        return models.Measurement.objects.filter(parameter__in=parameter_set.parameters.all()).filter(
+        queryset = queryset.filter(
             Q(article__isnull=False) |  # It's published, and therefore automatically accessible by everyone
             Q(owner=request.user) |  # The owner can always see their own measurements
             Q(access=models.Measurement.ACCESS_PUBLIC) |  # Include measurements explicitly marked as public
@@ -24,25 +33,27 @@ def get_accessible_measurements(request, parameter_set):
              Q(access_groups__in=request.user.groups.all()))  # ...then the user must be in of the allowed groups.
         )
     else:
-        return models.Measurement.objects.filter(parameter__in=parameter_set.parameters.all()).filter(
+        queryset = queryset.filter(
             Q(article__isnull=False) |  # It's published, and therefore automatically accessible by everyone
             Q(access=models.Measurement.ACCESS_PUBLIC)  # Include measurements explicitly marked as public
         )
+
+    return queryset
 
 
 def parameter_set_table_view(request, pk):
 
     parameter_set = get_object_or_404(models.ParameterSet, pk=pk)
-    measurements = get_accessible_measurements(request, parameter_set)
+    measurements = get_accessible_measurements(request, parameter_set=parameter_set)
 
     ulps = list({measurement.ulp for measurement in measurements})
     parameters = [parameter for parameter in parameter_set.parameters.all()]
 
     rows = {}
     for ulp in ulps:
-        rows[ulp.name] = {}
+        rows[ulp] = {}
         for parameter in parameters:
-            rows[ulp.name][parameter.name] = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
+            rows[ulp][parameter.name] = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
 
     context = {
         'parameters': parameters,
@@ -51,6 +62,22 @@ def parameter_set_table_view(request, pk):
 
     return render(request, 'published/main_table.html', context)
 
+def ulp_view(request, pk):
+
+    ulp = get_object_or_404(models.Ulp, pk=pk)
+
+    measurements = get_accessible_measurements(request, ulp=ulp)
+
+    if not measurements.exists():
+        return HttpResponse(status=404)
+
+    context = {
+        'ulp': ulp,
+        'measurements': measurements,
+    }
+
+    return render(request, 'published/ulp.html', context)
+
 def galactic_view(request):
 
     method = request.GET.get('method') or 'DM'
@@ -58,7 +85,7 @@ def galactic_view(request):
     dm_dist_frac_err = float(request.GET.get('dm_dist_frac_err') or 0)
 
     parameter_set = get_object_or_404(models.ParameterSet, name="position")
-    measurements = get_accessible_measurements(request, parameter_set)
+    measurements = get_accessible_measurements(request, parameter_set=parameter_set)
 
     ulps = list({measurement.ulp for measurement in measurements})
     parameters = [parameter for parameter in parameter_set.parameters.all()]
@@ -68,33 +95,33 @@ def galactic_view(request):
     # Organise measurements by ULP and parameter
     values = {}
     for ulp in ulps:
-        values[ulp.name] = {}
+        values[ulp] = {}
         for parameter in parameters:
-            values[ulp.name][parameter.name] = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
+            values[ulp][parameter.name] = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
 
         # Pull out some quantities for future convenience
-        ra = values[ulp.name]['Right ascension'].astropy_quantity
-        dec = values[ulp.name]['Declination'].astropy_quantity
+        ra = values[ulp]['Right ascension'].astropy_quantity
+        dec = values[ulp]['Declination'].astropy_quantity
 
         coord = SkyCoord(ra=ra, dec=dec, frame='icrs')
-        values[ulp.name]['gal_long'] = coord.galactic.l.value
-        values[ulp.name]['gal_lat'] = coord.galactic.b.value
+        values[ulp]['gal_long'] = coord.galactic.l.value
+        values[ulp]['gal_lat'] = coord.galactic.b.value
 
         try:
-            dm = values[ulp.name]['Dispersion measure'].astropy_quantity
-            dm_err = values[ulp.name]['Dispersion measure'].astropy_err
+            dm = values[ulp]['Dispersion measure'].astropy_quantity
+            dm_err = values[ulp]['Dispersion measure'].astropy_err
         except:
             dm = None
             dm_err = None
 
         try:
-            dist = values[ulp.name]['Distance'].astropy_quantity
-            dist_err = values[ulp.name]['Distance'].astropy_err
+            dist = values[ulp]['Distance'].astropy_quantity
+            dist_err = values[ulp]['Distance'].astropy_err
 
             # Convert to galactic coordinates
-            values[ulp.name]['dist'] = dist.to('kpc').value
-            values[ulp.name]['near_dist'] = (dist - dist_err).to('kpc').value
-            values[ulp.name]['far_dist'] = (dist + dist_err).to('kpc').value
+            values[ulp]['dist'] = dist.to('kpc').value
+            values[ulp]['near_dist'] = (dist - dist_err).to('kpc').value
+            values[ulp]['far_dist'] = (dist + dist_err).to('kpc').value
         except:
             pass
 
@@ -107,9 +134,9 @@ def galactic_view(request):
             else:
                 pygedm_dist_lo = pygedm_dist * (1 - dm_dist_frac_err/100) # dm_dist_frac_err are %'s
                 pygedm_dist_hi = pygedm_dist * (1 + dm_dist_frac_err/100) # dm_dist_frac_err are %'s
-            values[ulp.name]['dist'] = pygedm_dist.to('kpc').value
-            values[ulp.name]['near_dist'] = pygedm_dist_lo.to('kpc').value
-            values[ulp.name]['far_dist'] = pygedm_dist_hi.to('kpc').value
+            values[ulp]['dist'] = pygedm_dist.to('kpc').value
+            values[ulp]['near_dist'] = pygedm_dist_lo.to('kpc').value
+            values[ulp]['far_dist'] = pygedm_dist_hi.to('kpc').value
 
     context = {
         'values': values,
@@ -119,3 +146,4 @@ def galactic_view(request):
     }
 
     return render(request, 'published/galactic_view.html', context)
+
