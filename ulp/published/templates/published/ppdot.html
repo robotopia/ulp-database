@@ -53,6 +53,7 @@
 
     // Get data
     d3.json("{% url 'table_data' pk=1 %}", function(data) {
+
         console.log(data);
         // Add points
         svg.append('g')
@@ -67,7 +68,18 @@
             .style("fill", "rebeccapurple")
             .append("title")
             .text((d) => d.ulp);
+
+        // Add Pdot upper limits
+        svg.append('g')
+            .selectAll("dot")
+            .data(data)
+            .enter()
+            .append("path")
+            .attr("d", (d) => d.Pdot__upper_limit === true ? "M " + x(d.P) + "," + y(d.Pdot) + " m -1,0 l 0,10 l -5,0 l 6,8 l 6,-8 l -5,0 l 0,-10 Z" : "M 0,0")
+            .style("fill", "rebeccapurple");
+
     });
+
 </script>
 
 {% endblock%}
