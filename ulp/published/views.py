@@ -15,8 +15,6 @@ def index(request):
 
 def get_accessible_measurements(request, parameter_set):
 
-    print("--------------", request.user.is_authenticated)
-
     if request.user.is_authenticated:
         return models.Measurement.objects.filter(parameter__in=parameter_set.parameters.all()).filter(
             Q(article__isnull=False) |  # It's published, and therefore automatically accessible by everyone
@@ -119,7 +117,5 @@ def galactic_view(request):
         'model': model,
         'dm_dist_frac_err': dm_dist_frac_err,
     }
-
-    print(context)
 
     return render(request, 'published/galactic_view.html', context)
