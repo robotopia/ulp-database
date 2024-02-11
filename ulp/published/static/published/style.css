@@ -61,3 +61,55 @@ th {
     left: 0;
 }
 
+.navbar {
+    display: flex;
+    background-color: black;
+    color: white;
+}
+
+.navmenu {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    top: 43px;
+}
+
+.navmenu-item {
+    font-size: 20px;
+    font-family: sans-serif;
+    font-weight: normal;
+    padding: 10px 15px;
+    text-decoration: none;
+    border: 1px solid white;
+    cursor: pointer;
+    background-color: black;
+    color: white;
+}
+
+.navmenu-item:hover {
+    background-color: #333;
+}
+
+.navbar-right {
+    display: flex;
+    justify-content: flex-end;
+    flex-grow: 1;
+}
+
+.navbar-left {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.navbar-item {
+    font-size: 20px;
+    font-family: sans-serif;
+    font-weight: normal;
+    padding: 10px 15px;
+    text-decoration: none;
+    border: none;
+    text-align: center;
+    cursor: pointer;
+    background-color: inherit;
+    color: inherit;
+}

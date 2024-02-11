@@ -11,7 +11,7 @@ from astropy.coordinates import SkyCoord
 # Create your views here.
 
 def index(request):
-    return HttpResponse("Hello, world. You're at the 'published' index.")
+    return render(request, 'published/index.html')
 
 def get_accessible_measurements(request, parameter_set):
 

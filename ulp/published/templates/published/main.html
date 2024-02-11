@@ -8,8 +8,62 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
+        {% block navbar %}
+        <div class="navbar">
+            <div class="navbar-left">
+                <a href="{% url 'index' %}" class="navbar-item">Home</a>
+                <a href="{% url 'galactic_view' %}" class="navmenu-item"><div>Galactic map</div></a>
+            </div>
+            <div class="navbar-right">
+                <button class="navbar-item" onclick="toggle_navmenu(this, 'navmenu-edit');">Edit</button>
+                <div id="navmenu-edit" class="navmenu navmenu-right">
+                    <a href="/login" class="navmenu-item"><div>Login</div></a>
+                </div>
+                {% if user.is_authenticated %}
+                <button class="navbar-item" onclick="toggle_navmenu(this, 'navmenu-account');">{{ user }}</button>
+                <div id="navmenu-account" class="navmenu">
+                    <a href="/profile" class="navmenu-item"><div>Profile</div></a>
+                </div>
+                {% else %}
+                <a href="/login" class="navmenu-item"><div>Login</div></a>
+                {% endif %}
+            </div>
+        </div>
+        {% endblock %}
         {% block body %}
         <h1>Welcome</h1>
         {% endblock %}
     </body>
 </html>
+
+<script>
+    function toggle_navmenu(navbarItem, id) {
+        // Get the menu element
+        navmenu = document.getElementById(id);
+        display = window.getComputedStyle(navmenu, null).display;
+        if (display === "none") {
+            // Go through and turn display to none for all (other) navmenus
+            navmenus = document.getElementsByClassName('navmenu');
+            navbarItems = document.getElementsByClassName('navbar-item');
+            Array.prototype.forEach.call(navmenus, e => { e.style.display = "none"; });
+            Array.prototype.forEach.call(navbarItems, e => { e.style.backgroundColor = "black"; });
+
+            // Turn on just _this_ one
+            navbarItem.style.backgroundColor = "#333";
+            navmenu.style.display = "flex";
+
+            // If it's on the right navbar...
+            if (navbarItem.classList.contains("navmenu-right")) {
+                // ...position the nabmenu to be flush right with the corresponding navbarItem
+                offsetRight = window.innerWidth - navbarItem.offsetLeft - navbarItem.offsetWidth;
+                navmenu.style.right = offsetRight + "px";
+            } else {
+                // Otherwise, position the nabmenu to be flush left with the corresponding navbarItem
+                navmenu.style.left = navbarItem.offsetLeft + "px";
+            }
+        } else {
+            navbarItem.style.backgroundColor = "black";
+            navmenu.style.display = "none";
+        }
+    }
+</script>
