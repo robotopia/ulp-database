@@ -54,7 +54,6 @@
     // Get data
     d3.json("{% url 'table_data' pk=1 %}", function(data) {
 
-        console.log(data);
         // Add points
         svg.append('g')
             .selectAll("dot")
