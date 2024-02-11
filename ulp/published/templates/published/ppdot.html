@@ -1,0 +1,55 @@
+{% extends 'published/main.html' %}
+
+{% load static %}
+
+{% block body %}
+
+<div id="ppdot-plot"></div>
+
+<script src="https://d3js.org/d3.v4.js"></script>
+<script>
+    // set the dimensions and margins of the graph
+    var margin = {top: 10, right: 50, bottom: 50, left: 80},
+        width = 800 - margin.left - margin.right,
+        height = 800 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select("#ppdot-plot")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Add axis labels
+    svg.append("text")
+        .attr("class", "x label")
+        .attr("text-anchor", "middle")
+        .attr("x", width/2)
+        .attr("y", height + margin.top + margin.bottom/2)
+        .text("Period (s)");
+    svg.append("text")
+        .attr("class", "y label")
+        .attr("transform", "rotate(-90)")
+        .attr("text-anchor", "middle")
+        .attr("y", -0.75*margin.left)
+        .attr("x", -margin.top - height/2)
+        .text("Period derivative (s/s)");
+
+    // Add X axis
+    var x = d3.scaleLog()
+        .domain([1e-3, 1e5])
+        .range([ 0, width ]);
+    svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+
+    // Add Y axis
+    var y = d3.scaleLog()
+        .domain([1e-22, 1e-7])
+        .range([ height, 0]);
+    svg.append("g")
+        .call(d3.axisLeft(y));
+</script>
+
+{% endblock%}

@@ -47,7 +47,6 @@ def parameter_set_table_view(request, pk):
     measurements = get_accessible_measurements(request, parameter_set=parameter_set)
 
     ulps = list({measurement.ulp for measurement in measurements})
-    print(ulps)
     parameters = [parameter for parameter in parameter_set.parameters.all()]
 
     rows = {}
@@ -67,6 +66,7 @@ def parameter_set_table_view(request, pk):
 
     return render(request, 'published/main_table.html', context)
 
+
 def ulp_view(request, pk):
 
     ulp = get_object_or_404(models.Ulp, pk=pk)
@@ -82,6 +82,28 @@ def ulp_view(request, pk):
     }
 
     return render(request, 'published/ulp.html', context)
+
+
+def ppdot_view(request):
+
+    parameter_set = get_object_or_404(models.ParameterSet, name='main_table')
+    measurements = get_accessible_measurements(request, parameter_set=parameter_set)
+
+    ulps = list({measurement.ulp for measurement in measurements})
+    parameters = [parameter for parameter in parameter_set.parameters.all()]
+
+    rows = {}
+    for ulp in ulps:
+        rows[ulp] = {}
+        for parameter in parameters:
+            rows[ulp][parameter.name] = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
+
+    context = {
+        'rows': rows,
+    }
+
+    return render(request, 'published/ppdot.html', context)
+
 
 def galactic_view(request):
 

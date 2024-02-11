@@ -13,6 +13,7 @@
             <div class="navbar-left">
                 <a href="{% url 'galactic_view' %}" class="navbar-item"><div>Galactic map</div></a>
                 <a href="{% url 'parameter_set_table_view' pk=1 %}" class="navbar-item"><div>Tables</div></a>
+                <a href="{% url 'ppdot_view' %}" class="navbar-item"><div>P-Ṗ diagram</div></a>
             </div>
             <div class="navbar-right">
                 {% if user.is_authenticated %}
