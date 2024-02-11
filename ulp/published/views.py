@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Q, Max
@@ -86,23 +86,34 @@ def ulp_view(request, pk):
 
 def ppdot_view(request):
 
-    parameter_set = get_object_or_404(models.ParameterSet, name='main_table')
+    return render(request, 'published/ppdot.html')
+
+
+def table_data(request, pk):
+
+    parameter_set = get_object_or_404(models.ParameterSet, pk=pk)
+
     measurements = get_accessible_measurements(request, parameter_set=parameter_set)
 
     ulps = list({measurement.ulp for measurement in measurements})
     parameters = [parameter for parameter in parameter_set.parameters.all()]
 
-    rows = {}
+    plot_data = []
     for ulp in ulps:
-        rows[ulp] = {}
+        ulp_dict = {'id': ulp.id, 'ulp': ulp.name}
         for parameter in parameters:
-            rows[ulp][parameter.name] = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
+            latest_measurement = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
+            if latest_measurement is None:
+                continue
+            ulp_dict[parameter.ascii_symbol] = latest_measurement.astropy_quantity.value
+            if latest_measurement.astropy_err is not None:
+                ulp_dict[parameter.ascii_symbol + '_err'] = latest_measurement.astropy_err.value
+            ulp_dict[parameter.ascii_symbol + '_unit'] = latest_measurement.parameter.astropy_unit
+            ulp_dict[parameter.ascii_symbol + '__upper_limit'] = latest_measurement.upper_limit == True
+            ulp_dict[parameter.ascii_symbol + '__lower_limit'] = latest_measurement.lower_limit == True
+        plot_data.append(ulp_dict)
 
-    context = {
-        'rows': rows,
-    }
-
-    return render(request, 'published/ppdot.html', context)
+    return JsonResponse(plot_data, safe=False)
 
 
 def galactic_view(request):

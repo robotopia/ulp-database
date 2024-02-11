@@ -50,6 +50,24 @@
         .range([ height, 0]);
     svg.append("g")
         .call(d3.axisLeft(y));
+
+    // Get data
+    d3.json("{% url 'table_data' pk=1 %}", function(data) {
+        console.log(data);
+        // Add points
+        svg.append('g')
+            .selectAll("dot")
+            .data(data)
+            .enter()
+            .append("a").attr("xlink:href", (d) => "{% url 'ulp' pk=1 %}".replace(/1$/, d.id)) // Dirty hack to form the right url
+            .append("circle")
+            .attr("cx", function (d) { return d.P? x(d.P) : x(1e-100)})  // Dirty hack to force the undefined points completely off the page
+            .attr("cy", function (d) { return d.Pdot ? y(d.Pdot) : y(1e100)})  // Dirty hack to force the undefined points completely off the page
+            .attr("r", 3)
+            .style("fill", "rebeccapurple")
+            .append("title")
+            .text((d) => d.ulp);
+    });
 </script>
 
 {% endblock%}

@@ -334,11 +334,14 @@ class Measurement(models.Model):
 
     @property
     def astropy_quantity(self):
-        return self.quantity * 10**(self.power_of_10) * u.Unit(self.parameter.astropy_unit)
+        return float(self.quantity) * 10**(self.power_of_10) * u.Unit(self.parameter.astropy_unit)
 
     @property
     def astropy_err(self):
-        return self.err * 10**(self.power_of_10) * u.Unit(self.parameter.astropy_unit)
+        if self.err:
+            return float(self.err) * 10**(self.power_of_10) * u.Unit(self.parameter.astropy_unit)
+
+        return None
 
     @property
     def formatted_quantity(self):
