@@ -21,6 +21,9 @@
                     {% csrf_token %}
                     <button class="navbar-item" type="submit">Logout</button>
                 </form>
+                {% if user.is_staff %}
+                <a href="{% url 'admin:index' %}" class="navbar-item">Admin</a>
+                {% endif %}
                 <button class="navbar-item" onclick="toggle_navmenu(this, 'navmenu-account');">{{ user }}</button>
                 <div id="navmenu-account" class="navmenu">
                     <a href="{% url 'password_change' %}" class="navmenu-item"><div>Change password</div></a>
