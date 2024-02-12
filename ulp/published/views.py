@@ -12,7 +12,7 @@ from astropy.coordinates import SkyCoord
 # Create your views here.
 
 def index(request):
-    return render(request, 'published/index.html')
+    return redirect('galactic_view')
 
 def get_accessible_measurements(request, parameter_set=None, ulp=None):
 
