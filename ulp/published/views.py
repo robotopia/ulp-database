@@ -118,9 +118,8 @@ def table_data(request, pk):
 
 def galactic_view(request):
 
-    method = request.GET.get('method') or 'DM'
     model = request.GET.get('model') or 'ne2001'
-    dm_dist_frac_err = float(request.GET.get('dm_dist_frac_err') or 0)
+    dm_dist_frac_err = float(request.GET.get('dm_dist_frac_err') or 0.3)
 
     parameter_set = get_object_or_404(models.ParameterSet, name="position")
     measurements = get_accessible_measurements(request, parameter_set=parameter_set)
@@ -129,6 +128,12 @@ def galactic_view(request):
     parameters = [parameter for parameter in parameter_set.parameters.all()]
 
     distance_parameter = models.Parameter.objects.get(name='Distance')
+
+    colours = {
+        'published': 'white',
+        'dm': 'yellow',
+        'unknown': 'gray',
+    }
 
     # Organise measurements by ULP and parameter
     values = {}
@@ -160,26 +165,32 @@ def galactic_view(request):
             values[ulp]['dist'] = dist.to('kpc').value
             values[ulp]['near_dist'] = (dist - dist_err).to('kpc').value
             values[ulp]['far_dist'] = (dist + dist_err).to('kpc').value
+            values[ulp]['colour'] = colours['published']
         except:
-            pass
+            # Update the distance according to the model
+            if dm is not None:
+                pygedm_dist, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm, method=model)
+                if dm_dist_frac_err <= 0:
+                    pygedm_dist_lo, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm - dm_err, method=model)
+                    pygedm_dist_hi, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm + dm_err, method=model)
+                else:
+                    pygedm_dist_lo = pygedm_dist * (1 - dm_dist_frac_err/100) # dm_dist_frac_err are %'s
+                    pygedm_dist_hi = pygedm_dist * (1 + dm_dist_frac_err/100) # dm_dist_frac_err are %'s
+                values[ulp]['dist'] = pygedm_dist.to('kpc').value
+                values[ulp]['near_dist'] = pygedm_dist_lo.to('kpc').value
+                values[ulp]['far_dist'] = pygedm_dist_hi.to('kpc').value
+                values[ulp]['colour'] = colours['dm']
 
-        # Update the distance according to the method and the model
-        if method == 'DM' and dm is not None:
-            pygedm_dist, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm, method=model)
-            if dm_dist_frac_err <= 0:
-                pygedm_dist_lo, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm - dm_err, method=model)
-                pygedm_dist_hi, _ = pygedm.dm_to_dist(coord.galactic.l, coord.galactic.b, dm + dm_err, method=model)
-            else:
-                pygedm_dist_lo = pygedm_dist * (1 - dm_dist_frac_err/100) # dm_dist_frac_err are %'s
-                pygedm_dist_hi = pygedm_dist * (1 + dm_dist_frac_err/100) # dm_dist_frac_err are %'s
-            values[ulp]['dist'] = pygedm_dist.to('kpc').value
-            values[ulp]['near_dist'] = pygedm_dist_lo.to('kpc').value
-            values[ulp]['far_dist'] = pygedm_dist_hi.to('kpc').value
+        if values[ulp]['Distance'] is None and dm is None:
+            values[ulp]['dist'] = 15
+            values[ulp]['near_dist'] = 0
+            values[ulp]['far_dist'] = 30
+            values[ulp]['colour'] = colours['unknown']
 
     context = {
         'values': values,
-        'method': method,
         'model': model,
+        'colours': colours,
         'dm_dist_frac_err': dm_dist_frac_err,
     }
 

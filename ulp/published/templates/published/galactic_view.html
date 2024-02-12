@@ -15,7 +15,7 @@
             <option value="yt2020">YT2020</option>
             {% endcomment %}
         </select><br>
-        <label for="dm_dist_frac_err">Display fractional error (%):</label>
+        <label for="dm_dist_frac_err">Set fractional error for DM-derived distances (%):</label>
         <input type="range" id="dm_dist_frac_err" name="dm_dist_frac_err" value="{{ dm_dist_frac_err }}" min="0" max="100"/>
         <label for="dm_dist_frac_err">(Set to 0 to use DM-derived errors)</label><br>
         <input type="submit" value="Update"></input>
@@ -32,8 +32,8 @@
             {% for ulp, values in values.items %}
             <a href="{% url 'ulp' pk=ulp.pk %}" title="{{ ulp }}">
                 <g id="{{ ulp }}" transform="rotate({{ values.gal_long }})">
-                    <line x1="0" y1="{{ values.near_dist }}" x2="0" y2="{{ values.far_dist }}" stroke="white" stroke-width="0.1" />
-                    <circle r="0.2" cx="0" cy="{{ values.dist }}" fill="white"/>
+                    <line x1="0" y1="{{ values.near_dist }}" x2="0" y2="{{ values.far_dist }}" stroke="{{ values.colour }}" stroke-width="0.1" />
+                    <circle r="0.2" cx="0" cy="{{ values.dist }}" fill="{{ values.colour }}"/>
                     <title>{{ ulp }}</title>
                 </g>
             </a>
