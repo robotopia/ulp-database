@@ -63,16 +63,18 @@
         // Get data from ulp database
         d3.json(url, function(data) {
 
-            // Add points
+            console.log(data);
             g = svg.append('g')
 
+            // Add links
             if (ulp_link_stem !== "") {
                 g.selectAll("dot")
                     .data(data)
                     .enter()
-                    .append("a").attr("xlink:href", (d) => "{% url 'ulp' pk=1 %}".replace(/1$/, d.id)) // Dirty hack to form the right url
+                    .append("a").attr("xlink:href", (d) => ulp_link_stem.replace(/1$/, d.id)) // Dirty hack to form the right url
             }
 
+            // Add points
             g.selectAll("dot")
                 .data(data)
                 .enter()
@@ -83,6 +85,19 @@
                 .style("fill", color)
                 .append("title")
                 .text((d) => d.ulp);
+
+            // Add Pdot error bars
+            g.selectAll("Pdot_err")
+                .data(data)
+                .enter()
+                .append("path")
+                .attr("d", (d) => d.Pdot_err > 0 ?
+                    " M " + x(d.P) + "," + y(d.Pdot) +
+                    " L " + x(d.P) + "," + y(d.Pdot - d.Pdot_err) +
+                    " M " + x(d.P) + "," + y(d.Pdot) +
+                    " L " + x(d.P) + "," + y(d.Pdot + d.Pdot_err)
+                    : "M 0,0")
+                .style("stroke", color);
 
             // Add Pdot upper limits
             svg.append('g')

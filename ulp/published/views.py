@@ -107,13 +107,14 @@ def mcgill_data(request):
     validated_mcgill_json_data = [
         {
             'magnetar': magnetar['Name'],
-            'P': magnetar['Period'],
-            'Pdot': magnetar['Pdot'],
+            'P': float(magnetar['Period']) if magnetar['Period'] != "" else None,
+            'Pdot': float(magnetar['Pdot']) if magnetar['Pdot'] != "" else None,
+            'Pdot_err': float(magnetar['Pdot_Err']) if magnetar['Pdot_Err'] != "" else None,
             'Pdot__upper_limit': magnetar['Pdot_lim'] == '<'
         }
         for magnetar in list(reader)
     ]
-    print([d['Pdot__upper_limit'] for d in validated_mcgill_json_data])
+    print([d['Pdot_err'] for d in validated_mcgill_json_data])
 
     return JsonResponse(validated_mcgill_json_data, safe=False)
 
