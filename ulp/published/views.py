@@ -3,8 +3,12 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Q, Max
+import requests
 from . import models
 from decimal import Decimal
+import csv
+import io
+import json
 
 import pygedm
 from astropy.coordinates import SkyCoord
@@ -86,7 +90,23 @@ def ulp_view(request, pk):
 
 def ppdot_view(request):
 
-    return render(request, 'published/ppdot.html')
+    import_mcgill = request.GET.get("mcgill") == "1"
+
+    context = {
+        'import_mcgill': import_mcgill,
+    }
+
+    return render(request, 'published/ppdot.html', context)
+
+
+def mcgill_data(request):
+
+    url = "https://www.physics.mcgill.ca/~pulsar/magnetar/TabO1.csv"
+    mcgill = requests.get(url, stream=True)
+    reader = csv.DictReader(io.StringIO(mcgill.text))
+    mcgill_json_data = json.dumps(list(reader))
+
+    return JsonResponse(mcgill_json_data, safe=False)
 
 
 def table_data(request, pk):

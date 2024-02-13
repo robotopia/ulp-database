@@ -51,7 +51,7 @@
     svg.append("g")
         .call(d3.axisLeft(y));
 
-    // Get data
+    // Get data from ulp database
     d3.json("{% url 'table_data' pk=1 %}", function(data) {
 
         // Add points
@@ -77,6 +77,13 @@
             .attr("d", (d) => d.Pdot__upper_limit === true ? "M " + x(d.P) + "," + y(d.Pdot) + " m -1,0 l 0,10 l -5,0 l 6,8 l 6,-8 l -5,0 l 0,-10 Z" : "M 0,0")
             .style("fill", "rebeccapurple");
 
+    });
+
+    // Get data from McGill
+    d3.json("{% url 'mcgill_data' %}", function(data) {
+
+        // Add points
+        console.log(data);
     });
 
 </script>
