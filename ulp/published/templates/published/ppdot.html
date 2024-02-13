@@ -69,30 +69,32 @@
 
             console.log(data);
             g = svg.append('g')
+            const circle = d3.symbol();
+            console.log(circle);
 
             // Add links
             if (link_function !== "") {
                 g.selectAll("dot")
                     .data(data)
                     .enter()
-                    .append("a").attr("xlink:href", (d) => link_function(d))
-                    .append("circle")
-                    .attr("cx", function (d) { return d.P? x(d.P) : x(1e-100)})  // Dirty hack to force the undefined points completely off the page
-                    .attr("cy", function (d) { return d.Pdot ? y(d.Pdot) : y(1e100)})  // Dirty hack to force the undefined points completely off the page
-                    .attr("r", 3)
+                    .append("a")
+                    .attr("xlink:href", (d) => link_function(d))
+                    .append("path")
+                    .attr("d", d3.symbol().size(20))
+                    .attr("transform", (d) => "translate(" + (d.P ? x(d.P) : x(1e-100)) + "," + (d.Pdot ? y(d.Pdot) : y(1e100)) + ")")
                     .style("fill", color)
                     .append("title")
                     .text((d) => d.name);
+                    //.attr("d", (d) => d3.symbol().type(d.radio ? d3.symbolCircle : d3.symbolStar).size(20)) // <-- Try to figure out how to change the symbol by whether it's a radio source or not. Functions of (d) don't seem to work...
             } else {
 
                 // Add points
                 g.selectAll("dot")
                     .data(data)
                     .enter()
-                    .append("circle")
-                    .attr("cx", function (d) { return d.P? x(d.P) : x(1e-100)})  // Dirty hack to force the undefined points completely off the page
-                    .attr("cy", function (d) { return d.Pdot ? y(d.Pdot) : y(1e100)})  // Dirty hack to force the undefined points completely off the page
-                    .attr("r", 3)
+                    .append("path")
+                    .attr("d", d3.symbol().size(20))
+                    .attr("transform", (d) => "translate(" + (d.P ? x(d.P) : x(1e-100)) + "," + (d.Pdot ? y(d.Pdot) : y(1e100)) + ")")
                     .style("fill", color)
                     .append("title")
                     .text((d) => d.name);
@@ -109,7 +111,8 @@
                     " M " + x(d.P) + "," + y(d.Pdot) +
                     " L " + x(d.P) + "," + y(d.Pdot + d.Pdot_err)
                     : "M 0,0")
-                .style("stroke", color);
+                .style("stroke", color)
+                .style("stroke-width", "2");
 
             // Add Pdot upper limits
             svg.append('g')
@@ -117,7 +120,7 @@
                 .data(data)
                 .enter()
                 .append("path")
-                .attr("d", (d) => d.Pdot__upper_limit === true ? "M " + x(d.P) + "," + y(d.Pdot) + " m -1,0 l 0,10 l -5,0 l 6,8 l 6,-8 l -5,0 l 0,-10 Z" : "M 0,0")
+                .attr("d", (d) => d.Pdot__upper_limit === true ? "M " + x(d.P) + "," + y(d.Pdot) + " m -1,0 l 0,10 l -3,0 l 4,8 l 4,-8 l -3,0 l 0,-10 Z" : "M 0,0")
                 .style("fill", color);
 
         });

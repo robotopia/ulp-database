@@ -110,11 +110,11 @@ def mcgill_data(request):
             'P': float(magnetar['Period']) if magnetar['Period'] != "" else None,
             'Pdot': float(magnetar['Pdot']) if magnetar['Pdot'] != "" else None,
             'Pdot_err': float(magnetar['Pdot_Err']) if magnetar['Pdot_Err'] != "" else None,
-            'Pdot__upper_limit': magnetar['Pdot_lim'] == '<'
+            'Pdot__upper_limit': magnetar['Pdot_lim'] == '<',
+            'radio': 'R' in magnetar['Bands'],
         }
         for magnetar in list(reader)
     ]
-    print([d['Pdot_err'] for d in validated_mcgill_json_data])
 
     return JsonResponse(validated_mcgill_json_data, safe=False)
 
@@ -141,6 +141,7 @@ def table_data(request, pk):
             ulp_dict[parameter.ascii_symbol + '_unit'] = latest_measurement.parameter.astropy_unit
             ulp_dict[parameter.ascii_symbol + '__upper_limit'] = latest_measurement.upper_limit == True
             ulp_dict[parameter.ascii_symbol + '__lower_limit'] = latest_measurement.lower_limit == True
+        ulp_dict['radio'] = True
         plot_data.append(ulp_dict)
 
     return JsonResponse(plot_data, safe=False)
