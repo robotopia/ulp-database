@@ -7,6 +7,7 @@
 <h1 class="visually-hidden">Galactic view</h1>
 <div style="padding: 10px">
     <form>
+        {% csrf_token %}
         <label for="model">Electron density model:</label>
         <select id="model" name="model">
             <option value="ne2001" {% if model == "ne2001" %}selected{% endif %}>NE2001</option>
