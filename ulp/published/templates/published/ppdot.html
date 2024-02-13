@@ -9,7 +9,7 @@
 <form>
     {% csrf_token %}
     <input type=checkbox id="mcgill" name="mcgill" {% if import_mcgill %}checked{% endif %}/>
-    <label for="mcgill">Display McGill data</label></br>
+    <label for="mcgill">Display McGill magnetar catalogue</label></br>
     <input type="submit" value="Update plot"/>
 </form>
 
