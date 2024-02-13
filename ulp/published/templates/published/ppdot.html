@@ -6,6 +6,13 @@
 
 <div id="ppdot-plot"></div>
 
+<form>
+    {% csrf_token %}
+    <input type=checkbox id="mcgill" name="mcgill" {% if import_mcgill %}checked{% endif %}/>
+    <label for="mcgill">Display McGill data</label></br>
+    <input type="submit" value="Update plot"/>
+</form>
+
 <script src="https://d3js.org/d3.v4.js"></script>
 <script>
     // set the dimensions and margins of the graph
@@ -51,40 +58,48 @@
     svg.append("g")
         .call(d3.axisLeft(y));
 
-    // Get data from ulp database
-    d3.json("{% url 'table_data' pk=1 %}", function(data) {
+    function plot_dataset(url, color, ulp_link_stem) {
 
-        // Add points
-        svg.append('g')
-            .selectAll("dot")
-            .data(data)
-            .enter()
-            .append("a").attr("xlink:href", (d) => "{% url 'ulp' pk=1 %}".replace(/1$/, d.id)) // Dirty hack to form the right url
-            .append("circle")
-            .attr("cx", function (d) { return d.P? x(d.P) : x(1e-100)})  // Dirty hack to force the undefined points completely off the page
-            .attr("cy", function (d) { return d.Pdot ? y(d.Pdot) : y(1e100)})  // Dirty hack to force the undefined points completely off the page
-            .attr("r", 3)
-            .style("fill", "rebeccapurple")
-            .append("title")
-            .text((d) => d.ulp);
+        // Get data from ulp database
+        d3.json(url, function(data) {
 
-        // Add Pdot upper limits
-        svg.append('g')
-            .selectAll("dot")
-            .data(data)
-            .enter()
-            .append("path")
-            .attr("d", (d) => d.Pdot__upper_limit === true ? "M " + x(d.P) + "," + y(d.Pdot) + " m -1,0 l 0,10 l -5,0 l 6,8 l 6,-8 l -5,0 l 0,-10 Z" : "M 0,0")
-            .style("fill", "rebeccapurple");
+            // Add points
+            g = svg.append('g')
 
-    });
+            if (ulp_link_stem !== "") {
+                g.selectAll("dot")
+                    .data(data)
+                    .enter()
+                    .append("a").attr("xlink:href", (d) => "{% url 'ulp' pk=1 %}".replace(/1$/, d.id)) // Dirty hack to form the right url
+            }
 
-    // Get data from McGill
-    d3.json("{% url 'mcgill_data' %}", function(data) {
+            g.selectAll("dot")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("cx", function (d) { return d.P? x(d.P) : x(1e-100)})  // Dirty hack to force the undefined points completely off the page
+                .attr("cy", function (d) { return d.Pdot ? y(d.Pdot) : y(1e100)})  // Dirty hack to force the undefined points completely off the page
+                .attr("r", 3)
+                .style("fill", color)
+                .append("title")
+                .text((d) => d.ulp);
 
-        // Add points
-        console.log(data);
-    });
+            // Add Pdot upper limits
+            svg.append('g')
+                .selectAll("upper_limits")
+                .data(data)
+                .enter()
+                .append("path")
+                .attr("d", (d) => d.Pdot__upper_limit === true ? "M " + x(d.P) + "," + y(d.Pdot) + " m -1,0 l 0,10 l -5,0 l 6,8 l 6,-8 l -5,0 l 0,-10 Z" : "M 0,0")
+                .style("fill", color);
+
+        });
+    }
+
+    plot_dataset("{% url 'table_data' pk=1 %}", "rebeccapurple", "{% url 'ulp' pk=1 %}");
+    {% if import_mcgill %}
+    plot_dataset("{% url 'mcgill_data' %}", "blue", "");
+    {% endif %}
 
 </script>
 

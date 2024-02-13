@@ -90,7 +90,7 @@ def ulp_view(request, pk):
 
 def ppdot_view(request):
 
-    import_mcgill = request.GET.get("mcgill") == "1"
+    import_mcgill = request.GET.get("mcgill") == "on"
 
     context = {
         'import_mcgill': import_mcgill,
@@ -104,9 +104,18 @@ def mcgill_data(request):
     url = "https://www.physics.mcgill.ca/~pulsar/magnetar/TabO1.csv"
     mcgill = requests.get(url, stream=True)
     reader = csv.DictReader(io.StringIO(mcgill.text))
-    mcgill_json_data = json.dumps(list(reader))
+    validated_mcgill_json_data = [
+        {
+            'magnetar': magnetar['Name'],
+            'P': magnetar['Period'],
+            'Pdot': magnetar['Pdot'],
+            'Pdot__upper_limit': magnetar['Pdot_lim'] == '<'
+        }
+        for magnetar in list(reader)
+    ]
+    print([d['Pdot__upper_limit'] for d in validated_mcgill_json_data])
 
-    return JsonResponse(mcgill_json_data, safe=False)
+    return JsonResponse(validated_mcgill_json_data, safe=False)
 
 
 def table_data(request, pk):
