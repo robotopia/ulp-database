@@ -106,7 +106,7 @@ def mcgill_data(request):
     reader = csv.DictReader(io.StringIO(mcgill.text))
     validated_mcgill_json_data = [
         {
-            'magnetar': magnetar['Name'],
+            'name': magnetar['Name'],
             'P': float(magnetar['Period']) if magnetar['Period'] != "" else None,
             'Pdot': float(magnetar['Pdot']) if magnetar['Pdot'] != "" else None,
             'Pdot_err': float(magnetar['Pdot_Err']) if magnetar['Pdot_Err'] != "" else None,
@@ -130,7 +130,7 @@ def table_data(request, pk):
 
     plot_data = []
     for ulp in ulps:
-        ulp_dict = {'id': ulp.id, 'ulp': ulp.name}
+        ulp_dict = {'id': ulp.id, 'name': ulp.name}
         for parameter in parameters:
             latest_measurement = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
             if latest_measurement is None:

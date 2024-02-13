@@ -58,7 +58,11 @@
     svg.append("g")
         .call(d3.axisLeft(y));
 
-    function plot_dataset(url, color, ulp_link_stem) {
+    function ulp_link(d) {
+        return "{% url 'ulp' pk=1 %}".replace(/1$/, d.id) // Dirty hack to form the right url
+    }
+
+    function plot_dataset(url, color, link_function) {
 
         // Get data from ulp database
         d3.json(url, function(data) {
@@ -67,24 +71,32 @@
             g = svg.append('g')
 
             // Add links
-            if (ulp_link_stem !== "") {
+            if (link_function !== "") {
                 g.selectAll("dot")
                     .data(data)
                     .enter()
-                    .append("a").attr("xlink:href", (d) => ulp_link_stem.replace(/1$/, d.id)) // Dirty hack to form the right url
-            }
+                    .append("a").attr("xlink:href", (d) => link_function(d))
+                    .append("circle")
+                    .attr("cx", function (d) { return d.P? x(d.P) : x(1e-100)})  // Dirty hack to force the undefined points completely off the page
+                    .attr("cy", function (d) { return d.Pdot ? y(d.Pdot) : y(1e100)})  // Dirty hack to force the undefined points completely off the page
+                    .attr("r", 3)
+                    .style("fill", color)
+                    .append("title")
+                    .text((d) => d.name);
+            } else {
 
-            // Add points
-            g.selectAll("dot")
-                .data(data)
-                .enter()
-                .append("circle")
-                .attr("cx", function (d) { return d.P? x(d.P) : x(1e-100)})  // Dirty hack to force the undefined points completely off the page
-                .attr("cy", function (d) { return d.Pdot ? y(d.Pdot) : y(1e100)})  // Dirty hack to force the undefined points completely off the page
-                .attr("r", 3)
-                .style("fill", color)
-                .append("title")
-                .text((d) => d.ulp);
+                // Add points
+                g.selectAll("dot")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("cx", function (d) { return d.P? x(d.P) : x(1e-100)})  // Dirty hack to force the undefined points completely off the page
+                    .attr("cy", function (d) { return d.Pdot ? y(d.Pdot) : y(1e100)})  // Dirty hack to force the undefined points completely off the page
+                    .attr("r", 3)
+                    .style("fill", color)
+                    .append("title")
+                    .text((d) => d.name);
+            }
 
             // Add Pdot error bars
             g.selectAll("Pdot_err")
@@ -111,9 +123,9 @@
         });
     }
 
-    plot_dataset("{% url 'table_data' pk=1 %}", "rebeccapurple", "{% url 'ulp' pk=1 %}");
+    plot_dataset("{% url 'table_data' pk=1 %}", "rebeccapurple", ulp_link);
     {% if import_mcgill %}
-    plot_dataset("{% url 'mcgill_data' %}", "blue", "");
+    plot_dataset("{% url 'mcgill_data' %}", "blue", (d) => "https://www.physics.mcgill.ca/~pulsar/magnetar/main.html");
     {% endif %}
 
 </script>
