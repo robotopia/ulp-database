@@ -11,11 +11,6 @@ if [ ! -e /$CONTAINER_FIRST_STARTUP ]; then
     python3 manage.py migrate published
     python3 manage.py migrate
     python3 manage.py migrate --run-syncdb
-
-    psql "postgres://${DBUSER}:${DBPASS}@postgres:5432/${DBNAME}" -v ON_ERROR_STOP=1 -c "\
-        CREATE EXTENSION q3c; \
-        CREATE INDEX ON candidate_app_candidate (q3c_ang2ipix(ra_deg, dec_deg)); \
-    "
 fi 
 
 # This runs the web app locally through Django
