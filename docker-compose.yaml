@@ -10,11 +10,17 @@ volumes:
 
 services:
   postgres:
-    hostname: postgres
+    hostname: ${DBHOST}
     container_name: postgres
     build: postgres
+    ports:
+      - "8001:${DBPORT}"
     restart: always
-    environment: *environment
+    environment:
+      DBNAME: ${DBNAME}
+      DBUSER: ${DBUSER}
+      DBPASS: ${DBPASS}
+      POSTGRES_PASSWORD: ${DBPASS}
     networks:
       - ulp-network
     volumes:
@@ -27,7 +33,12 @@ services:
     restart: always
     depends_on:
       - postgres
-    environment: *environment
+    environment:
+      DBNAME: ${DBNAME}
+      DBUSER: ${DBUSER}
+      DBPASS: ${DBPASS}
+      DBHOST: ${DBHOST}
+      DBPORT: ${DBPORT}
     networks:
       - ulp-network
     volumes:
