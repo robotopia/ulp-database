@@ -1,8 +1,0 @@
-django
-numpy
-scipy
-astropy
-pygedm
-requests
-uvicorn
-gunicorn

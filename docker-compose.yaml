@@ -1,0 +1,49 @@
+version: "3.9"
+
+# Variables passed to the containers
+networks:
+  ulp-network:
+    name: ulp-network
+
+volumes:
+  ulp-data:
+
+services:
+  postgres:
+    hostname: postgres
+    container_name: postgres
+    build: postgres
+    restart: always
+    environment: *environment
+    networks:
+      - ulp-network
+    volumes:
+      - ulp-data:/var/lib/postgres/data
+
+  django:
+    hostname: django
+    container_name: django
+    build: ulp-webapp
+    restart: always
+    depends_on:
+      - postgres
+    environment: *environment
+    networks:
+      - ulp-network
+    volumes:
+      - ulp-data:/var/lib/postgres/data
+
+# nginx:
+#   hostname: nginx
+#   container_name: nginx
+#   build: nginx
+#   restart: always
+#   networks:
+#     - gleam-network
+#   volumes:
+#     - uwsgi_data:/tmp/uwsgi/
+#     - web_static:/var/www/gleam_webapp/static:ro
+#   ports:
+#     - "80:80"
+#   depends_on:
+#     - django

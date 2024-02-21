@@ -1,0 +1,7 @@
+astropy==6.0.0
+django==5.0.2
+django_q3c==0.2
+numpy==1.26.4
+pygedm==3.3.0
+requests==2.31.0
+scipy==1.12.0

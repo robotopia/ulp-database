@@ -53,7 +53,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'ulp.urls'
+ROOT_URLCONF = 'ulp-webapp.urls'
 
 TEMPLATES = [
     {
@@ -71,7 +71,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'ulp.wsgi.application'
+WSGI_APPLICATION = 'ulp-webapp.wsgi.application'
 
 
 # Database
