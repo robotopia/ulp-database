@@ -39,10 +39,9 @@ services:
 #   build: nginx
 #   restart: always
 #   networks:
-#     - gleam-network
+#     - ulp-network
 #   volumes:
 #     - uwsgi_data:/tmp/uwsgi/
-#     - web_static:/var/www/gleam_webapp/static:ro
 #   ports:
 #     - "80:80"
 #   depends_on:
