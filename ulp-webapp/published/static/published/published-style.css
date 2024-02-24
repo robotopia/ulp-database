@@ -73,6 +73,10 @@ body,html {
     min-height: 100vh
 }
 
+h1, h2, h3, h4, h5 {
+    letter-spacing: .1rem;
+}
+
 table.parameter-set {
     font-family: Arial, Helvetica, sans-serif;
     border-collapse: collapse;
@@ -182,7 +186,7 @@ select {
 
 option {
     color: inherit;
-    background-color: inherit;
+    background-color: #191919;
 }
 
 .navbar {
@@ -225,16 +229,26 @@ option {
 }
 
 .navbar-item {
-    /*font-size: 20px;*/
-    /*font-family: sans-serif;*/
-    /*font-weight: normal;*/
+    font-size: 16px;
     padding: 10px 15px;
     text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: .15rem;
+    font-weight: 500;
     border: none;
     text-align: center;
     cursor: pointer;
     background-color: inherit;
     color: inherit;
+}
+
+.navbar-item > * {
+    padding: 0px;
+}
+
+.navbar-item:hover {
+    text-shadow: 0px 0px 5px var(--color-kiwi);
+    /*color: var(--color-apple--light);*/
 }
 
 /* From: https://a11y-guidelines.orange.com/en/articles/accessible-hiding/ */
