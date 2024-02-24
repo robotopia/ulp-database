@@ -13,8 +13,6 @@ services:
     hostname: ${DBHOST}
     container_name: postgres
     build: postgres
-    ports:
-      - "8001:${DBPORT}"
     restart: always
     environment:
       POSTGRES_PASSWORD: ${DBPASS}
@@ -34,6 +32,8 @@ services:
     container_name: django
     build: ulp-webapp
     restart: always
+    expose:
+      - "8000"
     depends_on:
       - postgres
     environment:
