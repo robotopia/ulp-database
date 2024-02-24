@@ -17,10 +17,10 @@ services:
       - "8001:${DBPORT}"
     restart: always
     environment:
-      DBNAME: ${DBNAME}
-      DBUSER: ${DBUSER}
-      DBPASS: ${DBPASS}
+      POSTGRES_DB: ${DBNAME}
+      POSTGRES_USER: ${DBUSER}
       POSTGRES_PASSWORD: ${DBPASS}
+      PGDATA: ${DBDATA}
     networks:
       - ulp-network
     volumes:
