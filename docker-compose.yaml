@@ -32,8 +32,8 @@ services:
     container_name: django
     build: ulp-webapp
     restart: always
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     depends_on:
       - postgres
     environment:
@@ -42,10 +42,10 @@ services:
       DBPASS: ${DBPASS}
       DBHOST: ${DBHOST}
       DBPORT: ${DBPORT}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
     networks:
       - ulp-network
-    volumes:
-      - ulp-data:${DBDATA}
 
 # nginx:
 #   hostname: nginx
