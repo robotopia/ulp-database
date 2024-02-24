@@ -24,7 +24,7 @@ services:
     networks:
       - ulp-network
     volumes:
-      - ulp-data:/var/lib/postgres/data
+      - ulp-data:${DBDATA}
 
   django:
     hostname: django
@@ -42,7 +42,7 @@ services:
     networks:
       - ulp-network
     volumes:
-      - ulp-data:/var/lib/postgres/data
+      - ulp-data:${DBDATA}
 
 # nginx:
 #   hostname: nginx
