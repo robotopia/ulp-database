@@ -1,3 +1,78 @@
+:root {
+    --font-size: 10px;
+    --black: #000;
+    --body-black: #051c2a;
+    --text-color: #4b4b4b;
+    --black--bg: #191919;
+    --blue--lightest: #caecf7;
+    --blue: #1473ab;
+    --blue--dark: #004b8b;
+    --blue--link: #116191;
+    --blue--portal: #22547c;
+    --brown: #503110;
+    --gap-element: 3rem;
+    --gap-larger: 4rem;
+    --gap-largest: 3.6rem;
+    --gray--lightest: #f7f7f7;
+    --gray--lighter: #f0f0f0;
+    --gray--light: #e8e8e8;
+    --gray: #b3b3b3;
+    --gray--dark: #717171;
+    --gray--darker: #4b4b4b;
+    --gray--darkest: #303030;
+    --gray--bg: #f7f7f7;
+    --color-apple: #1de57e;
+    --color-apple--light: #ddfbec;
+    --color-lime: #c3d82e;
+    --color-kiwi: #57d897;
+    --color-banana: #fff3a8;
+    --color-banana--light: #fbf4cf;
+    --color-strawberry: #ff615e;
+    --color-strawberry--light: #ffefef;
+    --color-magenta: #e52592;
+    --color-magenta-light: #fdeaf5;
+    --color-magenta-dark: #ca2381;
+    --color-lilac: #eeeafd;
+    --color-deep-blue: #5525e5;
+    --color-deep-blue--light: #f1eefd;
+    --fuchsia: #9b0664;
+    --red: #af1800;
+    --purple: #636;
+    --yellow: #ffc000;
+    --white: #fff;
+    --facebook: #3c5193;
+    --msngr: #009eff;
+    --linkedin: #0077b5;
+    --twitter: #37a7df;
+    --youtube: #cc181e;
+    --error: #ffecec;
+    --success: #e9ffd9;
+    --video-size: 740px;
+    --gap-half: 10px;
+    font-size: var(--font-size,10px)
+}
+
+html {
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    font-family: sans-serif;
+    line-height: 1.15
+}
+
+body {
+    margin: 0
+}
+
+body,html {
+    background-color: #f7f7f7;
+    color: #4b4b4b;
+    font-family: proxima-nova,Helvetica,Arial,sans-serif;
+    font-size: 1.6rem;
+    font-weight: 400;
+    line-height: 1.5;
+    min-height: 100vh
+}
+
 table.parameter-set {
     font-family: Arial, Helvetica, sans-serif;
     border-collapse: collapse;
@@ -89,7 +164,7 @@ table.parameter-set th {
 
 .navbar {
     display: flex;
-    background-color: black;
+    background-color: #191919;
     color: white;
 }
 
@@ -101,19 +176,19 @@ table.parameter-set th {
 }
 
 .navmenu-item {
-    font-size: 20px;
-    font-family: sans-serif;
-    font-weight: normal;
+    /*font-size: 20px;*/
+    /*font-family: sans-serif;*/
+    /*font-weight: normal;*/
     padding: 10px 15px;
     text-decoration: none;
     border: 1px solid white;
     cursor: pointer;
-    background-color: black;
+    background-color: #191919;
     color: white;
 }
 
 .navmenu-item:hover {
-    background-color: #333;
+    background-color: #444;
 }
 
 .navbar-right {
@@ -128,9 +203,9 @@ table.parameter-set th {
 }
 
 .navbar-item {
-    font-size: 20px;
-    font-family: sans-serif;
-    font-weight: normal;
+    /*font-size: 20px;*/
+    /*font-family: sans-serif;*/
+    /*font-weight: normal;*/
     padding: 10px 15px;
     text-decoration: none;
     border: none;
