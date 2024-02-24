@@ -60,12 +60,12 @@ html {
 }
 
 body {
-    margin: 0
+    margin: 0;
 }
 
 body,html {
-    background-color: #f7f7f7;
-    color: #4b4b4b;
+    background-color: var(--black--bg);
+    color: var(--gray--lighter);
     font-family: proxima-nova,Helvetica,Arial,sans-serif;
     font-size: 1.6rem;
     font-weight: 400;
@@ -142,6 +142,16 @@ table.parameter-set th {
     cursor: pointer;
 }
 
+.galactic-map-container {
+    display: flex;
+}
+
+.galactic-map-settings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+}
+
 .galactic-map {
     position: relative;
     display: inline-block; /* shrinks container to image size */
@@ -162,9 +172,22 @@ table.parameter-set th {
     left: 0;
 }
 
+select {
+    /*appearance: none;*/
+    color: inherit;
+    background-color: inherit;
+    padding: 0.7em;
+    font-size: 1.5rem;
+}
+
+option {
+    color: inherit;
+    background-color: inherit;
+}
+
 .navbar {
     display: flex;
-    background-color: #191919;
+    background-color: var(--black--bg);
     color: white;
 }
 
@@ -181,9 +204,8 @@ table.parameter-set th {
     /*font-weight: normal;*/
     padding: 10px 15px;
     text-decoration: none;
-    border: 1px solid white;
     cursor: pointer;
-    background-color: #191919;
+    background-color: var(--black--bg);
     color: white;
 }
 
