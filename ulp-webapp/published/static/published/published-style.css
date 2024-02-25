@@ -1,5 +1,4 @@
 :root {
-    --font-size: 10px;
     --black: #000;
     --body-black: #051c2a;
     --text-color: #4b4b4b;
@@ -49,28 +48,6 @@
     --success: #e9ffd9;
     --video-size: 740px;
     --gap-half: 10px;
-    font-size: var(--font-size,10px)
-}
-
-html {
-    -ms-text-size-adjust: 100%;
-    -webkit-text-size-adjust: 100%;
-    font-family: sans-serif;
-    line-height: 1.15
-}
-
-body {
-    margin: 0;
-}
-
-body,html {
-    background-color: var(--black--bg);
-    color: var(--gray--lighter);
-    font-family: proxima-nova,Helvetica,Arial,sans-serif;
-    font-size: 1.6rem;
-    font-weight: 400;
-    line-height: 1.5;
-    min-height: 100vh
 }
 
 h1, h2, h3, h4, h5 {
@@ -176,79 +153,14 @@ table.parameter-set th {
     left: 0;
 }
 
-select {
-    /*appearance: none;*/
-    color: inherit;
-    background-color: inherit;
-    padding: 0.7em;
-    font-size: 1.5rem;
-}
-
-option {
-    color: inherit;
-    background-color: #191919;
-}
-
-.navbar {
-    display: flex;
-    background-color: var(--black--bg);
-    color: white;
-}
-
-.navmenu {
-    display: none;
-    flex-direction: column;
-    position: fixed;
-    top: 43px;
-}
-
-.navmenu-item {
-    /*font-size: 20px;*/
-    /*font-family: sans-serif;*/
-    /*font-weight: normal;*/
-    padding: 10px 15px;
-    text-decoration: none;
-    cursor: pointer;
-    background-color: var(--black--bg);
-    color: white;
-}
-
-.navmenu-item:hover {
-    background-color: #444;
-}
-
-.navbar-right {
-    display: flex;
-    justify-content: flex-end;
-    flex-grow: 1;
-}
-
-.navbar-left {
-    display: flex;
-    justify-content: flex-start;
-}
-
-.navbar-item {
-    font-size: 16px;
-    padding: 10px 15px;
-    text-decoration: none;
+.nav-link, .navbar-brand {
     text-transform: uppercase;
-    letter-spacing: .15rem;
-    font-weight: 500;
-    border: none;
-    text-align: center;
-    cursor: pointer;
-    background-color: inherit;
-    color: inherit;
+    font-family: proxima-nova,Helvetica,Arial,sans-serif;
+    letter-spacing: .12rem;
 }
 
-.navbar-item > * {
-    padding: 0px;
-}
-
-.navbar-item:hover {
+.nav-link:hover, .navbar-brand:hover {
     text-shadow: 0px 0px 5px var(--color-kiwi);
-    /*color: var(--color-apple--light);*/
 }
 
 /* From: https://a11y-guidelines.orange.com/en/articles/accessible-hiding/ */
