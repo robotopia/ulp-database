@@ -108,10 +108,20 @@ class Parameter(models.Model):
     )
 
     def __str__(self):
-        if self.astropy_unit is not None:
-            return f"{self.name} ({u.Unit(self.astropy_unit).to_string(format='unicode')})"
+        if self.unicode_unit is not None:
+            return f"{self.name} ({self.unicode_unit})"
         else:
             return f"{self.name}"
+
+    @property
+    def unicode_unit(self):
+        if self.astropy_unit is None:
+            return None
+
+        if u.Unit(self.astropy_unit) == u.dimensionless_unscaled:
+            return None
+
+        return u.Unit(self.astropy_unit).to_string(format='unicode')
 
     class Meta:
         ordering = ['name']
@@ -416,8 +426,8 @@ class Measurement(models.Model):
         if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
             return f"{self.formatted_quantity}"
 
-        if self.parameter.astropy_unit is not None:
-            return f"{self.formatted_quantity} {self.parameter.astropy_unit}"
+        if self.parameter.unicode_unit is not None:
+            return f"{self.formatted_quantity} {self.parameter.unicode_unit}"
 
         return f"{self.formatted_quantity}"
 

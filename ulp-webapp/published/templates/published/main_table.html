@@ -19,7 +19,13 @@
     <tr>
         <th>ULP</th>
         {% for parameter in parameters %}
-        <th>{{ parameter }}</th>
+        <th>
+            {{ parameter.name }}
+            {% if parameter.unicode_unit %}
+            <br>
+            ({{ parameter.unicode_unit }})
+            {% endif %}
+        </th>
         {% endfor %}
     </tr>
     {% for ulp, parameters in rows.items %}
