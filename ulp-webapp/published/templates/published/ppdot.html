@@ -8,9 +8,13 @@
 
 <form>
     {% csrf_token %}
-    <input type=checkbox id="mcgill" name="mcgill" {% if import_mcgill %}checked{% endif %}/>
-    <label for="mcgill">Display McGill magnetar catalogue</label></br>
-    <input type="submit" value="Update plot"/>
+    <div class="mb-3">
+        <div class="form-check">
+            <input type=checkbox class="form-check-input" id="mcgill" name="mcgill" {% if import_mcgill %}checked{% endif %}/>
+            <label for="mcgill" class="form-check-label">Display McGill magnetar catalogue</label></br>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Update plot</button>
 </form>
 
 <script src="https://d3js.org/d3.v4.js"></script>
@@ -34,29 +38,43 @@
         .attr("text-anchor", "middle")
         .attr("x", width/2)
         .attr("y", height + margin.top + margin.bottom/2)
-        .text("Period (s)");
+        .text("Period (s)")
+        .attr("fill", "var(--bs-body-color)");
     svg.append("text")
         .attr("class", "y label")
         .attr("transform", "rotate(-90)")
         .attr("text-anchor", "middle")
         .attr("y", -0.75*margin.left)
         .attr("x", -margin.top - height/2)
-        .text("Period derivative (s/s)");
+        .text("Period derivative (s/s)")
+        .attr("fill", "var(--bs-body-color)");
 
     // Add X axis
     var x = d3.scaleLog()
         .domain([1e-3, 1e5])
         .range([ 0, width ]);
-    svg.append("g")
+    var xaxis = svg.append("g")
         .attr("transform", "translate(0," + height + ")")
         .call(d3.axisBottom(x));
+    xaxis.selectAll("text")
+        .style("fill", "var(--bs-body-color)");
+    xaxis.selectAll("path")
+        .style("stroke", "var(--bs-body-color)");
+    xaxis.selectAll("line")
+        .style("stroke", "var(--bs-body-color)");
 
     // Add Y axis
     var y = d3.scaleLog()
         .domain([1e-22, 1e-7])
         .range([ height, 0]);
-    svg.append("g")
+    var yaxis = svg.append("g")
         .call(d3.axisLeft(y));
+    yaxis.selectAll("text")
+        .style("fill", "var(--bs-body-color)");
+    yaxis.selectAll("path")
+        .style("stroke", "var(--bs-body-color)");
+    yaxis.selectAll("line")
+        .style("stroke", "var(--bs-body-color)");
 
     function ulp_link(d) {
         return "{% url 'ulp' pk=1 %}".replace(/1$/, d.id) // Dirty hack to form the right url
@@ -126,9 +144,9 @@
         });
     }
 
-    plot_dataset("{% url 'table_data' pk=1 %}", "rebeccapurple", ulp_link);
+    plot_dataset("{% url 'table_data' pk=1 %}", "#d090f8", ulp_link);
     {% if import_mcgill %}
-    plot_dataset("{% url 'mcgill_data' %}", "blue", (d) => "https://www.physics.mcgill.ca/~pulsar/magnetar/main.html");
+    plot_dataset("{% url 'mcgill_data' %}", "#c0c0ff", (d) => "https://www.physics.mcgill.ca/~pulsar/magnetar/main.html");
     {% endif %}
 
 </script>

@@ -1,34 +1,11 @@
 :root {
     --color-kiwi: #57d897;
+    --color-forest: #98b71d;
+    --color-darkforest: #3d880c;
 }
 
 h1, h2, h3, h4, h5 {
     letter-spacing: .1rem;
-}
-
-.login-form {
-    width: 500px;
-    max-width: 100%;
-    margin: 50px auto;
-    padding: 30px;
-    background-color: #ccc;
-}
-
-.login-form table {
-    font-family: Arial, Helvetica, sans-serif;
-    width: 100%;
-}
-
-.login-form td {
-    background-color: #ccc;
-    border: 0;
-}
-
-.login-form #login-button {
-    border: 0;
-    padding: 10px;
-    margin: 5px 5px auto;
-    cursor: pointer;
 }
 
 .galactic-map {
@@ -60,6 +37,19 @@ h1, h2, h3, h4, h5 {
 
 .nav-link:hover, .navbar-brand:hover {
     text-shadow: 0px 0px 5px var(--color-kiwi);
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--bs-secondary-bg) !important;
+    --bs-btn-border-color: var(--color-darkforest) !important;
+    --bs-btn-hover-border-color: var(--color-forest) !important;
+    --bs-btn-hover-bg: var(--bs-secondary-bg) !important;
+    text-shadow: 0px 0px 5px var(--color-darkforest);
+}
+
+.btn-primary:hover {
+    text-shadow: 0px 0px 5px var(--color-forest);
+    transition: text-shadow 0.01s, border-color 0.01s;
 }
 
 /* From: https://a11y-guidelines.orange.com/en/articles/accessible-hiding/ */
