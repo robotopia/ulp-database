@@ -222,7 +222,7 @@ def galactic_view(request):
         'values': values,
         'model': model,
         'colours': colours,
-        'dm_dist_frac_err': dm_dist_frac_err,
+        'dm_dist_frac_err': int(dm_dist_frac_err),
     }
 
     return render(request, 'published/galactic_view.html', context)

@@ -1,101 +1,9 @@
 :root {
-    --black: #000;
-    --body-black: #051c2a;
-    --text-color: #4b4b4b;
-    --black--bg: #191919;
-    --blue--lightest: #caecf7;
-    --blue: #1473ab;
-    --blue--dark: #004b8b;
-    --blue--link: #116191;
-    --blue--portal: #22547c;
-    --brown: #503110;
-    --gap-element: 3rem;
-    --gap-larger: 4rem;
-    --gap-largest: 3.6rem;
-    --gray--lightest: #f7f7f7;
-    --gray--lighter: #f0f0f0;
-    --gray--light: #e8e8e8;
-    --gray: #b3b3b3;
-    --gray--dark: #717171;
-    --gray--darker: #4b4b4b;
-    --gray--darkest: #303030;
-    --gray--bg: #f7f7f7;
-    --color-apple: #1de57e;
-    --color-apple--light: #ddfbec;
-    --color-lime: #c3d82e;
     --color-kiwi: #57d897;
-    --color-banana: #fff3a8;
-    --color-banana--light: #fbf4cf;
-    --color-strawberry: #ff615e;
-    --color-strawberry--light: #ffefef;
-    --color-magenta: #e52592;
-    --color-magenta-light: #fdeaf5;
-    --color-magenta-dark: #ca2381;
-    --color-lilac: #eeeafd;
-    --color-deep-blue: #5525e5;
-    --color-deep-blue--light: #f1eefd;
-    --fuchsia: #9b0664;
-    --red: #af1800;
-    --purple: #636;
-    --yellow: #ffc000;
-    --white: #fff;
-    --facebook: #3c5193;
-    --msngr: #009eff;
-    --linkedin: #0077b5;
-    --twitter: #37a7df;
-    --youtube: #cc181e;
-    --error: #ffecec;
-    --success: #e9ffd9;
-    --video-size: 740px;
-    --gap-half: 10px;
 }
 
 h1, h2, h3, h4, h5 {
     letter-spacing: .1rem;
-}
-
-table.parameter-set {
-    font-family: Arial, Helvetica, sans-serif;
-    border-collapse: collapse;
-    width: 95%;
-    margin: 20px auto;
-    table-layout: fixed;
-}
-
-table.parameter-set th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    word-wrap: break-word;
-}
-
-table.parameter-set td, th {
-    border: 1px solid #ddd;
-    padding: 8px;
-    word-wrap: break-word;
-}
-
-table.parameter-set tr.disabled {
-    opacity: 0.4;
-}
-
-table.parameter-set tr:nth-child(even), tr:nth-child(even) button, tr:nth-child(even) input {
-    background-color: #f2f2f2;
-}
-
-table.parameter-set tr:nth-child(odd), tr:nth-child(odd) button, tr:nth-child(odd) input {
-    background-color: #fff;
-}
-
-table.parameter-set tr:hover, .btn-fa:hover, tr:hover button, tr:hover input {
-    background-color: #ddd;
-}
-
-table.parameter-set th {
-    padding-top: 12px;
-    padding-bottom: 12px;
-    text-align: left;
-    background-color: #4C50AF;
-    color: white;
 }
 
 .login-form {
@@ -123,16 +31,6 @@ table.parameter-set th {
     cursor: pointer;
 }
 
-.galactic-map-container {
-    display: flex;
-}
-
-.galactic-map-settings {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto;
-}
-
 .galactic-map {
     position: relative;
     display: inline-block; /* shrinks container to image size */
@@ -145,6 +43,7 @@ table.parameter-set th {
     width: 100%;
     height: auto;
     filter: brightness(75%);
+    box-shadow: 0 0 10px 10px black;
 }
 
 .galactic-map svg {

@@ -1,7 +1,7 @@
 {% load static %}
 
 <!DOCTYPE html>
-<html>
+<html data-bs-theme="dark">
     <head>
         <title>Ultra-long period transients</title>
         <link rel="stylesheet" href="{% static 'published/published-style.css' %}">
@@ -12,11 +12,11 @@
         {% block navbar %}
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container-fluid">
-                <a class="navbar-brand" href="{% url 'index' %}">ULP catalogue</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMainMenu" aria-controls="navbarMainMenu" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarMainMenu">
+                    <a class="navbar-brand" href="{% url 'index' %}">ULP catalogue</a>
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'galactic_view' %}">Galactic map</a>
@@ -43,7 +43,7 @@
                         {% endif %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {{ user }}</button>
+                                {{ user }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{% url 'password_change' %}">Change password</a></li>
