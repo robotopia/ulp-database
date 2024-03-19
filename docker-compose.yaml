@@ -13,7 +13,7 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: /home/ubuntu/ulp-database/ulp-webapp
+      device: ${HOME}/ulp-database/ulp-webapp
       o: bind
 
 services:
