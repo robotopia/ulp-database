@@ -10,6 +10,11 @@ volumes:
   web-static:
   ulp-data:
   ulp-webapp:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/ubuntu/ulp-database/ulp-webapp
+      o: bind
 
 services:
   postgres:
@@ -45,6 +50,8 @@ services:
       DBPORT: ${DBPORT}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_DEBUG: ${DJANGO_DEBUG}
+      WAN_IP: ${WAN_IP}
+      ULP_URL: ${ULP_URL}
     networks:
       - ulp-network
     volumes:

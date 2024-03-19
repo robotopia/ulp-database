@@ -33,6 +33,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '0.0.0.0',
     'localhost',
+    os.getenv("GLEAM_URL"),
+    os.getenv("WAN_IP"),
 ]
 
 LOGIN_REDIRECT_URL = '/published/galactic_view'
