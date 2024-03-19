@@ -14,8 +14,8 @@ if [ ! -e /$CONTAINER_FIRST_STARTUP ]; then
 fi 
 
 # This runs the web app locally through Django
-python3 manage.py collectstatic
-python3 manage.py runserver 0.0.0.0:8000
+#python3 manage.py collectstatic
+#python3 manage.py runserver 0.0.0.0:8000
 
 # This runs the webapp using uwsgi and creates a socket that nginx uses
-#uwsgi --ini /ulp-webapp/ulp-webapp.uwsgi.ini
+uwsgi --ini /ulp-webapp/ulp-webapp.uwsgi.ini

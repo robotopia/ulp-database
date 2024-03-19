@@ -6,7 +6,10 @@ networks:
     name: ulp-network
 
 volumes:
+  uwsgi-data:
+  web-static:
   ulp-data:
+  ulp-webapp:
 
 services:
   postgres:
@@ -44,17 +47,23 @@ services:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
     networks:
       - ulp-network
+    volumes:
+      - uwsgi-data: /tmp/uwsgi
+      - web-static: /ulp-webapp/static
+      - web-static: /var/www/ulp-webapp/static
+      - ulp-webapp: /ulp-webapp
 
-# nginx:
-#   hostname: nginx
-#   container_name: nginx
-#   build: nginx
-#   restart: always
-#   networks:
-#     - ulp-network
-#   volumes:
-#     - uwsgi_data:/tmp/uwsgi/
-#   ports:
-#     - "80:80"
-#   depends_on:
-#     - django
+  nginx:
+   hostname: nginx
+   container_name: nginx
+   build: nginx
+   restart: always
+   networks:
+     - ulp-network
+   volumes:
+     - uwsgi-data:/tmp/uwsgi/
+     - ulp-webapp:/ulp-webapp
+   ports:
+     - "80:80"
+   depends_on:
+     - django
