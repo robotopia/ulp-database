@@ -174,8 +174,13 @@ def galactic_view(request):
             values[ulp][parameter.name] = measurements.filter(ulp=ulp, parameter=parameter).order_by('updated').last()
 
         # Pull out some quantities for future convenience
-        ra = values[ulp]['Right ascension'].astropy_quantity
-        dec = values[ulp]['Declination'].astropy_quantity
+        try:
+            ra = values[ulp]['Right ascension'].astropy_quantity
+            dec = values[ulp]['Declination'].astropy_quantity
+        except:
+            # If they don't have a position, it cannot be plotted, so ignore this ULP
+            values.pop(ulp)
+            continue
 
         coord = SkyCoord(ra=ra, dec=dec, frame='icrs')
         values[ulp]['gal_long'] = coord.galactic.l.value
