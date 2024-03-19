@@ -55,10 +55,10 @@ services:
     networks:
       - ulp-network
     volumes:
-      - uwsgi-data: /tmp/uwsgi
-      - web-static: /ulp-webapp/static
-      - web-static: /var/www/ulp-webapp/static
-      - ulp-webapp: /ulp-webapp
+      - uwsgi-data:/tmp/uwsgi
+      - web-static:/ulp-webapp/static
+      - web-static:/var/www/ulp-webapp/static
+      - ulp-webapp:/ulp-webapp
 
   nginx:
    hostname: nginx
