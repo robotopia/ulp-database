@@ -63,14 +63,25 @@ services:
   nginx:
    hostname: nginx
    container_name: nginx
-   build: nginx
+   image: nginx:latest
    restart: always
    networks:
      - ulp-network
    volumes:
      - uwsgi-data:/tmp/uwsgi/
      - ulp-webapp:/ulp-webapp
+     - ./nginx/conf/:/etc/nginx/conf.d/:ro
+     - ./certbot/www/:/var/www/certbot/:ro
+     - ./certbot/conf/:/etc/nginx/ssl/:ro
    ports:
      - "80:80"
+     - "443:443"
    depends_on:
      - django
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw
+
