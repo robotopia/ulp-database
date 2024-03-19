@@ -56,7 +56,7 @@ services:
       - ulp-network
     volumes:
       - uwsgi-data:/tmp/uwsgi
-      - web-static:/ulp-webapp/static
+      - web-static:/ulp-webapp/ulp-webapp/static
       - web-static:/var/www/ulp-webapp/static
       - ulp-webapp:/ulp-webapp
 

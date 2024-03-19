@@ -11,10 +11,10 @@ if [ ! -e /$CONTAINER_FIRST_STARTUP ]; then
     python3 manage.py migrate published
     python3 manage.py migrate
     python3 manage.py migrate --run-syncdb
+    python3 manage.py collectstatic
 fi 
 
 # This runs the web app locally through Django
-#python3 manage.py collectstatic
 #python3 manage.py runserver 0.0.0.0:8000
 
 # This runs the webapp using uwsgi and creates a socket that nginx uses
