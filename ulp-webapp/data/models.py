@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
+from published import models as published_models
 import astropy.units as u
 from astropy.coordinates import Angle
 from decimal import Decimal
@@ -89,3 +90,46 @@ class Backend(models.Model):
     class Meta:
         ordering = ['telescope', 'name',]
 
+
+class TimeOfArrival(models.Model):
+
+    ulp = models.ForeignKey(
+        published_models.Ulp,
+        on_delete=models.CASCADE,
+        help_text="The associated ULP.",
+        verbose_name="ULP",
+        related_name="times_of_arrival",
+    )
+
+    mjd = models.DecimalField(
+        decimal_places=20,
+        max_digits=30,
+        help_text="The MJD of the time of arrival.",
+        verbose_name="MJD",
+    )
+
+    mjd_err = models.DecimalField(
+        decimal_places=20,
+        max_digits=30,
+        null=True,
+        blank=True,
+        help_text="The 1σ uncertainty of the time of arrival (in days).",
+        verbose_name="MJD error",
+    )
+
+    barycentred = models.BooleanField(
+        default=True,
+        help_text="Whether this TOA has been barycentred.",
+    )
+
+    dedispersed = models.BooleanField(
+        default=True,
+        help_text="Whether this TOA has been corrected for dedispersion.",
+    )
+
+    def __str__(self):
+        return f'{self.mjd} ({self.ulp})'
+
+    class Meta:
+        ordering = ['ulp', 'mjd']
+        verbose_name_plural = "Times of arrival"
