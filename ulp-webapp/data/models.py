@@ -46,7 +46,7 @@ class Telescope(models.Model):
     class Meta:
         ordering = ['name',]
 
-def Backend(models.Model):
+class Backend(models.Model):
 
     telescope = models.ForeignKey(
         "Telescope",
@@ -62,16 +62,16 @@ def Backend(models.Model):
     )
 
     freq_ctr = models.FloatField(
-        help="The centre frequency of the band",
+        help_text="The centre frequency of the band",
         verbose_name="Centre frequency",
     )
 
     bw = models.FloatField(
-        help="The bandwidth",
+        help_text="The bandwidth",
         verbose_name="Bandwidth",
     )
 
-    freq_units = model.CharField(
+    freq_units = models.CharField(
         max_length=31,
         default="MHz",
         help_text="An astropy-conversant unit string that applies to the frequencies.",

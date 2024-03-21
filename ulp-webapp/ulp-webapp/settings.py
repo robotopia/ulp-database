@@ -48,6 +48,7 @@ LOGOUT_REDIRECT_URL = '/published/galactic_view'
 
 INSTALLED_APPS = [
     'published.apps.PublishedConfig',
+    'data.apps.DataConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
