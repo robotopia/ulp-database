@@ -30,6 +30,13 @@ class Ulp(models.Model):
         related_name="ulps",
     )
 
+    data_access_groups = models.ManyToManyField(
+        Group,
+        blank=True,
+        help_text="The groups that are allowed access to this ULP's data.",
+        related_name="data_accessible_ulps",
+    )
+
     class Meta:
         verbose_name = "ULP"
         verbose_name_plural = "ULPs"
