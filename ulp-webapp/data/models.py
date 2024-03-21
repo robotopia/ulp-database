@@ -10,7 +10,7 @@ class Telescope(models.Model):
     name = models.CharField(
         max_length=255,
         unique=True,
-        help_text="The name of the telescope",
+        help_text="The name of the telescope.",
     )
 
     abbr = models.CharField(
@@ -18,7 +18,7 @@ class Telescope(models.Model):
         unique=True,
         blank=True,
         null=True,
-        help_text="The abbreviation of the name",
+        help_text="The abbreviation of the name.",
         verbose_name="Abbreviation",
     )
 
@@ -27,7 +27,7 @@ class Telescope(models.Model):
         max_digits=14,
         null=True,
         blank=True,
-        help_text="The latitude (in degrees) of the telescope",
+        help_text="The latitude (in degrees) of the telescope.",
         verbose_name="Latitude (°)",
     )
 
@@ -36,7 +36,7 @@ class Telescope(models.Model):
         max_digits=14,
         null=True,
         blank=True,
-        help_text="The longitude (in degrees) of the telescope",
+        help_text="The longitude (in degrees) of the telescope.",
         verbose_name="Longitude (°)",
     )
 
@@ -51,7 +51,7 @@ class Backend(models.Model):
     telescope = models.ForeignKey(
         "Telescope",
         on_delete=models.CASCADE,
-        help_text="The telescope to which this backend belongs",
+        help_text="The telescope to which this backend belongs.",
         related_name="backends",
     )
 
@@ -62,17 +62,23 @@ class Backend(models.Model):
     )
 
     freq_ctr = models.FloatField(
-        help_text="The centre frequency of the band",
+        null=True,
+        blank=True,
+        help_text="The centre frequency of the band.",
         verbose_name="Centre frequency",
     )
 
     bw = models.FloatField(
-        help_text="The bandwidth",
+        null=True,
+        blank=True,
+        help_text="The bandwidth.",
         verbose_name="Bandwidth",
     )
 
     freq_units = models.CharField(
         max_length=31,
+        null=True,
+        blank=True,
         default="MHz",
         help_text="An astropy-conversant unit string that applies to the frequencies.",
     )
