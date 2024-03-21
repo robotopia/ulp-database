@@ -1,9 +1,24 @@
-{% extends 'published/main.html' %}
+{% extends "published/main.html" %}
 
 {% load static %}
 
 {% block body %}
 
 <h1>{{ ulp }}</h1>
+
+<label for="period" class="form-label">Fold on measured period:</label>
+<select id="period" class="form-control" name="period">
+  {% for period in periods %}
+  <option value="{{ period.quantity }}">{{ period.formatted_quantity_with_units }}</option>
+  {% endfor %}
+</select>
+
+<svg width="500px" height="200px" viewbox="{{ plot_specs.xmin }} 0 {{ plot_specs.xrange }} 1">
+  <g id="toas">
+    {% for toa in toas %}
+    <circle r="0.2" cx={{ toa.mjd }} cy="0.5" fill="#ff0000"/>
+    {% endfor %}
+  </g>
+</svg>
 
 {% endblock %}
