@@ -13,21 +13,18 @@
   {% endfor %}
 </select>
 
-<label for="pepoch">PEPOCH:</label>
-<input type="number" id="pepoch" value="{{ toas.0.mjd }}" onchange="replot()"/>
+<label for="pepoch" class="form-label">PEPOCH:</label>
+<input type="number" class="form-control" id="pepoch" value="{{ toas.0.mjd }}" onchange="replot()"/>
 
-<label for="folding-period">Folding period:</label>
-<input type="number" id="folding-period" value="{{ init_folding_period }}" onchange="replot()"/>
+<label for="folding-period" class="form-label">Folding period:</label>
+<input type="number" class="form-control" id="folding-period" value="{{ init_folding_period }}" onchange="replot()"/>
 
-<label>x range:</label>
-<input type="number" id="xmin" value="{{ plot_specs.xmin }}" onchange="replot()"/>
-<input type="number" id="xmax" value="{{ plot_specs.xmax }}" onchange="replot()"/>
+<input type="number" id="xmin" value="{{ plot_specs.xmin }}" onchange="replot()" hidden/>
+<input type="number" id="xmax" value="{{ plot_specs.xmax }}" onchange="replot()" hidden/>
+<input type="number" id="ymin" value="-0.5" onchange="replot()" hidden/>
+<input type="number" id="ymax" value="0.5" onchange="replot()" hidden/>
 
-<label>y range:</label>
-<input type="number" id="ymin" value="-0.5" onchange="replot()"/>
-<input type="number" id="ymax" value="0.5" onchange="replot()"/>
-
-<div id="residual-plot"></div>
+<div id="residual-plot" style="height: 500px;"></div>
 
 <script src="https://d3js.org/d3.v4.js"></script>
 <script>
@@ -45,101 +42,131 @@
   var ymax_element = document.getElementById("ymax")
 
   // Function to calculate the pulse numbers and phases of TOAs
-  function pulse_phase(mjd, pepoch, P) {
+  function calc_pulse_phase(mjd, pepoch, P) {
     // mjd and pepoch should be in days,
     // P (the folding period) in seconds
-    var pulse = 86400*(mjd - pepoch)/P; // Dimensionless
-    var pulse_number = Math.floor(pulse)
-    var phase = (pulse + 0.5) % 1 - 0.5;
-      return {pulse: pulse, phase: phase}
+    var pulse_phase = 86400*(mjd - pepoch)/P; // Dimensionless
+    var pulse = Math.floor(pulse_phase)
+    var phase = (pulse_phase + 0.5) % 1 - 0.5;
+    return {pulse: pulse, phase: phase, pulse_phase: pulse_phase};
   }
 
   // set the dimensions and margins of the graph
   var parentDiv = document.getElementById("residual-plot");
 
-  var margin = {top: 10, right: 50, bottom: 50, left: 80},
-    width = 1000 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
-
   // append the svg object to the body of the page
-  var svg = d3.select("#residual-plot").append("svg")
+  var svg = d3.select("#residual-plot").append("svg");
 
-  svg.attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
+  // "g" is the main group containing all plotted elements
+  var margin = {top: 50, right: 80, bottom: 50, left: 80};
+  var g = svg.append('g')
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
   // Add axis labels
-  svg.append("text")
-    .attr("class", "x label")
+  xlabel = g.append("text")
     .attr("text-anchor", "middle")
-    .attr("x", width/2)
-    .attr("y", height + margin.top + margin.bottom/2)
     .text("MJD")
     .attr("fill", "var(--bs-body-color)");
-  svg.append("text")
-    .attr("class", "y label")
+  x2label = g.append("text")
+    .attr("text-anchor", "middle")
+    .text("Pulse number")
+    .attr("fill", "var(--bs-body-color)");
+  ylabel = g.append("text")
     .attr("transform", "rotate(-90)")
     .attr("text-anchor", "middle")
-    .attr("y", -0.75*margin.left)
-    .attr("x", -margin.top - height/2)
-    .text("Residual phase")
+    .text("Residual (phase)")
+    .attr("fill", "var(--bs-body-color)");
+  y2label = g.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("text-anchor", "middle")
+    .text("Residual (s)")
     .attr("fill", "var(--bs-body-color)");
 
-  var xaxis = svg.append("g")
-    .attr("transform", "translate(0," + height + ")");
-
-  var yaxis = svg.append("g");
-
-  var g = svg.append('g');
+  var xaxis = g.append("g");
+  var yaxis = g.append("g");
+  var x2axis = g.append("g");
+  var y2axis = g.append("g");
 
   function plot_dataset(data, color) {
-
-    // Construct X axis
-    var x = d3.scaleLinear()
-      .domain([xmin_element.value, xmax_element.value])
-      .range([ 0, width ]);
-
-    xaxis.call(d3.axisBottom(x));
-
-    xaxis.selectAll("text")
-      .style("fill", "var(--bs-body-color)");
-    xaxis.selectAll("path")
-      .style("stroke", "var(--bs-body-color)");
-    xaxis.selectAll("line")
-      .style("stroke", "var(--bs-body-color)");
-
-    // Construct Y axis
-    var y = d3.scaleLinear()
-      .domain([ymin_element.value, ymax_element.value])
-      .range([ height, 0]);
-
-    yaxis.call(d3.axisLeft(y));
-
-    yaxis.selectAll("text")
-      .style("fill", "var(--bs-body-color)");
-    yaxis.selectAll("path")
-      .style("stroke", "var(--bs-body-color)");
-    yaxis.selectAll("line")
-      .style("stroke", "var(--bs-body-color)");
 
     // Get the folding period and the PEPOCH
     var folding_period = folding_period_element.value
     var pepoch = pepoch_element.value
 
+    // Set the SVG width and height
+    svg.attr("width", parentDiv.clientWidth)
+      .attr("height", parentDiv.clientHeight)
+
+    // Calculate the plot dimensions
+    var width = parentDiv.clientWidth - margin.left - margin.right;
+    var height = parentDiv.clientHeight - margin.top - margin.bottom;
+
+    // Construct X axes
+    x = d3.scaleLinear()
+      .domain([xmin_element.value, xmax_element.value])
+      .range([0, width]);
+
+    x2 = d3.scaleLinear()
+      .domain([calc_pulse_phase(xmin_element.value, pepoch, folding_period).pulse_phase,
+               calc_pulse_phase(xmax_element.value, pepoch, folding_period).pulse_phase])
+      .range([0, width]);
+
+    xaxis.attr("transform", "translate(0," + height + ")");
+
+    xlabel.attr("x", width/2)
+      .attr("y", height + 0.75*margin.bottom)
+    x2label.attr("x", width/2)
+      .attr("y", -0.75*margin.top)
+
+    xaxis.call(d3.axisBottom(x));
+    xaxis.selectAll("text").style("fill", "var(--bs-body-color)");
+    xaxis.selectAll("path").style("stroke", "var(--bs-body-color)");
+    xaxis.selectAll("line").style("stroke", "var(--bs-body-color)");
+
+    x2axis.call(d3.axisTop(x2));
+    x2axis.selectAll("text").style("fill", "var(--bs-body-color)");
+    x2axis.selectAll("path").style("stroke", "var(--bs-body-color)");
+    x2axis.selectAll("line").style("stroke", "var(--bs-body-color)");
+
+    // Construct Y axis
+    y = d3.scaleLinear()
+      .domain([ymin_element.value, ymax_element.value])
+      .range([height, 0]);
+
+    y2 = d3.scaleLinear()
+      .domain([ymin_element.value*folding_period, ymax_element.value*folding_period])
+      .range([height, 0]);
+
+    y2axis.attr("transform", "translate(" + width + ",0)");
+
+    ylabel.attr("y", -0.5*margin.left)
+      .attr("x", -height/2)
+    y2label.attr("y", width + 0.75*margin.right)
+      .attr("x", -height/2)
+
+    yaxis.call(d3.axisLeft(y));
+    yaxis.selectAll("text").style("fill", "var(--bs-body-color)");
+    yaxis.selectAll("path").style("stroke", "var(--bs-body-color)");
+    yaxis.selectAll("line").style("stroke", "var(--bs-body-color)");
+
+    y2axis.call(d3.axisRight(y2));
+    y2axis.selectAll("text").style("fill", "var(--bs-body-color)");
+    y2axis.selectAll("path").style("stroke", "var(--bs-body-color)");
+    y2axis.selectAll("line").style("stroke", "var(--bs-body-color)");
+
     // Remove previous points
-    g.selectAll('circle').remove();
-    g.selectAll('path').remove();
+    g.selectAll('.data').remove();
 
     // Add points
     g.selectAll(".dot")
       .data(data)
       .enter()
       .append("circle")
-        .attr("cx", function (toa) { return x(toa.mjd); })
-        .attr("cy", function (toa) { return y(pulse_phase(toa.mjd, pepoch, folding_period).phase); })
-        .attr("r", 3)
-        .style("fill", color);
+      .attr("cx", function (toa) { return x2(calc_pulse_phase(toa.mjd, pepoch, folding_period).pulse); })
+      .attr("cy", function (toa) { return y(calc_pulse_phase(toa.mjd, pepoch, folding_period).phase); })
+      .attr("r", 3)
+      .style("fill", color)
+      .classed("data", true);
 
     // Add error bars
     g.selectAll(".err")
@@ -147,17 +174,80 @@
       .enter()
       .append("path")
       .attr("d", function (toa) {
-        return " M " + x(toa.mjd) + "," + y(pulse_phase(toa.mjd - toa.mjd_err, pepoch, folding_period).phase) +
-               " L " + x(toa.mjd) + "," + y(pulse_phase(toa.mjd + toa.mjd_err, pepoch, folding_period).phase);
+        pulse_phase_lo = calc_pulse_phase(toa.mjd - toa.mjd_err, pepoch, folding_period);
+        pulse_phase_hi = calc_pulse_phase(toa.mjd + toa.mjd_err, pepoch, folding_period);
+
+        pulse = pulse_phase_lo.pulse;
+        phase_lo = pulse_phase_lo.phase;
+        phase_hi = pulse_phase_hi.phase;
+
+        let xpos = x2(pulse);
+
+        return " M " + xpos + "," + y(phase_lo) +
+               " L " + xpos + "," + y(phase_hi);
       })
       .style("stroke", color)
-      .style("stroke-width", "2");
+      .style("stroke-width", "2")
+      .classed("data", true);
   }
 
   function replot() {
     plot_dataset(plot_data, "#d090f8");
   }
 
+  // Zoom on mouse wheel
+  svg.on("wheel", function(d) {
+    xmin = parseFloat(xmin_element.value);
+    xmax = parseFloat(xmax_element.value);
+    ymin = parseFloat(ymin_element.value);
+    ymax = parseFloat(ymax_element.value);
+
+    m = d3.mouse(this);
+    xpos = x.invert(m[0] - margin.left);
+    ypos = y.invert(m[1] - margin.top);
+
+    scale_factor = d3.event.wheelDelta < 0 ? 0.05 : -0.05;
+
+    if (xpos > xmin && xpos < xmax) { // if mouse is not over the y-axis itself (if it were, we leave x-zoom untouched)
+      xmin -= scale_factor*(xpos - xmin);
+      xmax += scale_factor*(xmax - xpos);
+      xmin_element.value = xmin;
+      xmax_element.value = xmax;
+    }
+
+    if (ypos > ymin && ypos < ymax) { // if mouse is not over the x-axis itself (if it were, we leave y-zoom untouched)
+      ymin -= scale_factor*(ypos - ymin);
+      ymax += scale_factor*(ymax - ypos);
+      ymin_element.value = ymin;
+      ymax_element.value = ymax;
+    }
+
+    replot();
+  });
+
+  // Change period on mouse drag
+  mousedown = false;
+  svg.on("mousedown", function(d) {
+    mousedown = true;
+    let downpos = d3.mouse(this);
+    ref_xpos = x.invert(downpos[0] - margin.left);
+    ref_ypos = y.invert(downpos[1] - margin.top);
+  });
+
+  svg.on("mousemove", function(d) {
+    if (mousedown) {
+      movepos = d3.mouse(this);
+      console.log("movepos = ", movepos);
+    }
+  });
+
+  svg.on("mouseup", function(d) {
+    mousedown = false;
+    uppos = d3.mouse(this);
+    console.log("uppos = ", uppos);
+  });
+
+  // Plot once to get started
   replot();
 
 </script>
