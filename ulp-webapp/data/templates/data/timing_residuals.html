@@ -262,23 +262,13 @@
 
   // Change period on mouse drag
   mousedown = false;
-  svg.on("mousedown", function(d) {
-
+  svg.on("mousedown", function() {
     // Record in global variable the fact that the mouse button is down
     mousedown = true;
-
-    // Draw the svg line from the origin to the clicked point
-    let downpos = d3.mouse(this); // (Initially in svg coords)
-    myLine(svg, period_path, downpos);
-
-    // Record for later use the world coords of the clicked event, as well as the folding period
-    ref_mjd = x.invert(downpos[0] - margin.left) - pepoch_element.value; // world coords of click pos
-    ref_res = y2.invert(downpos[1] - margin.top);                        // world coords of click pos
-    ref_factor = ref_res / (ref_mjd*86400);
-
+    ref_factor = null;
   });
 
-  svg.on("mousemove", function(d) {
+  svg.on("mousemove", function() {
     if (mousedown) {
       d3.event.preventDefault();
 
@@ -286,13 +276,13 @@
       let movepos = d3.mouse(this);
 
       // Record for later use the world coords of the clicked event, as well as the folding period
-      mjd = x.invert(movepos[0] - margin.left) - pepoch_element.value; // world coords of click pos
-      res = y2.invert(movepos[1] - margin.top);                        // world coords of click pos
+      let mjd = x.invert(movepos[0] - margin.left) - pepoch_element.value; // world coords of click pos
+      let res = y2.invert(movepos[1] - margin.top);                       // world coords of click pos
       factor = res / (mjd*86400);
 
-      folding_period_element.value *= (1 - (factor - ref_factor));
-      //ref_mjd = mjd;
-      //ref_res = res;
+      if (ref_factor !== null) {
+        folding_period_element.value *= (1 - (factor - ref_factor));
+      }
       ref_factor = factor;
 
       replot();
@@ -300,10 +290,8 @@
     }
   });
 
-  svg.on("mouseup", function(d) {
+  svg.on("mouseup", function() {
     mousedown = false;
-    uppos = d3.mouse(this);
-    console.log("uppos = ", uppos);
 
     period_path
       .style("stroke-opacity", "0.0")
