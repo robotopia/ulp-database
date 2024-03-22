@@ -98,8 +98,8 @@
       .attr("height", parentDiv.clientHeight)
 
     // Calculate the plot dimensions
-    var width = parentDiv.clientWidth - margin.left - margin.right;
-    var height = parentDiv.clientHeight - margin.top - margin.bottom;
+    width = parentDiv.clientWidth - margin.left - margin.right;
+    height = parentDiv.clientHeight - margin.top - margin.bottom;
 
     // Construct X axes
     x = d3.scaleLinear()
@@ -157,6 +157,22 @@
     // Remove previous points
     g.selectAll('.data').remove();
 
+    // Add vertical dashed line for PEPOCH
+    g.append("path")
+      .attr("d", "M " + x2(0) + ",0 l 0," + height)
+      .style("stroke", "#aaee1180")
+      .style("stroke-width", "2")
+      .style("stroke-dasharray", "7")
+      .classed("data", true);
+
+    // Add dashed line for click-n-drag for changing period
+    period_path = g.append("path")
+      .style("stroke", "#aaee1180")
+      .style("stroke-width", "2")
+      .style("stroke-dasharray", "7")
+      .style("stroke-opacity", "0")
+      .classed("data", true);
+
     // Add points
     g.selectAll(".dot")
       .data(data)
@@ -189,6 +205,7 @@
       .style("stroke", color)
       .style("stroke-width", "2")
       .classed("data", true);
+
   }
 
   function replot() {
@@ -225,19 +242,61 @@
     replot();
   });
 
+  // A handy function for plotting the period path
+  function myLine(svg, path, pos) {
+
+    // Draw the svg line from the origin to the clicked point
+    // Everything here in "g" coords
+    pos[0] -= margin.left; // (Now converted to "g" coords)
+    pos[1] -= margin.top;
+    let origpos = [x2(0), y(0)];
+    let slope = (pos[1] - origpos[1]) / (pos[0] - origpos[0]);
+    let yintercept = pos[1] - slope*pos[0];
+
+    // Draw the path connecting the clicked point and the origin
+    period_path
+      .attr("d", "M 0," + yintercept + " L " + width + "," + (slope*width + yintercept))
+      .style("stroke-opacity", "0.5");
+
+  }
+
   // Change period on mouse drag
   mousedown = false;
   svg.on("mousedown", function(d) {
+
+    // Record in global variable the fact that the mouse button is down
     mousedown = true;
-    let downpos = d3.mouse(this);
-    ref_xpos = x.invert(downpos[0] - margin.left);
-    ref_ypos = y.invert(downpos[1] - margin.top);
+
+    // Draw the svg line from the origin to the clicked point
+    let downpos = d3.mouse(this); // (Initially in svg coords)
+    myLine(svg, period_path, downpos);
+
+    // Record for later use the world coords of the clicked event, as well as the folding period
+    ref_mjd = x.invert(downpos[0] - margin.left) - pepoch_element.value; // world coords of click pos
+    ref_res = y2.invert(downpos[1] - margin.top);                        // world coords of click pos
+    ref_factor = ref_res / (ref_mjd*86400);
+
   });
 
   svg.on("mousemove", function(d) {
     if (mousedown) {
-      movepos = d3.mouse(this);
-      console.log("movepos = ", movepos);
+      d3.event.preventDefault();
+
+      // Draw the svg line from the origin to the clicked point
+      let movepos = d3.mouse(this);
+
+      // Record for later use the world coords of the clicked event, as well as the folding period
+      mjd = x.invert(movepos[0] - margin.left) - pepoch_element.value; // world coords of click pos
+      res = y2.invert(movepos[1] - margin.top);                        // world coords of click pos
+      factor = res / (mjd*86400);
+
+      folding_period_element.value *= (1 - (factor - ref_factor));
+      //ref_mjd = mjd;
+      //ref_res = res;
+      ref_factor = factor;
+
+      replot();
+      myLine(svg, period_path, movepos);
     }
   });
 
@@ -245,6 +304,10 @@
     mousedown = false;
     uppos = d3.mouse(this);
     console.log("uppos = ", uppos);
+
+    period_path
+      .style("stroke-opacity", "0.0")
+
   });
 
   // Plot once to get started
