@@ -6,19 +6,119 @@
 
 <h1>{{ ulp }}</h1>
 
-<label for="period" class="form-label">Fold on measured period:</label>
-<select id="period" class="form-control" name="period">
+<label for="folding_period_select" class="form-label">Reset folding period to:</label>
+<select id="folding_period_select" class="form-control" name="folding_period">
   {% for period in periods %}
   <option value="{{ period.quantity }}">{{ period.formatted_quantity_with_units }}</option>
   {% endfor %}
 </select>
 
-<svg width="500px" height="200px" viewbox="{{ plot_specs.xmin }} 0 {{ plot_specs.xrange }} 1">
-  <g id="toas">
-    {% for toa in toas %}
-    <circle r="0.2" cx={{ toa.mjd }} cy="0.5" fill="#ff0000"/>
-    {% endfor %}
-  </g>
-</svg>
+<label for="pepoch">PEPOCH:</label>
+<input type="number" id="pepoch" value="{{ pepoch }}"/>
+
+<label for="folding-period">Folding period:</label>
+<input type="number" id="folding_period" value="{{ folding_period.quantity }}"/>
+
+<div id="residual-plot"></div>
+
+<script src="https://d3js.org/d3.v4.js"></script>
+<script>
+    // set the dimensions and margins of the graph
+    var margin = {top: 10, right: 50, bottom: 50, left: 80},
+        width = 1000 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select("#residual-plot")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Add axis labels
+    svg.append("text")
+      .attr("class", "x label")
+      .attr("text-anchor", "middle")
+      .attr("x", width/2)
+      .attr("y", height + margin.top + margin.bottom/2)
+      .text("MJD - 60000") // TODO: CHANGE TO NOT HARD-CODED
+      .attr("fill", "var(--bs-body-color)");
+    svg.append("text")
+      .attr("class", "y label")
+      .attr("transform", "rotate(-90)")
+      .attr("text-anchor", "middle")
+      .attr("y", -0.75*margin.left)
+      .attr("x", -margin.top - height/2)
+      .text("Residual (% of period)")
+      .attr("fill", "var(--bs-body-color)");
+
+    // Add X axis
+    var x = d3.scaleLinear()
+	    .domain([{{ plot_specs.xmin }}, {{ plot_specs.xmax }}])
+      .range([ 0, width ]);
+    var xaxis = svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+    xaxis.selectAll("text")
+      .style("fill", "var(--bs-body-color)");
+    xaxis.selectAll("path")
+      .style("stroke", "var(--bs-body-color)");
+    xaxis.selectAll("line")
+      .style("stroke", "var(--bs-body-color)");
+
+    // Add Y axis
+    var y = d3.scaleLinear()
+      .domain([-50, 50]) // TODO: CHANGE TO NOT HARD_CODED
+      .range([ height, 0]);
+    var yaxis = svg.append("g")
+      .call(d3.axisLeft(y));
+    yaxis.selectAll("text")
+      .style("fill", "var(--bs-body-color)");
+    yaxis.selectAll("path")
+      .style("stroke", "var(--bs-body-color)");
+    yaxis.selectAll("line")
+      .style("stroke", "var(--bs-body-color)");
+
+    var plot_data = {{ plot_data | safe }};
+
+  function plot_dataset(data, color) {
+
+      g = svg.append('g')
+
+      // Add points
+      g.selectAll("dot")
+        .data(data)
+        .enter()
+        .append("circle")
+          .attr("cx", function (d) { return x(d.x); })
+          .attr("cy", function (d) { return y(d.y); })
+          .attr("r", 2.5)
+          .style("fill", color);
+
+      /*
+      // Add error bars
+      g.selectAll("Pdot_err")
+        .data(data)
+        .enter()
+        .append("path")
+        .attr("d", (d) => d.Pdot_err > 0 ?
+            " M " + x(d.P) + "," + y(d.Pdot) +
+            " L " + x(d.P) + "," + y(d.Pdot - d.Pdot_err) +
+            " M " + x(d.P) + "," + y(d.Pdot) +
+            " L " + x(d.P) + "," + y(d.Pdot + d.Pdot_err)
+            : "M 0,0")
+        .style("stroke", color)
+        .style("stroke-width", "2");
+      */
+    }
+
+    function replot() {
+      plot_dataset(plot_data, "#d090f8");
+    }
+
+    replot();
+
+</script>
 
 {% endblock %}
