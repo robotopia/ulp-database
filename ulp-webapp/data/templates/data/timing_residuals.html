@@ -14,52 +14,94 @@
 </select>
 
 <label for="pepoch">PEPOCH:</label>
-<input type="number" id="pepoch" value="{{ pepoch }}"/>
+<input type="number" id="pepoch" value="{{ toas.0.mjd }}" onchange="replot()"/>
 
 <label for="folding-period">Folding period:</label>
-<input type="number" id="folding_period" value="{{ folding_period.quantity }}"/>
+<input type="number" id="folding-period" value="{{ init_folding_period }}" onchange="replot()"/>
+
+<label>x range:</label>
+<input type="number" id="xmin" value="{{ plot_specs.xmin }}" onchange="replot()"/>
+<input type="number" id="xmax" value="{{ plot_specs.xmax }}" onchange="replot()"/>
+
+<label>y range:</label>
+<input type="number" id="ymin" value="-0.5" onchange="replot()"/>
+<input type="number" id="ymax" value="0.5" onchange="replot()"/>
 
 <div id="residual-plot"></div>
 
 <script src="https://d3js.org/d3.v4.js"></script>
 <script>
-    // set the dimensions and margins of the graph
-    var margin = {top: 10, right: 50, bottom: 50, left: 80},
-        width = 1000 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
 
-    // append the svg object to the body of the page
-    var svg = d3.select("#residual-plot")
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  // Get the data for the plot
+  var plot_data = {{ toas | safe }};
 
-    // Add axis labels
-    svg.append("text")
-      .attr("class", "x label")
-      .attr("text-anchor", "middle")
-      .attr("x", width/2)
-      .attr("y", height + margin.top + margin.bottom/2)
-      .text("MJD - 60000") // TODO: CHANGE TO NOT HARD-CODED
-      .attr("fill", "var(--bs-body-color)");
-    svg.append("text")
-      .attr("class", "y label")
-      .attr("transform", "rotate(-90)")
-      .attr("text-anchor", "middle")
-      .attr("y", -0.75*margin.left)
-      .attr("x", -margin.top - height/2)
-      .text("Residual (% of period)")
-      .attr("fill", "var(--bs-body-color)");
+  // Get the folding period and the PEPOCH
+  var folding_period_element = document.getElementById("folding-period")
+  var pepoch_element = document.getElementById("pepoch")
 
-    // Add X axis
+  var xmin_element = document.getElementById("xmin")
+  var xmax_element = document.getElementById("xmax")
+  var ymin_element = document.getElementById("ymin")
+  var ymax_element = document.getElementById("ymax")
+
+  // Function to calculate the pulse numbers and phases of TOAs
+  function pulse_phase(mjd, pepoch, P) {
+    // mjd and pepoch should be in days,
+    // P (the folding period) in seconds
+    var pulse = 86400*(mjd - pepoch)/P; // Dimensionless
+    var pulse_number = Math.floor(pulse)
+    var phase = (pulse + 0.5) % 1 - 0.5;
+      return {pulse: pulse, phase: phase}
+  }
+
+  // set the dimensions and margins of the graph
+  var parentDiv = document.getElementById("residual-plot");
+
+  var margin = {top: 10, right: 50, bottom: 50, left: 80},
+    width = 1000 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+  // append the svg object to the body of the page
+  var svg = d3.select("#residual-plot").append("svg")
+
+  svg.attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  // Add axis labels
+  svg.append("text")
+    .attr("class", "x label")
+    .attr("text-anchor", "middle")
+    .attr("x", width/2)
+    .attr("y", height + margin.top + margin.bottom/2)
+    .text("MJD")
+    .attr("fill", "var(--bs-body-color)");
+  svg.append("text")
+    .attr("class", "y label")
+    .attr("transform", "rotate(-90)")
+    .attr("text-anchor", "middle")
+    .attr("y", -0.75*margin.left)
+    .attr("x", -margin.top - height/2)
+    .text("Residual phase")
+    .attr("fill", "var(--bs-body-color)");
+
+  var xaxis = svg.append("g")
+    .attr("transform", "translate(0," + height + ")");
+
+  var yaxis = svg.append("g");
+
+  var g = svg.append('g');
+
+  function plot_dataset(data, color) {
+
+    // Construct X axis
     var x = d3.scaleLinear()
-	    .domain([{{ plot_specs.xmin }}, {{ plot_specs.xmax }}])
+      .domain([xmin_element.value, xmax_element.value])
       .range([ 0, width ]);
-    var xaxis = svg.append("g")
-      .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x));
+
+    xaxis.call(d3.axisBottom(x));
+
     xaxis.selectAll("text")
       .style("fill", "var(--bs-body-color)");
     xaxis.selectAll("path")
@@ -67,12 +109,13 @@
     xaxis.selectAll("line")
       .style("stroke", "var(--bs-body-color)");
 
-    // Add Y axis
+    // Construct Y axis
     var y = d3.scaleLinear()
-      .domain([-50, 50]) // TODO: CHANGE TO NOT HARD_CODED
+      .domain([ymin_element.value, ymax_element.value])
       .range([ height, 0]);
-    var yaxis = svg.append("g")
-      .call(d3.axisLeft(y));
+
+    yaxis.call(d3.axisLeft(y));
+
     yaxis.selectAll("text")
       .style("fill", "var(--bs-body-color)");
     yaxis.selectAll("path")
@@ -80,44 +123,42 @@
     yaxis.selectAll("line")
       .style("stroke", "var(--bs-body-color)");
 
-    var plot_data = {{ plot_data | safe }};
+    // Get the folding period and the PEPOCH
+    var folding_period = folding_period_element.value
+    var pepoch = pepoch_element.value
 
-  function plot_dataset(data, color) {
+    // Remove previous points
+    g.selectAll('circle').remove();
+    g.selectAll('path').remove();
 
-      g = svg.append('g')
+    // Add points
+    g.selectAll(".dot")
+      .data(data)
+      .enter()
+      .append("circle")
+        .attr("cx", function (toa) { return x(toa.mjd); })
+        .attr("cy", function (toa) { return y(pulse_phase(toa.mjd, pepoch, folding_period).phase); })
+        .attr("r", 3)
+        .style("fill", color);
 
-      // Add points
-      g.selectAll("dot")
-        .data(data)
-        .enter()
-        .append("circle")
-          .attr("cx", function (d) { return x(d.x); })
-          .attr("cy", function (d) { return y(d.y); })
-          .attr("r", 2.5)
-          .style("fill", color);
+    // Add error bars
+    g.selectAll(".err")
+      .data(data)
+      .enter()
+      .append("path")
+      .attr("d", function (toa) {
+        return " M " + x(toa.mjd) + "," + y(pulse_phase(toa.mjd - toa.mjd_err, pepoch, folding_period).phase) +
+               " L " + x(toa.mjd) + "," + y(pulse_phase(toa.mjd + toa.mjd_err, pepoch, folding_period).phase);
+      })
+      .style("stroke", color)
+      .style("stroke-width", "2");
+  }
 
-      /*
-      // Add error bars
-      g.selectAll("Pdot_err")
-        .data(data)
-        .enter()
-        .append("path")
-        .attr("d", (d) => d.Pdot_err > 0 ?
-            " M " + x(d.P) + "," + y(d.Pdot) +
-            " L " + x(d.P) + "," + y(d.Pdot - d.Pdot_err) +
-            " M " + x(d.P) + "," + y(d.Pdot) +
-            " L " + x(d.P) + "," + y(d.Pdot + d.Pdot_err)
-            : "M 0,0")
-        .style("stroke", color)
-        .style("stroke-width", "2");
-      */
-    }
+  function replot() {
+    plot_dataset(plot_data, "#d090f8");
+  }
 
-    function replot() {
-      plot_dataset(plot_data, "#d090f8");
-    }
-
-    replot();
+  replot();
 
 </script>
 

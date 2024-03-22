@@ -30,6 +30,8 @@ def timing_residual_view(request, pk):
 
     # Otherwise, grant them access, and get the TOAs!
     toas = models.TimeOfArrival.objects.filter(ulp=ulp)
+    if not toas.exists():
+        return HttpResponse(status=404)
 
     # Get available published periods
     periods = published_models.Measurement.objects.filter(
@@ -46,71 +48,25 @@ def timing_residual_view(request, pk):
 
     context = {
         'ulp': ulp,
+        'toas': [
+            {
+                'mjd': float(toa.mjd),
+                'mjd_err': float(toa.mjd_err),
+            } for toa in toas
+        ],
         'periods': periods,
+        'init_folding_period': periods[0].astropy_quantity.to('s').value,
     }
 
-    # The folding period is obtained from the request body
-    if request.method == 'POST':
-        folding_period = request.POST.get('folding_period')
-    else:
-        folding_period = periods.first()
-
-    # It's still possible that there is no selected folding period, in which
-    # case no plot will be shown. But if there is a folding period, calculate
-    # the residuals
-
-    if folding_period is not None:
-
-        # For the moment, choose an arbitrary PEPOCH
-        pepoch = 60000.0*u.day
-
-        toas_mjd = np.array([toa.mjd for toa in toas]) * u.day
-        toas_mjd_err = np.array([toa.mjd_err for toa in toas]) * u.day
-
-        phases = ((toas_mjd - pepoch) / folding_period.astropy_quantity).decompose()
-        # Calculate the residuals
-        print('here01')
-        residuals_percent = (phases*100 + 50) % 100 - 50
-        # Subtract the mean
-        print('here02')
-        residuals_percent -= np.mean(residuals_percent)
-        print('here03')
-
-        # Associate the residuals with their corresponding TOAs
-        plot_data = [
-            {
-                'x': (toas_mjd[i] - pepoch).value,
-                'y': residuals_percent[i].value,
-                'yerr': (toas.mjd_err[i]*u.day / folding_period.astropy_quantity).decompose().value,
-            }
-            for i in range(len(toas_mjd))
-        ]
-
-        # Get some bounds for the plot. The SVG viewBox is defined in terms of
-        #   MJD since PEPOCH for the x-axis
-        #   Residual as a % for the y-axis
-        xs = [plot_data[i]['x'] for i in range(len(plot_data))]
-        ys = [plot_data[i]['y'] for i in range(len(plot_data))]
-        xdata_min = np.min(xs)
-        xdata_max = np.max(xs)
-        ydata_min = np.min(ys)
-        ydata_max = np.max(ys)
-        xdata_range = xdata_max - xdata_min
-        ydata_range = ydata_max - ydata_min
-        plot_specs = {
-            'xmin': xdata_min - 0.05*xdata_range,  # With an extra margin buffer
-            'ymin': ydata_min - 0.05*ydata_range,
-            'xmax': xdata_max + 0.05*xdata_range,
-            'ymax': ydata_max + 0.05*ydata_range,
-            'xrange': xdata_range,
-            'yrange': ydata_range,
-        }
-        print(plot_specs)
-
-        # Add plot info to the context
-        context['plot_specs'] = plot_specs
-        context['folding_period'] = folding_period
-        context['plot_data'] = plot_data
-        context['pepoch'] = pepoch.value
+    mjds = [toa['mjd'] for toa in context['toas']]
+    xdata_min = np.min(mjds)
+    xdata_max = np.max(mjds)
+    xdata_range = xdata_max - xdata_min
+    plot_specs = {
+        'xmin': xdata_min - 0.05*xdata_range,  # With an extra margin buffer
+        'xmax': xdata_max + 0.05*xdata_range,
+        'xrange': xdata_range,
+    }
+    context['plot_specs'] = plot_specs
 
     return render(request, 'data/timing_residuals.html', context)
