@@ -33,8 +33,8 @@
   var plot_data = {{ toas | safe }};
 
   // Get the folding period and the PEPOCH
-  var folding_period_element = document.getElementById("folding-period")
-  var pepoch_element = document.getElementById("pepoch")
+  const folding_period_element = document.getElementById("folding-period")
+  const pepoch_element = document.getElementById("pepoch")
 
   var xmin_element = document.getElementById("xmin")
   var xmax_element = document.getElementById("xmax")
@@ -90,8 +90,8 @@
   function plot_dataset(data, color) {
 
     // Get the folding period and the PEPOCH
-    var folding_period = folding_period_element.value
-    var pepoch = pepoch_element.value
+    var folding_period = folding_period_element.value;
+    var pepoch = pepoch_element.value;
 
     // Set the SVG width and height
     svg.attr("width", parentDiv.clientWidth)
@@ -174,7 +174,7 @@
       .classed("data", true);
 
     // Add points
-    g.selectAll(".dot")
+    toas = g.selectAll(".dot")
       .data(data)
       .enter()
       .append("circle")
@@ -185,7 +185,7 @@
       .classed("data", true);
 
     // Add error bars
-    g.selectAll(".err")
+    toas_err = g.selectAll(".err")
       .data(data)
       .enter()
       .append("path")
@@ -275,17 +275,38 @@
       // Draw the svg line from the origin to the clicked point
       let movepos = d3.mouse(this);
 
+      var pepoch = pepoch_element.value;
+      var folding_period = folding_period_element.value;
+
       // Record for later use the world coords of the clicked event, as well as the folding period
-      let mjd = x.invert(movepos[0] - margin.left) - pepoch_element.value; // world coords of click pos
-      let res = y2.invert(movepos[1] - margin.top);                       // world coords of click pos
+      let mjd = x.invert(movepos[0] - margin.left) - pepoch; // world coords of click pos
+      let res = y2.invert(movepos[1] - margin.top);          // world coords of click pos
       factor = res / (mjd*86400);
 
       if (ref_factor !== null) {
-        folding_period_element.value *= (1 - (factor - ref_factor));
+        folding_period *= (1 - (factor - ref_factor));
+        folding_period_element.value = folding_period; // Put the new value in the field
       }
       ref_factor = factor;
 
-      replot();
+      // Update plot
+      toas.attr("cx", function (toa) { return x2(calc_pulse_phase(toa.mjd, pepoch, folding_period).pulse); })
+          .attr("cy", function (toa) { return y(calc_pulse_phase(toa.mjd, pepoch, folding_period).phase); })
+
+      toas_err.attr("d", function (toa) {
+        pulse_phase_lo = calc_pulse_phase(toa.mjd - toa.mjd_err, pepoch, folding_period);
+        pulse_phase_hi = calc_pulse_phase(toa.mjd + toa.mjd_err, pepoch, folding_period);
+
+        pulse = pulse_phase_lo.pulse;
+        phase_lo = pulse_phase_lo.phase;
+        phase_hi = pulse_phase_hi.phase;
+
+        let xpos = x2(pulse);
+
+        return " M " + xpos + "," + y(phase_lo) +
+               " L " + xpos + "," + y(phase_hi);
+      })
+
       myLine(svg, period_path, movepos);
     }
   });
