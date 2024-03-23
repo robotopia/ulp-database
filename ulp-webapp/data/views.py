@@ -9,58 +9,77 @@ from published.views import get_accessible_measurements
 
 import numpy as np
 import astropy.units as u
+from astropy.coordinates import SkyCoord
+from astropy.constants import c
+from astropy.time import Time
 
 from spiceypy.spiceypy import spkezr, furnsh, j2000, spd, unload
 
+def calc_dmdelay(dm, flo, fhi):
+    return 4.148808e3 * u.s * (dm.to('pc/cm3').value) * (1/flo.to('MHz').value**2 - 1/fhi.to('MHz').value**2)
 
-def bc_corr(coord, mjds, ephemeris_file='de430.bsp'):
+def ephemeris_to_skycoord(ephemeris):
     '''
-    coord - SkyCoord object (from astropy) representing the location of the source
-    mjds - array of MJDs
-    ephemeris_file - e.g. de430.bsp
+    ephemeris_measurements_qs is a QuerySet. If it contains both RAJ and DECJ,
+    a SkyCoord object will be constructed therefrom.
+    '''
+    try:
+        coord = SkyCoord(ra=ephemeris['RAJ'], dec=ephemeris['DECJ'], unit=(u.deg, u.deg), frame='icrs')
+    except:
+        coord = None
+
+    return coord
+
+def bc_corr(coord, times, ephemeris_file='de430.bsp'):
+    '''
+    coord = SkyCoord object (from astropy) representing the location of the source
+    times = Time array of MJDs
+    ephemeris_file = e.g. de430.bsp
     '''
     try:
         furnsh(ephemeris_file)
     except:
         raise Exception("Cannot load ephemeris file {}\n".format(ephemeris_file))
-    jds = mjds + 2400000.5
-    ets = (jds - j2000())*spd()
+    #jds = times.mjd + 2400000.5
+    ets = (times.jd - j2000())*spd()
     r_earths = [spkezr("earth", et, "j2000", "NONE", "solar system barycenter")[0][:3] for et in ets]
     r_src_normalised = [
         np.cos(coord.ra.rad)*np.cos(coord.dec.rad),
         np.sin(coord.ra.rad)*np.cos(coord.dec.rad),
         np.sin(coord.dec.rad),
     ]
-    delays = [np.dot(r_earth, r_src_normalised) for r_earth in r_earths] * u.km / c # (spkezr returns km)
+    delays = np.array([np.dot(r_earth, r_src_normalised) for r_earth in r_earths]) * u.km / c # (spkezr returns km)
 
     return delays.to('s')
 
 
-def calc_pulse_phase(mjd, ephemeris):
+def calc_pulse_phase(time, ephemeris):
     '''
-    mjd and ephemeris['PEPOCH'] should be in days
+    time is an astropy Time object
+    ephemeris['PEPOCH'] should be in days
     ephemeris['P0'] should be in seconds
     '''
-    pepoch = ephemeris['PEPOCH']
-    P0 = ephemeris['P0']
-    return 86400*(mjd - pepoch)/P0
+    pepoch = Time(ephemeris['PEPOCH'], format='mjd')
+    P0 = ephemeris['P0']*u.s
+    return ((time - pepoch)/P0).decompose()
 
 
 def calc_mjd(pulse_phase, ephemeris):
     '''
     This is the inverse of calc_pulse_phase()
     '''
-    pepoch = ephemeris['PEPOCH']
-    P0 = ephemeris['P0']
+    pepoch = Time(ephemeris['PEPOCH'], format='mjd')
+    P0 = ephemeris['P0']*u.s
     return pepoch + pulse_phase*P0
 
 
-def generate_toas(mjd_start, mjd_end, ephemeris):
+def generate_toas(time_start, time_end, ephemeris):
 
-    pulse_phase_start = calc_pulse_phase(mjd_start, ephemeris)
-    pulse_phase_end = calc_pulse_phase(mjd_end, ephemeris)
+    pulse_phase_start = calc_pulse_phase(time_start, ephemeris)
+    pulse_phase_end = calc_pulse_phase(time_end, ephemeris)
 
     pulse_phases = np.arange(np.ceil(pulse_phase_start), pulse_phase_end)
+    print(pulse_phase_start, pulse_phase_end, pulse_phases)
     mjds = calc_mjd(pulse_phases, ephemeris)
 
     return mjds
@@ -101,6 +120,8 @@ def timing_residual_view(request, pk):
     # Retrieve the selected ULP
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
 
+    context = {'ulp': ulp}
+
     # Make sure the user has the permissions to view this ULP
 
     # First of all, they have to be logged in
@@ -117,33 +138,65 @@ def timing_residual_view(request, pk):
     if not toas.exists():
         return HttpResponse(status=404)
 
+    ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
+        measurement__owner=request.user,
+        measurement__ulp=ulp,
+    )
+
+    if not ephemeris_measurements.exists():
+        return HttpResponse(status=404)
+
+    # Construct a dictionary out of the ephemeris
+    ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
+
     if request.method == "POST":
 
         # Get form values
-        PEPOCH = request.POST.get('pepoch', None),
-        P0 = request.POST.get('folding-period', None),
-        mjd_start = request.POST.get('mjd-start', None)
-        mjd_end = request.POST.get('mjd-end', None)
-        mjd_dispersion_frequency = request.POST.get('mjd-dispersion-frequency', None)
+        PEPOCH = float(request.POST.get('pepoch'))
+        P0 = float(request.POST.get('folding-period'))
+        mjd_start = float(request.POST.get('mjd-start'))
+        mjd_end = float(request.POST.get('mjd-end'))
+        mjd_dispersion_frequency = float(request.POST.get('mjd-dispersion-frequency'))
+        output_toa_format = request.POST.get('output-toa-format', 'mjd')
 
         # Populate the ephemeris from the form values
-        ephemeris = {'PEPOCH': PEPOCH, 'P0': P0}
+        ephemeris['PEPOCH'] = PEPOCH
+        ephemeris['P0'] = P0
 
         # If they've also provided other form values, make a table of predicted values
         if mjd_start is not None and mjd_end is not None and mjd_dispersion_frequency is not None and PEPOCH is not None and P0 is not None:
-            predicted_toas = generate_toas(mjd_start, mjd_end, ephemeris)
+            # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
+            # so to get the right range, convert them to dedispersed, barycentric
+            coord = ephemeris_to_skycoord(ephemeris)
+            mjd_range = Time([mjd_start, mjd_end], format='mjd')
+            mjd_range += bc_corr(coord, mjd_range)
+            dmdelay = calc_dmdelay(ephemeris['DM']*u.pc/u.cm**3, mjd_dispersion_frequency*u.MHz, np.inf*u.MHz)
+            mjd_range -= dmdelay
 
-    else:
-        ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
-            measurement__owner=request.user,
-            measurement__ulp=ulp,
-        )
+            predicted_barycentric_toas = generate_toas(mjd_range[0], mjd_range[1], ephemeris)
+            predicted_topocentric_toas = predicted_barycentric_toas - bc_corr(coord, predicted_barycentric_toas)
+            predicted_dispersed_toas = predicted_topocentric_toas + dmdelay
 
-        if not ephemeris_measurements.exists():
-            return HttpResponse(status=404)
+            # Set to the requested format
+            predicted_barycentric_toas.format = output_toa_format
+            predicted_topocentric_toas.format = output_toa_format
+            predicted_dispersed_toas.format = output_toa_format
 
-        # Construct a dictionary out of the ephemeris
-        ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
+            predicted_toas = [
+                {
+                    'bary': predicted_barycentric_toas[i],
+                    'topo': predicted_topocentric_toas[i],
+                    'topo_disp': predicted_dispersed_toas[i],
+                } for i in range(len(predicted_barycentric_toas))
+            ]
+
+            context['predicted_toas'] = predicted_toas
+
+        context['mjd_start'] = mjd_start
+        context['mjd_end'] = mjd_end
+        context['mjd_dispersion_frequency'] = mjd_dispersion_frequency
+
+    context['ephemeris'] = ephemeris
 
     # Get available published periods
     periods = published_models.Measurement.objects.filter(
@@ -157,12 +210,7 @@ def timing_residual_view(request, pk):
         (Q(access=published_models.Measurement.ACCESS_GROUP) &  # But if it's marked as group-accessible...
          Q(access_groups__in=request.user.groups.all()))  # ...then the user must be in of the allowed groups.
     )
-
-    context = {
-        'ulp': ulp,
-        'ephemeris': ephemeris,
-        'periods': periods,
-    }
+    context['periods'] = periods
 
     mjds = [float(toa.mjd) for toa in toas]
     xdata_min = np.min(mjds)

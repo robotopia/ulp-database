@@ -10,7 +10,7 @@ function calc_pulse_phase(mjd, ephemeris) {
 
 function calc_mjd(pulse_phase, ephemeris) {
   // This is the inverse of calc_pulse_phase
-  return ephemeris.pepoch + pulse_phase*ephemeris.folding_period;
+  return ephemeris.pepoch + pulse_phase*ephemeris.folding_period/86400;
 }
 
 function generate_toas(mjd_start, mjd_end, ephemeris) {

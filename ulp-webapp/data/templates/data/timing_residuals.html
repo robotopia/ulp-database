@@ -23,24 +23,46 @@
 <form method="post">
   {% csrf_token %}
   <label for="pepoch" class="form-label">PEPOCH:</label>
-  <input type="number" class="form-control" id="pepoch" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="replot()"/>
+  <input type="number" class="form-control" id="pepoch" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="replot()" required/>
 
   <label for="folding-period" class="form-label">Folding period:</label>
-  <input type="number" class="form-control" id="folding-period" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="replot()"/>
+  <input type="number" class="form-control" id="folding-period" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="replot()" required/>
 
   <label for="mjd-start" class="form-label">MJD start:</label>
-  <input type="number" class="form-control" id="mjd-start" name="mjd-start" step="any"/>
+  <input type="number" class="form-control" id="mjd-start" name="mjd-start" value="{{ mjd_start }}" step="any" required/>
 
   <label for="mjd-end" class="form-label">MJD end:</label>
-  <input type="number" class="form-control" id="mjd-end" name="mjd-end" step="any"/>
+  <input type="number" class="form-control" id="mjd-end" name="mjd-end" value="{{ mjd_end }}" step="any" required/>
 
   <label for="mjd-dispersion-freq" class="form-label">Add a dispersion delay for this frequency (MHz):</label>
-  <input type="number" class="form-control" id="mjd-dispersion-frequency" name="mjd-dispersion-frequency" step="any"/>
+  <input type="number" class="form-control" id="mjd-dispersion-frequency" name="mjd-dispersion-frequency" value="{{ mjd_dispersion_frequency }}" step="any" required/>
+
+  <label for="output-toa-format" class="form-label">Output TOA format:</label>
+  <select id='output-toa-format' name='output-toa-format' class="form-control" required>
+    <option value='mjd'>MJD</option>
+    <option value='gps'>GPS</option>
+    <option value='isot'>ISOT</option>
+  </select>
 
   <input type="submit" class="btn btn-primary" value="Generate TOAs"/>
 </form>
 
-<table id="prediction-table"></table>
+{% if predicted_toas %}
+<table id="prediction-table" class="table">
+  <tr>
+    <th>Barycentred TOA</th>
+    <th>Topocentric TOA</th>
+    <th>Topocentric TOA at {{ mjd_dispersion_frequency }} MHz</th>
+  </tr>
+  {% for predicted_toa in predicted_toas %}
+  <tr>
+    <td>{{ predicted_toa.bary }}</td>
+    <td>{{ predicted_toa.topo }}</td>
+    <td>{{ predicted_toa.topo_disp }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
 
 <script src="https://d3js.org/d3.v4.js"></script>
 <script type="text/javascript" src="{% static 'data/residual_plot.js' %}"></script>
