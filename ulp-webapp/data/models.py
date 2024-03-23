@@ -195,6 +195,10 @@ class EphemerisMeasurement(models.Model):
         related_name = "ephemeris_measurements",
     )
 
+    @property
+    def value(self):
+        return self.measurement.astropy_quantity.to(self.ephemeris_parameter.tempo_astropy_units).value
+
     def validate_unique(self, *args, **kwargs):
         '''
         Custom validation is needed because the unique constraints are too complex.

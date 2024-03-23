@@ -14,10 +14,10 @@
 </select>
 
 <label for="pepoch" class="form-label">PEPOCH:</label>
-<input type="number" class="form-control" id="pepoch" value="{{ pepoch.mjd }}" onchange="replot()"/>
+<input type="number" class="form-control" id="pepoch" value="{{ ephemeris.PEPOCH }}" onchange="replot()"/>
 
 <label for="folding-period" class="form-label">Folding period:</label>
-<input type="number" class="form-control" id="folding-period" value="{{ init_folding_period }}" onchange="replot()"/>
+<input type="number" class="form-control" id="folding-period" value="{{ ephemeris.P0 }}" onchange="replot()"/>
 
 <div id="residual-plot" style="height: 500px;"></div>
 

@@ -63,7 +63,16 @@ def timing_residual_view(request, pk):
     if not toas.exists():
         return HttpResponse(status=404)
 
-    pepoch = toas.first()
+    ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
+        measurement__owner=request.user,
+        measurement__ulp=ulp,
+    )
+
+    if not ephemeris_measurements.exists():
+        return HttpResponse(status=404)
+
+    # Construct a dictionary out of the ephemeris
+    ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
 
     # Get available published periods
     periods = published_models.Measurement.objects.filter(
@@ -80,9 +89,8 @@ def timing_residual_view(request, pk):
 
     context = {
         'ulp': ulp,
-        'pepoch': pepoch,
+        'ephemeris': ephemeris,
         'periods': periods,
-        'init_folding_period': periods[0].astropy_quantity.to('s').value,
     }
 
     mjds = [float(toa.mjd) for toa in toas]
