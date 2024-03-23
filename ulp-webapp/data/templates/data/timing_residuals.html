@@ -47,160 +47,41 @@
   var ymin_element = document.getElementById("ymin")
   var ymax_element = document.getElementById("ymax")
 
+  var xlim = [xmin_element.value, xmax_element.value];
+  var ylim = [ymin_element.value, ymax_element.value];
+
   // set the dimensions and margins of the graph
   var parentDiv = document.getElementById("residual-plot");
 
-  // append the svg object to the body of the page
-  var svg = d3.select("#residual-plot").append("svg");
+  // Create plot elements
+  plot = create_residual_plot_elements("residual-plot");
 
   // "g" is the main group containing all plotted elements
   var margin = {top: 50, right: 80, bottom: 50, left: 80};
-  var g = svg.append('g')
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-  // Add axis labels
-  xlabel = g.append("text")
-    .attr("text-anchor", "middle")
-    .text("MJD")
-    .attr("fill", "var(--bs-body-color)");
-  x2label = g.append("text")
-    .attr("text-anchor", "middle")
-    .text("Pulse number")
-    .attr("fill", "var(--bs-body-color)");
-  ylabel = g.append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("text-anchor", "middle")
-    .text("Residual (phase)")
-    .attr("fill", "var(--bs-body-color)");
-  y2label = g.append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("text-anchor", "middle")
-    .text("Residual (s)")
-    .attr("fill", "var(--bs-body-color)");
-
-  var xaxis = g.append("g");
-  var yaxis = g.append("g");
-  var x2axis = g.append("g");
-  var y2axis = g.append("g");
+  var folding_period = folding_period_element.value;
+  var pepoch = pepoch_element.value;
+  ephemeris = {
+    folding_period: folding_period_element.value,
+    pepoch: pepoch_element.value
+  };
+  set_residual_plot_dimensions(plot, xlim, ylim, margin, ephemeris);
 
   function plot_dataset(data, color) {
 
     // Get the folding period and the PEPOCH
     var folding_period = folding_period_element.value;
     var pepoch = pepoch_element.value;
-
-    // Set the SVG width and height
-    svg.attr("width", parentDiv.clientWidth)
-      .attr("height", parentDiv.clientHeight)
-
-    // Calculate the plot dimensions
-    width = parentDiv.clientWidth - margin.left - margin.right;
-    height = parentDiv.clientHeight - margin.top - margin.bottom;
-
-    // Construct X axes
-    x = d3.scaleLinear()
-      .domain([xmin_element.value, xmax_element.value])
-      .range([0, width]);
-
-    x2 = d3.scaleLinear()
-      .domain([calc_pulse_phase(xmin_element.value, pepoch, folding_period).pulse_phase,
-               calc_pulse_phase(xmax_element.value, pepoch, folding_period).pulse_phase])
-      .range([0, width]);
-
-    xaxis.attr("transform", "translate(0," + height + ")");
-
-    xlabel.attr("x", width/2)
-      .attr("y", height + 0.75*margin.bottom)
-    x2label.attr("x", width/2)
-      .attr("y", -0.75*margin.top)
-
-    xaxis.call(d3.axisBottom(x));
-    xaxis.selectAll("text").style("fill", "var(--bs-body-color)");
-    xaxis.selectAll("path").style("stroke", "var(--bs-body-color)");
-    xaxis.selectAll("line").style("stroke", "var(--bs-body-color)");
-
-    x2axis.call(d3.axisTop(x2));
-    x2axis.selectAll("text").style("fill", "var(--bs-body-color)");
-    x2axis.selectAll("path").style("stroke", "var(--bs-body-color)");
-    x2axis.selectAll("line").style("stroke", "var(--bs-body-color)");
-
-    // Construct Y axis
-    y = d3.scaleLinear()
-      .domain([ymin_element.value, ymax_element.value])
-      .range([height, 0]);
-
-    y2 = d3.scaleLinear()
-      .domain([ymin_element.value*folding_period, ymax_element.value*folding_period])
-      .range([height, 0]);
-
-    y2axis.attr("transform", "translate(" + width + ",0)");
-
-    ylabel.attr("y", -0.5*margin.left)
-      .attr("x", -height/2)
-    y2label.attr("y", width + 0.75*margin.right)
-      .attr("x", -height/2)
-
-    yaxis.call(d3.axisLeft(y));
-    yaxis.selectAll("text").style("fill", "var(--bs-body-color)");
-    yaxis.selectAll("path").style("stroke", "var(--bs-body-color)");
-    yaxis.selectAll("line").style("stroke", "var(--bs-body-color)");
-
-    y2axis.call(d3.axisRight(y2));
-    y2axis.selectAll("text").style("fill", "var(--bs-body-color)");
-    y2axis.selectAll("path").style("stroke", "var(--bs-body-color)");
-    y2axis.selectAll("line").style("stroke", "var(--bs-body-color)");
+    var ephemeris = {
+      folding_period: folding_period_element.value,
+      pepoch: pepoch_element.value
+    };
 
     // Remove previous points
-    g.selectAll('.data').remove();
-
-    // Add vertical dashed line for PEPOCH
-    g.append("path")
-      .attr("d", "M " + x2(0) + ",0 l 0," + height)
-      .style("stroke", "#aaee1180")
-      .style("stroke-width", "2")
-      .style("stroke-dasharray", "7")
-      .classed("data", true);
-
-    // Add dashed line for click-n-drag for changing period
-    period_path = g.append("path")
-      .style("stroke", "#aaee1180")
-      .style("stroke-width", "2")
-      .style("stroke-dasharray", "7")
-      .style("stroke-opacity", "0")
-      .classed("data", true);
+    plot.g.selectAll('.data').remove();
 
     // Add points
-    toas = g.selectAll(".dot")
-      .data(data)
-      .enter()
-      .append("circle")
-      .attr("cx", function (toa) { return x2(calc_pulse_phase(toa.mjd, pepoch, folding_period).pulse); })
-      .attr("cy", function (toa) { return y(calc_pulse_phase(toa.mjd, pepoch, folding_period).phase); })
-      .attr("r", 3)
-      .style("fill", color)
-      .classed("data", true);
-
-    // Add error bars
-    toas_err = g.selectAll(".err")
-      .data(data)
-      .enter()
-      .append("path")
-      .attr("d", function (toa) {
-        pulse_phase_lo = calc_pulse_phase(toa.mjd - toa.mjd_err, pepoch, folding_period);
-        pulse_phase_hi = calc_pulse_phase(toa.mjd + toa.mjd_err, pepoch, folding_period);
-
-        pulse = pulse_phase_lo.pulse;
-        phase_lo = pulse_phase_lo.phase;
-        phase_hi = pulse_phase_hi.phase;
-
-        let xpos = x2(pulse);
-
-        return " M " + xpos + "," + y(phase_lo) +
-               " L " + xpos + "," + y(phase_hi);
-      })
-      .style("stroke", color)
-      .style("stroke-width", "2")
-      .classed("data", true);
+    add_residual_data(plot, data, color);
+    position_residual_data(plot, ephemeris);
 
   }
 
@@ -209,15 +90,15 @@
   }
 
   // Zoom on mouse wheel
-  svg.on("wheel", function(d) {
+  plot.svg.on("wheel", function(d) {
     xmin = parseFloat(xmin_element.value);
     xmax = parseFloat(xmax_element.value);
     ymin = parseFloat(ymin_element.value);
     ymax = parseFloat(ymax_element.value);
 
     m = d3.mouse(this);
-    xpos = x.invert(m[0] - margin.left);
-    ypos = y.invert(m[1] - margin.top);
+    xpos = plot.x.invert(m[0] - margin.left);
+    ypos = plot.y.invert(m[1] - margin.top);
 
     scale_factor = d3.event.wheelDelta < 0 ? 0.05 : -0.05;
 
@@ -235,7 +116,15 @@
       ymax_element.value = ymax;
     }
 
-    replot();
+    let xlim = [xmin, xmax];
+    let ylim = [ymin, ymax];
+
+    var ephemeris = {
+      folding_period: folding_period_element.value,
+      pepoch: pepoch_element.value
+    };
+    set_residual_plot_dimensions(plot, xlim, ylim, margin, ephemeris);
+    position_residual_data(plot, ephemeris);
   });
 
   // A handy function for plotting the period path
@@ -245,26 +134,26 @@
     // Everything here in "g" coords
     pos[0] -= margin.left; // (Now converted to "g" coords)
     pos[1] -= margin.top;
-    let origpos = [x2(0), y(0)];
+    let origpos = [plot.x2(0), plot.y(0)];
     let slope = (pos[1] - origpos[1]) / (pos[0] - origpos[0]);
     let yintercept = pos[1] - slope*pos[0];
 
     // Draw the path connecting the clicked point and the origin
-    period_path
-      .attr("d", "M 0," + yintercept + " L " + width + "," + (slope*width + yintercept))
+    plot.period_path
+      .attr("d", "M 0," + yintercept + " L " + plot.width + "," + (slope*plot.width + yintercept))
       .style("stroke-opacity", "0.5");
 
   }
 
   // Change period on mouse drag
   mousedown = false;
-  svg.on("mousedown", function() {
+  plot.svg.on("mousedown", function() {
     // Record in global variable the fact that the mouse button is down
     mousedown = true;
     ref_factor = null;
   });
 
-  svg.on("mousemove", function() {
+  plot.svg.on("mousemove", function() {
     if (mousedown) {
       d3.event.preventDefault();
 
@@ -275,48 +164,38 @@
       var folding_period = folding_period_element.value;
 
       // Record for later use the world coords of the clicked event, as well as the folding period
-      let mjd = x.invert(movepos[0] - margin.left) - pepoch; // world coords of click pos
-      let res = y2.invert(movepos[1] - margin.top);          // world coords of click pos
+      let mjd = plot.x.invert(movepos[0] - margin.left) - pepoch; // world coords of click pos
+      let res = plot.y2.invert(movepos[1] - margin.top);          // world coords of click pos
       factor = res / (mjd*86400);
 
       if (ref_factor !== null) {
         folding_period *= (1 - (factor - ref_factor));
         folding_period_element.value = folding_period; // Put the new value in the field
+        var ephemeris = {
+          folding_period: folding_period_element.value,
+          pepoch: pepoch_element.value
+        };
+        // Update plot
+        position_residual_data(plot, ephemeris);
       }
       ref_factor = factor;
 
-      // Update plot
-      toas.attr("cx", function (toa) { return x2(calc_pulse_phase(toa.mjd, pepoch, folding_period).pulse); })
-          .attr("cy", function (toa) { return y(calc_pulse_phase(toa.mjd, pepoch, folding_period).phase); })
 
-      toas_err.attr("d", function (toa) {
-        pulse_phase_lo = calc_pulse_phase(toa.mjd - toa.mjd_err, pepoch, folding_period);
-        pulse_phase_hi = calc_pulse_phase(toa.mjd + toa.mjd_err, pepoch, folding_period);
-
-        pulse = pulse_phase_lo.pulse;
-        phase_lo = pulse_phase_lo.phase;
-        phase_hi = pulse_phase_hi.phase;
-
-        let xpos = x2(pulse);
-
-        return " M " + xpos + "," + y(phase_lo) +
-               " L " + xpos + "," + y(phase_hi);
-      })
-
-      myLine(svg, period_path, movepos);
+      myLine(plot.svg, plot.period_path, movepos);
     }
   });
 
-  svg.on("mouseup", function() {
+  plot.svg.on("mouseup", function() {
     mousedown = false;
 
-    period_path
+    plot.period_path
       .style("stroke-opacity", "0.0")
 
   });
 
   // Plot once to get started
-  replot();
+  add_residual_data(plot, plot_data, "#d090f8");
+  position_residual_data(plot, ephemeris);
 
 </script>
 
