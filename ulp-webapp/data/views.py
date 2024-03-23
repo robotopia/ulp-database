@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from . import models
@@ -11,6 +11,36 @@ import numpy as np
 import astropy.units as u
 
 # Create your views here.
+
+def toa_data(request, pk):
+    # Retrieve the selected ULP
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    # Make sure the user has the permissions to view this ULP
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=404)
+
+    # Second, they have to belong to a group that has been granted access to
+    # this ULP's data
+    if not ulp.data_access_groups.filter(user=request.user).exists():
+        return HttpResponse(status=404)
+
+    # Otherwise, grant them access, and get the TOAs!
+    toas = models.TimeOfArrival.objects.filter(ulp=ulp)
+    if not toas.exists():
+        return HttpResponse(status=404)
+
+    toas_json = [
+        {
+            'mjd': float(toa.mjd),
+            'mjd_err': float(toa.mjd_err),
+        } for toa in toas
+    ]
+
+    return JsonResponse(toas_json, safe=False)
+
 
 def timing_residual_view(request, pk):
 
@@ -33,6 +63,8 @@ def timing_residual_view(request, pk):
     if not toas.exists():
         return HttpResponse(status=404)
 
+    pepoch = toas.first()
+
     # Get available published periods
     periods = published_models.Measurement.objects.filter(
         parameter__name="Period", # Hard code this specific parameter name
@@ -48,17 +80,12 @@ def timing_residual_view(request, pk):
 
     context = {
         'ulp': ulp,
-        'toas': [
-            {
-                'mjd': float(toa.mjd),
-                'mjd_err': float(toa.mjd_err),
-            } for toa in toas
-        ],
+        'pepoch': pepoch,
         'periods': periods,
         'init_folding_period': periods[0].astropy_quantity.to('s').value,
     }
 
-    mjds = [toa['mjd'] for toa in context['toas']]
+    mjds = [float(toa.mjd) for toa in toas]
     xdata_min = np.min(mjds)
     xdata_max = np.max(mjds)
     xdata_range = xdata_max - xdata_min

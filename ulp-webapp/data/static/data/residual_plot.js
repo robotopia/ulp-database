@@ -161,29 +161,34 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
   plot.pepoch_path.attr("d", "M " + plot.x2(0) + ",0 l 0," + plot.height);
 }
 
-function add_residual_data(plot, toas, color) {
+function add_residual_data(plot, toa_url, color, ephemeris) {
   // plot should be an object returned by create_residual_plot_elements()
   // toas should be an array of objects of the form:
   //     [{'mjd': 60001.0, 'mjd_err': 1e-4}, ... ]
   // color can be any string representing a valid color
 
-  const datapoints = plot.g.append("g")
+  d3.json(toa_url, function(toas) {
 
-  plot.toa_err_points = datapoints
-    .selectAll(".err")
-    .data(toas)
-    .enter()
-    .append("path")
-    .style("stroke", color)
-    .style("stroke-width", "2");
+    const datapoints = plot.g.append("g")
 
-  plot.toa_points = datapoints
-    .selectAll(".data")
-    .data(toas)
-    .enter()
-    .append("circle")
-    .attr("r", 3)
-    .style("fill", color);
+    plot.toa_err_points = datapoints
+      .selectAll(".err")
+      .data(toas)
+      .enter()
+      .append("path")
+      .style("stroke", color)
+      .style("stroke-width", "2");
+
+    plot.toa_points = datapoints
+      .selectAll(".data")
+      .data(toas)
+      .enter()
+      .append("circle")
+      .attr("r", 3)
+      .style("fill", color);
+
+    position_residual_data(plot, ephemeris);
+  });
 }
 
 function position_residual_data(plot, ephemeris) {

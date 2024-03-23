@@ -14,7 +14,7 @@
 </select>
 
 <label for="pepoch" class="form-label">PEPOCH:</label>
-<input type="number" class="form-control" id="pepoch" value="{{ toas.0.mjd }}" onchange="replot()"/>
+<input type="number" class="form-control" id="pepoch" value="{{ pepoch.mjd }}" onchange="replot()"/>
 
 <label for="folding-period" class="form-label">Folding period:</label>
 <input type="number" class="form-control" id="folding-period" value="{{ init_folding_period }}" onchange="replot()"/>
@@ -29,9 +29,6 @@
 <script src="https://d3js.org/d3.v4.js"></script>
 <script type="text/javascript" src="{% static 'data/residual_plot.js' %}"></script>
 <script>
-
-  // Get the data for the plot
-  var plot_data = {{ toas | safe }};
 
   // Get the folding period and the PEPOCH
   const folding_period_element = document.getElementById("folding-period")
@@ -57,27 +54,8 @@
 
   set_residual_plot_dimensions(plot, xlim, ylim, margin, ephemeris);
 
-  function plot_dataset(data, color) {
-
-    // Get the folding period and the PEPOCH
-    var folding_period = folding_period_element.value;
-    var pepoch = pepoch_element.value;
-    var ephemeris = {
-      folding_period: folding_period_element.value,
-      pepoch: pepoch_element.value
-    };
-
-    // Remove previous points
-    plot.g.selectAll('.data').remove();
-
-    // Add points
-    add_residual_data(plot, data, color);
-    position_residual_data(plot, ephemeris);
-
-  }
-
   function replot() {
-    plot_dataset(plot_data, "#d090f8");
+    position_residual_data(plot, ephemeris);
   }
 
   // Zoom on mouse wheel
@@ -118,8 +96,7 @@
   });
 
   // Plot once to get started
-  add_residual_data(plot, plot_data, "#d090f8");
-  position_residual_data(plot, ephemeris);
+  add_residual_data(plot, "{% url 'toa_data' pk=ulp.pk %}", "#d090f8", ephemeris);
 
 </script>
 
