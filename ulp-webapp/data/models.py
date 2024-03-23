@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import ValidationError
 from published import models as published_models
 import astropy.units as u
 from astropy.coordinates import Angle
@@ -177,6 +178,40 @@ class EphemerisMeasurement(models.Model):
         help_text="The measurement itself.",
         related_name = "ephemeris_measurements",
     )
+
+    def validate_unique(self, *args, **kwargs):
+        '''
+        Custom validation is needed because the unique constraints are too complex.
+
+        First, we must ensure that the measurement is of the same parameter type as
+        the ephemeris_parameter.
+
+        Second, we must ensure that each user (measurement.owner) only gets
+        one ephemeris per ulp.
+        '''
+        if self.ephemeris_parameter != self.measurement.parameter:
+            raise ValidationError(f'Parameter type mismatch: the measurement must be an instance of "{self.ephemeris_parameter.parameter}"')
+
+        # Get the user who owns the measurement, and the associated ulp
+        user = self.measurement.owner
+        ulp = self.measurement.ulp
+
+        # See if this user already owns an ephemeris measurement of this
+        # parameter type for the same ULP
+        qs = EphemerisMeasurement.objects.filter(
+            measurement__owner=user,
+            measurement__ulp=ulp,
+            ephemeris_parameter=self.ephemeris_parameter,
+        ).exclude(
+            pk=self.pk
+        )
+
+        if qs.exists():
+            raise ValidationError(f"{user}'s {ulp} ephemeris already contains the parameter {self.ephemeris_parameter}.")
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.ephemeris_parameter}: {self.measurement.astropy_quantity.to(self.ephemeris_parameter.tempo_astropy_units)}'
