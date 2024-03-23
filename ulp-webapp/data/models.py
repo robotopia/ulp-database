@@ -156,6 +156,22 @@ class EphemerisParameter(models.Model):
         help_text="The (astropy-conversant) unit if this parameter that TEMPO uses. The unit must be dimensionally equivalent to that of the matching parameter.",
     )
 
+    def validate_unique(self, *args, **kwargs):
+        '''
+        Ensure that the given astropy units are congruent to the parameter's units.
+        '''
+        try:
+            unit = u.Unit(self.tempo_astropy_units)
+        except:
+            raise ValidationError(f'{self.tempo_astropy_units} is not a valid AstroPy unit')
+
+        if not unit.is_equivalent(self.parameter.astropy_unit):
+            raise ValidationError(f"The units must be equivalent to that of {self.parameter}")
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.tempo_name
 
