@@ -97,6 +97,11 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
   //     {folding_period: 1000.0, pepoch: 60000.0}
   // plot should be an object returned by create_residual_plot_elements()
 
+  // Attach margins amd lims to plot object
+  plot.margins = margins;
+  plot.xlim = xlim;
+  plot.ylim = ylim;
+
   // Set up graph coordinates
   plot.g.attr("transform", "translate(" + margins.left + "," + margins.top + ")");
 
@@ -205,4 +210,92 @@ function position_residual_data(plot, ephemeris) {
              " L " + xpos + "," + plot.y(phase_hi);
     })
 
+}
+
+// A handy function for plotting the period path
+function plot_period_line(plot, pos) {
+
+  // Draw the svg line from the origin to the clicked point
+  // Everything here in "g" coords
+  let xpos = pos[0] - plot.margins.left; // (Now converted to "g" coords)
+  let ypos = pos[1] - plot.margins.top;
+  let xorig = plot.x2(0);
+  let yorig = plot.y(0);
+  let slope = (ypos - yorig) / (xpos - xorig);
+  let yintercept = ypos - slope*xpos;
+
+  // Draw the path connecting the clicked point and the origin
+  plot.period_path
+    .attr("d", "M 0," + yintercept + " L " + plot.width + "," + (slope*plot.width + yintercept))
+    .style("stroke-opacity", "0.5");
+
+}
+
+/*********************\
+* Zooming with scroll *
+**********************/
+
+function plot_zoom(plot, pos, ephemeris) {
+  xpos = plot.x.invert(pos[0] - plot.margins.left);
+  ypos = plot.y.invert(pos[1] - plot.margins.top);
+  [xmin, xmax] = plot.xlim;
+  [ymin, ymax] = plot.ylim;
+
+  const scale_factor = d3.event.wheelDelta < 0 ? 0.05 : -0.05;
+
+  if (xpos > xmin && xpos < xmax) { // if mouse is not over the y-axis itself (if it were, we leave x-zoom untouched)
+    xmin -= scale_factor*(xpos - xmin);
+    xmax += scale_factor*(xmax - xpos);
+  }
+
+  if (ypos > ymin && ypos < ymax) { // if mouse is not over the x-axis itself (if it were, we leave y-zoom untouched)
+    ymin -= scale_factor*(ypos - ymin);
+    ymax += scale_factor*(ymax - ypos);
+  }
+
+  set_residual_plot_dimensions(plot, [xmin, xmax], [ymin, ymax], plot.margins, ephemeris);
+  position_residual_data(plot, ephemeris);
+}
+
+/******************************************************\
+*  Mouse interaction functions for editing the period  *
+\******************************************************/
+
+// Global state
+svg_mousedown = false;
+period_ref_factor = null;
+
+function edit_period_mousedown() {
+  svg_mousedown = true;
+  period_ref_factor = null;
+}
+
+function edit_period_mousemove(plot, ephemeris, pos) {
+
+  var pepoch = pepoch_element.value;
+  var folding_period = folding_period_element.value;
+
+  // Record for later use the world coords of the clicked event, as well as the folding period
+  let mjd = plot.x.invert(pos[0] - plot.margins.left) - ephemeris.pepoch; // world coords of click pos
+  let res = plot.y2.invert(pos[1] - plot.margins.top);          // world coords of click pos
+  let factor = res / (mjd*86400);
+
+  if (period_ref_factor !== null) {
+    ephemeris.folding_period *= (1 - (factor - period_ref_factor));
+
+    // Update plot
+    position_residual_data(plot, ephemeris);
+  }
+
+  period_ref_factor = factor;
+
+  plot_period_line(plot, pos);
+}
+
+function edit_period_mouseup(plot) {
+
+  svg_mousedown = false;
+
+  plot.period_path
+    .style("stroke-opacity", "0.0");
 }
