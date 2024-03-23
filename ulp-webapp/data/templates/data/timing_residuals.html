@@ -50,9 +50,9 @@
 {% if predicted_toas %}
 <table id="prediction-table" class="table">
   <tr>
-    <th>Barycentred TOA</th>
-    <th>Topocentric TOA</th>
-    <th>Topocentric TOA at {{ mjd_dispersion_frequency }} MHz</th>
+    <th>Barycentred TOA (<a onclick="copy_column(0)" href='#'>copy</a>)</th>
+    <th>Topocentric TOA (<a onclick="copy_column(1)" href='#'>copy</a>)</th>
+    <th>Topocentric TOA at {{ mjd_dispersion_frequency }} MHz for DM = {{ ephemeris.DM }} pc/cm3 (<a onclick="copy_column(2)" href='#'>copy</a>)</th>
   </tr>
   {% for predicted_toa in predicted_toas %}
   <tr>
@@ -67,6 +67,15 @@
 <script src="https://d3js.org/d3.v4.js"></script>
 <script type="text/javascript" src="{% static 'data/residual_plot.js' %}"></script>
 <script>
+
+  function copy_column(col) {
+    text = "";
+    var table = document.getElementById("prediction-table");
+    for (var i = 0, row; row = table.rows[i]; i++) {
+      text += row.cells[col].innerText + '\n';
+    }
+    navigator.clipboard.writeText(text);
+  }
 
   // Get the folding period and the PEPOCH
   const folding_period_element = document.getElementById("folding-period")
