@@ -5,3 +5,6 @@ venv
 ulp.sql
 certbot
 ulp-webapp/static
+
+# Planetary ephemerides
+de*.bsp
