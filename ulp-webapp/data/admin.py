@@ -14,3 +14,12 @@ class BackendAdmin(admin.ModelAdmin):
 @admin.register(TimeOfArrival)
 class TimeOfArrivalAdmin(admin.ModelAdmin):
     list_display = ['ulp', 'mjd', 'mjd_err', 'barycentred', 'dedispersed']
+
+@admin.register(EphemerisParameter)
+class EphemerisParameterAdmin(admin.ModelAdmin):
+    list_display = ['tempo_name', 'parameter', 'tempo_astropy_units']
+
+@admin.register(EphemerisMeasurement)
+class EphemerisMeasurementAdmin(admin.ModelAdmin):
+    list_display = ['ephemeris_parameter', 'measurement',]
+

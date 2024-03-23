@@ -133,3 +133,53 @@ class TimeOfArrival(models.Model):
     class Meta:
         ordering = ['ulp', 'mjd']
         verbose_name_plural = "Times of arrival"
+
+
+class EphemerisParameter(models.Model):
+
+    tempo_name = models.CharField(
+        unique=True,
+        max_length=63,
+        help_text="The name of this parameter according to TEMPO.",
+    )
+
+    parameter = models.OneToOneField(
+        published_models.Parameter,
+        on_delete=models.CASCADE,
+        help_text="The parameter type.",
+        related_name="ephemeris_parameter",
+    )
+
+    tempo_astropy_units = models.CharField(
+        max_length=31,
+        help_text="The (astropy-conversant) unit if this parameter that TEMPO uses. The unit must be dimensionally equivalent to that of the matching parameter.",
+    )
+
+    def __str__(self):
+        return self.tempo_name
+
+    class Meta:
+        ordering = ["tempo_name",]
+
+
+class EphemerisMeasurement(models.Model):
+
+    ephemeris_parameter = models.ForeignKey(
+        "EphemerisParameter",
+        on_delete=models.CASCADE,
+        help_text="The associated parameter of this measurement.",
+        related_name = "ephemeris_measurements",
+    )
+
+    measurement = models.ForeignKey(
+        published_models.Measurement,
+        on_delete=models.CASCADE,
+        help_text="The measurement itself.",
+        related_name = "ephemeris_measurements",
+    )
+
+    def __str__(self):
+        return f'{self.ephemeris_parameter}: {self.measurement.astropy_quantity.to(self.ephemeris_parameter.tempo_astropy_units)}'
+
+    class Meta:
+        ordering = ['measurement__ulp', 'ephemeris_parameter',]
