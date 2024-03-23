@@ -3,4 +3,4 @@ __pycache__
 .env
 ulp.sql
 certbot
-static
+ulp-webapp/static
