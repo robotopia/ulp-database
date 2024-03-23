@@ -1,0 +1,57 @@
+version: "3.9"
+
+# Variables passed to the containers
+networks:
+  ulp-network:
+    name: ulp-network
+
+volumes:
+  uwsgi-data:
+  web-static:
+  ulp-data:
+  ulp-webapp:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${SRCDIR}/ulp-database/ulp-webapp
+      o: bind
+
+services:
+  postgres:
+    hostname: ${DBHOST}
+    container_name: postgres
+    build: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${DBPASS}
+      POSTGRES_USER: ${DBUSER}
+      POSTGRES_DB: ${DBNAME}
+    networks:
+      - ulp-network
+    volumes:
+      - ulp-data:/var/lib/postgresql/data
+
+  django:
+    hostname: django
+    container_name: django
+    build: ulp-webapp
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      DBNAME: ${DBNAME}
+      DBUSER: ${DBUSER}
+      DBPASS: ${DBPASS}
+      DBHOST: ${DBHOST}
+      DBPORT: ${DBPORT}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
+    networks:
+      - ulp-network
+    volumes:
+      - ulp-webapp:/ulp-webapp
+
