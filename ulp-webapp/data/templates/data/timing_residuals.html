@@ -6,6 +6,8 @@
 
 <h1>{{ ulp }}</h1>
 
+<div id="residual-plot" style="height: 500px;"></div>
+
 <label for="folding_period_select" class="form-label">Reset folding period to:</label>
 <select id="folding_period_select" class="form-control" name="folding_period">
   {% for period in periods %}
@@ -13,18 +15,32 @@
   {% endfor %}
 </select>
 
-<label for="pepoch" class="form-label">PEPOCH:</label>
-<input type="number" class="form-control" id="pepoch" value="{{ ephemeris.PEPOCH }}" onchange="replot()"/>
+<h2>Usage</h2>
+...
 
-<label for="folding-period" class="form-label">Folding period:</label>
-<input type="number" class="form-control" id="folding-period" value="{{ ephemeris.P0 }}" onchange="replot()"/>
+<h2>Predictions</h2>
 
-<div id="residual-plot" style="height: 500px;"></div>
+<form method="post">
+  {% csrf_token %}
+  <label for="pepoch" class="form-label">PEPOCH:</label>
+  <input type="number" class="form-control" id="pepoch" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="replot()"/>
 
-<div id="instructions">
-  <h2>Usage</h2>
-  ...
-</div>
+  <label for="folding-period" class="form-label">Folding period:</label>
+  <input type="number" class="form-control" id="folding-period" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="replot()"/>
+
+  <label for="mjd-start" class="form-label">MJD start:</label>
+  <input type="number" class="form-control" id="mjd-start" name="mjd-start" step="any"/>
+
+  <label for="mjd-end" class="form-label">MJD end:</label>
+  <input type="number" class="form-control" id="mjd-end" name="mjd-end" step="any"/>
+
+  <label for="mjd-dispersion-freq" class="form-label">Add a dispersion delay for this frequency (MHz):</label>
+  <input type="number" class="form-control" id="mjd-dispersion-frequency" name="mjd-dispersion-frequency" step="any"/>
+
+  <input type="submit" class="btn btn-primary" value="Generate TOAs"/>
+</form>
+
+<table id="prediction-table"></table>
 
 <script src="https://d3js.org/d3.v4.js"></script>
 <script type="text/javascript" src="{% static 'data/residual_plot.js' %}"></script>

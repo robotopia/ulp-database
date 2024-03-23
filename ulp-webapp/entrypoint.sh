@@ -12,6 +12,10 @@ if [ ! -e /$CONTAINER_FIRST_STARTUP ]; then
     python3 manage.py migrate
     python3 manage.py migrate --run-syncdb
     python3 manage.py collectstatic
+
+    # Download a planetary ephemeris to this folder
+    wget -O de430.bsp http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp
+
 fi 
 
 if [ "$DJANGO_DEBUG" == "True" ]

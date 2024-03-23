@@ -1,11 +1,29 @@
 // Function to calculate the pulse numbers and phases of TOAs
-function calc_pulse_phase(mjd, pepoch, P) {
+function calc_pulse_phase(mjd, ephemeris) {
   // mjd and pepoch should be in days,
   // P (the folding period) in seconds
-  var pulse_phase = 86400*(mjd - pepoch)/P; // Dimensionless
+  var pulse_phase = 86400*(mjd - ephemeris.pepoch)/ephemeris.folding_period; // Dimensionless
   var pulse = Math.round(pulse_phase)
   var phase = (pulse_phase + 0.5) % 1 - 0.5;
   return {pulse: pulse, phase: phase, pulse_phase: pulse_phase};
+}
+
+function calc_mjd(pulse_phase, ephemeris) {
+  // This is the inverse of calc_pulse_phase
+  return ephemeris.pepoch + pulse_phase*ephemeris.folding_period;
+}
+
+function generate_toas(mjd_start, mjd_end, ephemeris) {
+  pp_start = calc_pulse_phase(mjd_start, ephemeris);
+  pp_end = calc_pulse_phase(mjd_end, ephemeris);
+
+  // Get the pulse numbers
+  mjds = [];
+  for (let n = Math.ceil(pp_start.pulse_phase); n <= pp_end.pulse_phase; n++) {
+    mjds.push(calc_mjd(n, ephemeris));
+  }
+
+  return mjds;
 }
 
 // Function to create the plot elements
@@ -112,8 +130,8 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
   // Set axis limits
   plot.x.domain(xlim).range([0, plot.width]);
   plot.x2
-    .domain([calc_pulse_phase(xlim[0], ephemeris.pepoch, ephemeris.folding_period).pulse_phase,
-             calc_pulse_phase(xlim[1], ephemeris.pepoch, ephemeris.folding_period).pulse_phase])
+    .domain([calc_pulse_phase(xlim[0], ephemeris).pulse_phase,
+             calc_pulse_phase(xlim[1], ephemeris).pulse_phase])
     .range([0, plot.width]);
 
   plot.y.domain(ylim).range([plot.height, 0]);
@@ -197,13 +215,13 @@ function position_residual_data(plot, ephemeris) {
   //     {folding_period: 1000.0, pepoch: 60000.0}
 
   plot.toa_points
-    .attr("cx", function (toa) { return plot.x2(calc_pulse_phase(toa.mjd, ephemeris.pepoch, ephemeris.folding_period).pulse); })
-    .attr("cy", function (toa) { return plot.y(calc_pulse_phase(toa.mjd, ephemeris.pepoch, ephemeris.folding_period).phase); })
+    .attr("cx", function (toa) { return plot.x2(calc_pulse_phase(toa.mjd, ephemeris).pulse); })
+    .attr("cy", function (toa) { return plot.y(calc_pulse_phase(toa.mjd, ephemeris).phase); })
 
   plot.toa_err_points
     .attr("d", function (toa) {
-      pulse_phase_lo = calc_pulse_phase(toa.mjd - toa.mjd_err, ephemeris.pepoch, ephemeris.folding_period);
-      pulse_phase_hi = calc_pulse_phase(toa.mjd + toa.mjd_err, ephemeris.pepoch, ephemeris.folding_period);
+      pulse_phase_lo = calc_pulse_phase(toa.mjd - toa.mjd_err, ephemeris);
+      pulse_phase_hi = calc_pulse_phase(toa.mjd + toa.mjd_err, ephemeris);
 
       pulse = pulse_phase_lo.pulse;
       phase_lo = pulse_phase_lo.phase;
@@ -304,3 +322,4 @@ function edit_period_mouseup(plot) {
   plot.period_path
     .style("stroke-opacity", "0.0");
 }
+

@@ -199,6 +199,14 @@ class EphemerisMeasurement(models.Model):
     def value(self):
         return self.measurement.astropy_quantity.to(self.ephemeris_parameter.tempo_astropy_units).value
 
+    @property
+    def ulp(self):
+        return self.measurement.ulp
+
+    @property
+    def owner(self):
+        return self.measurement.owner
+
     def validate_unique(self, *args, **kwargs):
         '''
         Custom validation is needed because the unique constraints are too complex.
@@ -209,7 +217,8 @@ class EphemerisMeasurement(models.Model):
         Second, we must ensure that each user (measurement.owner) only gets
         one ephemeris per ulp.
         '''
-        if self.ephemeris_parameter != self.measurement.parameter:
+        if self.ephemeris_parameter.parameter != self.measurement.parameter:
+            print(f'{self.ephemeris_parameter} vs {self.measurement.parameter}')
             raise ValidationError(f'Parameter type mismatch: the measurement must be an instance of "{self.ephemeris_parameter.parameter}"')
 
         # Get the user who owns the measurement, and the associated ulp

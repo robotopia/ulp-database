@@ -1,8 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
-import astropy.units as u
-from astropy.coordinates import Angle
+
 from decimal import Decimal
+
+import astropy.units as u
+from astropy.coordinates import Angle, SkyCoord
 
 # Create your models here.
 class Ulp(models.Model):

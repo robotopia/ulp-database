@@ -21,5 +21,6 @@ class EphemerisParameterAdmin(admin.ModelAdmin):
 
 @admin.register(EphemerisMeasurement)
 class EphemerisMeasurementAdmin(admin.ModelAdmin):
-    list_display = ['ephemeris_parameter', 'value', 'measurement',]
+    list_display = ['pk', 'ulp', 'ephemeris_parameter', 'owner', 'value', 'measurement',]
+    list_filter = ['ephemeris_parameter']
 
