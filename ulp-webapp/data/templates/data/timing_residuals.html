@@ -32,6 +32,7 @@
 </div>
 
 <script src="https://d3js.org/d3.v4.js"></script>
+<script type="text/javascript" src="{% static 'data/residual_plot.js' %}"></script>
 <script>
 
   // Get the data for the plot
@@ -45,16 +46,6 @@
   var xmax_element = document.getElementById("xmax")
   var ymin_element = document.getElementById("ymin")
   var ymax_element = document.getElementById("ymax")
-
-  // Function to calculate the pulse numbers and phases of TOAs
-  function calc_pulse_phase(mjd, pepoch, P) {
-    // mjd and pepoch should be in days,
-    // P (the folding period) in seconds
-    var pulse_phase = 86400*(mjd - pepoch)/P; // Dimensionless
-    var pulse = Math.floor(pulse_phase)
-    var phase = (pulse_phase + 0.5) % 1 - 0.5;
-    return {pulse: pulse, phase: phase, pulse_phase: pulse_phase};
-  }
 
   // set the dimensions and margins of the graph
   var parentDiv = document.getElementById("residual-plot");
