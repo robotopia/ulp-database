@@ -220,17 +220,38 @@ function position_residual_data(plot, ephemeris) {
 
   plot.toa_err_points
     .attr("d", function (toa) {
-      pulse_phase_lo = calc_pulse_phase(toa.mjd - toa.mjd_err, ephemeris);
-      pulse_phase_hi = calc_pulse_phase(toa.mjd + toa.mjd_err, ephemeris);
+      const pulse_phase_lo = calc_pulse_phase(toa.mjd - toa.mjd_err, ephemeris);
+      const pulse_phase_hi = calc_pulse_phase(toa.mjd + toa.mjd_err, ephemeris);
 
-      pulse = pulse_phase_lo.pulse;
-      phase_lo = pulse_phase_lo.phase;
-      phase_hi = pulse_phase_hi.phase;
+      const pulse_lo = pulse_phase_lo.pulse;
+      const pulse_hi = pulse_phase_hi.pulse;
 
-      let xpos = plot.x2(pulse);
+      const phase_lo = pulse_phase_lo.phase;
+      const phase_hi = pulse_phase_hi.phase;
 
-      return " M " + xpos + "," + plot.y(phase_lo) +
-             " L " + xpos + "," + plot.y(phase_hi);
+      const xpos_lo = plot.x2(pulse_lo);
+      const xpos_hi = plot.x2(pulse_hi);
+
+      const ypos_lo = plot.y(phase_lo);
+      const ypos_hi = plot.y(phase_hi);
+
+      var path;
+
+      if (phase_lo < phase_hi) {
+        // The errors do not straddle the phase = 0.5 boundary between adjacent pulses,
+        // so draw a single line
+        path = " M " + xpos_lo + "," + ypos_lo +
+               " L " + xpos_hi + "," + ypos_hi;
+      } else {
+        // The errors *do* straddle the phase = 0.5 boundary between adjacent pulses,
+        // so draw two line segments
+        path = " M " + xpos_lo + "," + ypos_lo +
+               " L " + xpos_lo + "," + plot.y(0.5) +
+               " M " + xpos_hi + "," + plot.y(-0.5) +
+               " L " + xpos_hi + "," + ypos_hi;
+      }
+
+      return path;
     })
 
 }

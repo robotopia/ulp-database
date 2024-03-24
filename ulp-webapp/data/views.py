@@ -159,13 +159,13 @@ def timing_residual_view(request, pk):
         measurement__access_groups__user=request.user,
         measurement__ulp=ulp,
     )
+    print(ephemeris_measurements)
 
     if not ephemeris_measurements.exists():
         return HttpResponse(status=404)
 
     # Construct a dictionary out of the ephemeris
     ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
-    print(ephemeris)
 
     output_toa_format = 'mjd'
 

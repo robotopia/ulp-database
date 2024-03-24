@@ -8,34 +8,26 @@
 
 <div id="residual-plot" style="height: 500px;"></div>
 
-<label for="folding_period_select" class="form-label">Reset folding period to:</label>
-<select id="folding_period_select" class="form-control" name="folding_period">
-  {% for period in periods %}
-  <option value="{{ period.quantity }}">{{ period.formatted_quantity_with_units }}</option>
-  {% endfor %}
-</select>
-
-<h2>Usage</h2>
-...
-
-<h2>Predictions</h2>
+<h2>Ephemeris</h2>
 
 <form method="post" action="#prediction-table">
   {% csrf_token %}
   <label for="pepoch" class="form-label">PEPOCH:</label>
   <input type="number" class="form-control" id="pepoch" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="replot()" required/>
 
-  <label for="folding-period" class="form-label">Folding period:</label>
+  <label for="folding-period" class="form-label">P0:</label>
   <input type="number" class="form-control" id="folding-period" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="replot()" required/>
-
-  <label for="mjd-start" class="form-label">MJD start:</label>
-  <input type="datetime-local" class="form-control" id="mjd-start" name="mjd-start" value="{{ mjd_start }}" step="any" required/>
-
-  <label for="mjd-end" class="form-label">MJD end:</label>
-  <input type="datetime-local" class="form-control" id="mjd-end" name="mjd-end" value="{{ mjd_end }}" step="any" required/>
 
   <label for="mjd-dispersion-freq" class="form-label">Add a dispersion delay for this frequency (MHz):</label>
   <input type="number" class="form-control" id="mjd-dispersion-frequency" name="mjd-dispersion-frequency" value="{{ mjd_dispersion_frequency }}" step="any" required/>
+
+  <h2>Predictions</h2>
+
+  <label for="mjd-start" class="form-label">Start date:</label>
+  <input type="datetime-local" class="form-control" id="mjd-start" name="mjd-start" value="{{ mjd_start }}" step="any" required/>
+
+  <label for="mjd-end" class="form-label">End date:</label>
+  <input type="datetime-local" class="form-control" id="mjd-end" name="mjd-end" value="{{ mjd_end }}" step="any" required/>
 
   <label for="output-toa-format" class="form-label">Output TOA format:</label>
   <select id='output-toa-format' name='output-toa-format' class="form-control" required>
