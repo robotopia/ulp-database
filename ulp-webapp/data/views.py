@@ -166,17 +166,18 @@ def timing_residual_view(request, pk):
     # Construct a dictionary out of the ephemeris
     ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
 
+    output_toa_format = 'mjd'
+
     if request.method == "POST":
 
         # Get form values
         PEPOCH = float(request.POST.get('pepoch'))
         P0 = float(request.POST.get('folding-period'))
-        print(request.POST.get('mjd-start'))
         mjd_start = Time(request.POST.get('mjd-start'), format='isot')
         mjd_end = Time(request.POST.get('mjd-end'), format='isot')
         mjd_range = Time([request.POST.get('mjd-start'), request.POST.get('mjd-end')], format='isot')
         mjd_dispersion_frequency = float(request.POST.get('mjd-dispersion-frequency'))
-        output_toa_format = request.POST.get('output-toa-format', 'mjd')
+        output_toa_format = request.POST.get('output-toa-format')
 
         # Populate the ephemeris from the form values
         ephemeris['PEPOCH'] = PEPOCH
