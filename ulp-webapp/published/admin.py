@@ -36,5 +36,5 @@ class ParameterSetAdmin(admin.ModelAdmin):
 
 @admin.register(Ulp)
 class UlpAdmin(admin.ModelAdmin):
-    list_display = ['name', 'abbr']
+    list_display = ['pk', 'name', 'abbr']
 
