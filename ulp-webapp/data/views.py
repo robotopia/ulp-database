@@ -156,7 +156,7 @@ def timing_residual_view(request, pk):
         return HttpResponse(status=404)
 
     ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
-        measurement__owner=request.user,
+        measurement__access_groups__user=request.user,
         measurement__ulp=ulp,
     )
 
@@ -165,6 +165,7 @@ def timing_residual_view(request, pk):
 
     # Construct a dictionary out of the ephemeris
     ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
+    print(ephemeris)
 
     output_toa_format = 'mjd'
 
@@ -188,11 +189,16 @@ def timing_residual_view(request, pk):
             # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
             # so to get the right range, convert them to dedispersed, barycentric
             coord = ephemeris_to_skycoord(ephemeris)
-            dmdelay = calc_dmdelay(ephemeris['DM']*u.pc/u.cm**3, mjd_dispersion_frequency*u.MHz, np.inf*u.MHz)
-            mjd_range += bc_corr(coord, mjd_range) - dmdelay
+            if 'DM' in ephemeris.keys():
+                dmdelay = calc_dmdelay(ephemeris['DM']*u.pc/u.cm**3, mjd_dispersion_frequency*u.MHz, np.inf*u.MHz)
+            else:
+                dmdelay = 0*u.s
+            mjd_range -= dmdelay
+            if 'RAJ' in ephemeris.keys() and 'DECJ' in ephemeris.keys():
+                mjd_range += bc_corr(coord, mjd_range)
 
             predicted_barycentric_toas = generate_toas(mjd_range[0], mjd_range[1], ephemeris)
-            predicted_topocentric_toas = predicted_barycentric_toas - bc_corr(coord, predicted_barycentric_toas)
+            predicted_topocentric_toas = predicted_barycentric_toas - (bc_corr(coord, predicted_barycentric_toas) if 'RAJ' in ephemeris.keys() and 'DECJ' in ephemeris.keys() else 0*u.s)
             predicted_dispersed_toas = predicted_topocentric_toas + dmdelay
 
             # Set to the requested format
