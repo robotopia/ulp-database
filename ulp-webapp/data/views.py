@@ -79,7 +79,6 @@ def generate_toas(time_start, time_end, ephemeris):
     pulse_phase_end = calc_pulse_phase(time_end, ephemeris)
 
     pulse_phases = np.arange(np.ceil(pulse_phase_start), pulse_phase_end)
-    print(pulse_phase_start, pulse_phase_end, pulse_phases)
     mjds = calc_mjd(pulse_phases, ephemeris)
 
     return mjds
@@ -154,8 +153,10 @@ def timing_residual_view(request, pk):
         # Get form values
         PEPOCH = float(request.POST.get('pepoch'))
         P0 = float(request.POST.get('folding-period'))
-        mjd_start = float(request.POST.get('mjd-start'))
-        mjd_end = float(request.POST.get('mjd-end'))
+        print(request.POST.get('mjd-start'))
+        mjd_start = Time(request.POST.get('mjd-start'), format='isot')
+        mjd_end = Time(request.POST.get('mjd-end'), format='isot')
+        mjd_range = Time([request.POST.get('mjd-start'), request.POST.get('mjd-end')], format='isot')
         mjd_dispersion_frequency = float(request.POST.get('mjd-dispersion-frequency'))
         output_toa_format = request.POST.get('output-toa-format', 'mjd')
 
@@ -168,10 +169,8 @@ def timing_residual_view(request, pk):
             # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
             # so to get the right range, convert them to dedispersed, barycentric
             coord = ephemeris_to_skycoord(ephemeris)
-            mjd_range = Time([mjd_start, mjd_end], format='mjd')
-            mjd_range += bc_corr(coord, mjd_range)
             dmdelay = calc_dmdelay(ephemeris['DM']*u.pc/u.cm**3, mjd_dispersion_frequency*u.MHz, np.inf*u.MHz)
-            mjd_range -= dmdelay
+            mjd_range += bc_corr(coord, mjd_range) - dmdelay
 
             predicted_barycentric_toas = generate_toas(mjd_range[0], mjd_range[1], ephemeris)
             predicted_topocentric_toas = predicted_barycentric_toas - bc_corr(coord, predicted_barycentric_toas)
@@ -192,8 +191,8 @@ def timing_residual_view(request, pk):
 
             context['predicted_toas'] = predicted_toas
 
-        context['mjd_start'] = mjd_start
-        context['mjd_end'] = mjd_end
+        context['mjd_start'] = mjd_range[0].isot
+        context['mjd_end'] = mjd_range[1].isot
         context['mjd_dispersion_frequency'] = mjd_dispersion_frequency
 
     context['ephemeris'] = ephemeris
@@ -222,5 +221,8 @@ def timing_residual_view(request, pk):
         'xrange': xdata_range,
     }
     context['plot_specs'] = plot_specs
+
+    # Generate list of output TOA formats:
+    # ...
 
     return render(request, 'data/timing_residuals.html', context)

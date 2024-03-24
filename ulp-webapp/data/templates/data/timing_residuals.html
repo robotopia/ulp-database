@@ -20,7 +20,7 @@
 
 <h2>Predictions</h2>
 
-<form method="post">
+<form method="post" action="#prediction-table">
   {% csrf_token %}
   <label for="pepoch" class="form-label">PEPOCH:</label>
   <input type="number" class="form-control" id="pepoch" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="replot()" required/>
@@ -29,10 +29,10 @@
   <input type="number" class="form-control" id="folding-period" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="replot()" required/>
 
   <label for="mjd-start" class="form-label">MJD start:</label>
-  <input type="number" class="form-control" id="mjd-start" name="mjd-start" value="{{ mjd_start }}" step="any" required/>
+  <input type="datetime-local" class="form-control" id="mjd-start" name="mjd-start" value="{{ mjd_start }}" step="any" required/>
 
   <label for="mjd-end" class="form-label">MJD end:</label>
-  <input type="number" class="form-control" id="mjd-end" name="mjd-end" value="{{ mjd_end }}" step="any" required/>
+  <input type="datetime-local" class="form-control" id="mjd-end" name="mjd-end" value="{{ mjd_end }}" step="any" required/>
 
   <label for="mjd-dispersion-freq" class="form-label">Add a dispersion delay for this frequency (MHz):</label>
   <input type="number" class="form-control" id="mjd-dispersion-frequency" name="mjd-dispersion-frequency" value="{{ mjd_dispersion_frequency }}" step="any" required/>
@@ -50,9 +50,9 @@
 {% if predicted_toas %}
 <table id="prediction-table" class="table">
   <tr>
-    <th>Barycentred TOA (<a onclick="copy_column(0)" href='#'>copy</a>)</th>
-    <th>Topocentric TOA (<a onclick="copy_column(1)" href='#'>copy</a>)</th>
-    <th>Topocentric TOA at {{ mjd_dispersion_frequency }} MHz for DM = {{ ephemeris.DM }} pc/cm3 (<a onclick="copy_column(2)" href='#'>copy</a>)</th>
+    <th>Barycentred TOA (<a class="col0 copy-col" href='#'>copy</a>)</th>
+    <th>Topocentric TOA (<a class="col1 copy-col" href='#'>copy</a>)</th>
+    <th>Topocentric TOA at {{ mjd_dispersion_frequency }} MHz for DM = {{ ephemeris.DM }} pc/cm3 (<a class="col2 copy-col" href='#'>copy</a>)</th>
   </tr>
   {% for predicted_toa in predicted_toas %}
   <tr>
@@ -68,14 +68,20 @@
 <script type="text/javascript" src="{% static 'data/residual_plot.js' %}"></script>
 <script>
 
-  function copy_column(col) {
-    text = "";
-    var table = document.getElementById("prediction-table");
-    for (var i = 0, row; row = table.rows[i]; i++) {
-      text += row.cells[col].innerText + '\n';
-    }
-    navigator.clipboard.writeText(text);
-  }
+  var copy_links = document.getElementsByClassName('copy-col');
+
+  Array.prototype.forEach.call(copy_links, function (copy_link) {
+    copy_link.addEventListener('click', function (e) {
+      e.preventDefault();
+      col = copy_link.className[3]; // An ugly hack to get which column's "copy" link was clicked
+      text = "";
+      var table = document.getElementById("prediction-table");
+      for (var i = 1, row; row = table.rows[i]; i++) {
+        text += row.cells[col].innerText + '\n';
+      }
+      navigator.clipboard.writeText(text);
+    })
+  });
 
   // Get the folding period and the PEPOCH
   const folding_period_element = document.getElementById("folding-period")
