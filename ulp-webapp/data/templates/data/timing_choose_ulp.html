@@ -1,0 +1,14 @@
+{% extends "published/main.html" %}
+
+{% load static %}
+
+{% block body %}
+
+Choose ULP:
+<ul>
+  {% for ulp in ulps %}
+  <li><a href="{% url 'timing_residuals' pk=ulp.pk %}">{{ ulp }}</a></li>
+  {% endfor %}
+</ul>
+
+{% endblock %}

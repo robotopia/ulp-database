@@ -114,6 +114,7 @@
   // Zoom on mouse wheel
   plot.svg.on("wheel", function(d) {
 
+    d3.event.preventDefault();
     scrollpos = d3.mouse(this);
 
     var ephemeris = {

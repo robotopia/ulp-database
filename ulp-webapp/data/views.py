@@ -114,7 +114,29 @@ def toa_data(request, pk):
     return JsonResponse(toas_json, safe=False)
 
 
+def timing_choose_ulp_view(request):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=404)
+
+    # Get ULPs to which they have access
+    ulps = published_models.Ulp.objects.filter(
+        data_access_groups__user=request.user
+    )
+
+    context = {
+        'ulps': ulps,
+    }
+
+    return render(request, 'data/timing_choose_ulp.html', context)
+
+
 def timing_residual_view(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=404)
 
     # Retrieve the selected ULP
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -122,10 +144,6 @@ def timing_residual_view(request, pk):
     context = {'ulp': ulp}
 
     # Make sure the user has the permissions to view this ULP
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=404)
 
     # Second, they have to belong to a group that has been granted access to
     # this ULP's data
