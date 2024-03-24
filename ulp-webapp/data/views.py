@@ -159,7 +159,6 @@ def timing_residual_view(request, pk):
         measurement__access_groups__user=request.user,
         measurement__ulp=ulp,
     )
-    print(ephemeris_measurements)
 
     if not ephemeris_measurements.exists():
         return HttpResponse(status=404)
