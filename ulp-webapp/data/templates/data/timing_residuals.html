@@ -105,7 +105,7 @@
   };
 
   var xlim = [{{ plot_specs.xmin }}, {{ plot_specs.xmax }}];
-  var ylim = [-0.5, 0.5];
+  var ylim = [{{ plot_specs.ymin }}, {{ plot_specs.ymax }}];
 
   set_residual_plot_dimensions(plot, xlim, ylim, margin, ephemeris);
 
