@@ -440,6 +440,33 @@ class Measurement(models.Model):
 
         return f"{self.formatted_quantity}"
 
+    @property
+    def accessible_by(self):
+        if self.access == self.ACCESS_PUBLIC:
+            return 'Everyone'
+
+        if self.access == self.ACCESS_GROUP:
+            return ', '.join([f'{access_group}' for access_group in self.access_groups.all()])
+
+        # Else, only owner has access
+        return f'{self.owner}'
+
+    def check_access(self, user):
+        # Return true if user has access to this measurement
+        if self.access == self.ACCESS_PUBLIC:
+            return True
+
+        if self.access == self.ACCESS_GROUP:
+            if self.access_groups.filter(user=user).exists():
+                return True
+
+        # Assert: self.access must = ACCESS_PRIVATE
+        if self.user == user:
+            return True
+
+        # Default case
+        return False
+
     def __str__(self):
         return self.formatted_quantity_with_units
 

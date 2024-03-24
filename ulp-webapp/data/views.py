@@ -9,7 +9,7 @@ from published.views import get_accessible_measurements
 
 import numpy as np
 import astropy.units as u
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, Angle
 from astropy.constants import c
 from astropy.time import Time
 
@@ -172,8 +172,12 @@ def timing_residual_view(request, pk):
     if request.method == "POST":
 
         # Get form values
-        PEPOCH = float(request.POST.get('pepoch'))
-        P0 = float(request.POST.get('folding-period'))
+        PEPOCH = float(request.POST.get('pepoch', '0.0'))
+        P0 = float(request.POST.get('folding-period', '0.0'))
+        DM = float(request.POST.get('dm', '0.0'))
+        RAJ = Angle(request.POST.get('raj', '00:00:00') + ' h').deg
+        DECJ = Angle(request.POST.get('decj', '00:00:00') + ' d').deg
+
         mjd_start = Time(request.POST.get('mjd-start'), format='isot')
         mjd_end = Time(request.POST.get('mjd-end'), format='isot')
         mjd_range = Time([request.POST.get('mjd-start'), request.POST.get('mjd-end')], format='isot')
@@ -183,22 +187,21 @@ def timing_residual_view(request, pk):
         # Populate the ephemeris from the form values
         ephemeris['PEPOCH'] = PEPOCH
         ephemeris['P0'] = P0
+        ephemeris['DM'] = DM
+        ephemeris['RAJ'] = RAJ
+        ephemeris['DECJ'] = DECJ
 
         # If they've also provided other form values, make a table of predicted values
         if mjd_start is not None and mjd_end is not None and mjd_dispersion_frequency is not None and PEPOCH is not None and P0 is not None:
             # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
             # so to get the right range, convert them to dedispersed, barycentric
             coord = ephemeris_to_skycoord(ephemeris)
-            if 'DM' in ephemeris.keys():
-                dmdelay = calc_dmdelay(ephemeris['DM']*u.pc/u.cm**3, mjd_dispersion_frequency*u.MHz, np.inf*u.MHz)
-            else:
-                dmdelay = 0*u.s
+            dmdelay = calc_dmdelay(ephemeris['DM']*u.pc/u.cm**3, mjd_dispersion_frequency*u.MHz, np.inf*u.MHz)
             mjd_range -= dmdelay
-            if 'RAJ' in ephemeris.keys() and 'DECJ' in ephemeris.keys():
-                mjd_range += bc_corr(coord, mjd_range)
+            mjd_range += bc_corr(coord, mjd_range)
 
             predicted_barycentric_toas = generate_toas(mjd_range[0], mjd_range[1], ephemeris)
-            predicted_topocentric_toas = predicted_barycentric_toas - (bc_corr(coord, predicted_barycentric_toas) if 'RAJ' in ephemeris.keys() and 'DECJ' in ephemeris.keys() else 0*u.s)
+            predicted_topocentric_toas = predicted_barycentric_toas - bc_corr(coord, predicted_barycentric_toas)
             predicted_dispersed_toas = predicted_topocentric_toas + dmdelay
 
             # Set to the requested format
@@ -250,5 +253,9 @@ def timing_residual_view(request, pk):
     # Generate list of output TOA formats:
     context['output_toa_formats'] = list(Time.FORMATS)
     context['selected_output_toa_format'] = output_toa_format
+
+    # For display purposes, convert RAJ and DECJ to hexagesimal format
+    ephemeris['RAJ'] = Angle(ephemeris['RAJ'], unit=u.deg).to_string(unit=u.hour, sep=':')
+    ephemeris['DECJ'] = Angle(ephemeris['DECJ'], unit=u.deg).to_string(sep=':')
 
     return render(request, 'data/timing_residuals.html', context)

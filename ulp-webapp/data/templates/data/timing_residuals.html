@@ -12,14 +12,21 @@
 
 <form method="post" action="#prediction-table">
   {% csrf_token %}
+
+  <label for="raj" class="form-label">RAJ:</label>
+  <input class="form-control" id="raj" name="raj" value="{{ ephemeris.RAJ }}" step="any" required/>
+
+  <label for="decj" class="form-label">DECJ:</label>
+  <input class="form-control" id="decj" name="decj" value="{{ ephemeris.DECJ }}" step="any" required/>
+
   <label for="pepoch" class="form-label">PEPOCH:</label>
   <input type="number" class="form-control" id="pepoch" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="replot()" required/>
 
   <label for="folding-period" class="form-label">P0:</label>
   <input type="number" class="form-control" id="folding-period" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="replot()" required/>
 
-  <label for="mjd-dispersion-freq" class="form-label">Add a dispersion delay for this frequency (MHz):</label>
-  <input type="number" class="form-control" id="mjd-dispersion-frequency" name="mjd-dispersion-frequency" value="{{ mjd_dispersion_frequency }}" step="any" required/>
+  <label for="dm" class="form-label">DM:</label>
+  <input type="number" class="form-control" id="dm" name="dm" value="{{ ephemeris.DM }}" step="any" required/>
 
   <h2>Predictions</h2>
 
@@ -28,6 +35,9 @@
 
   <label for="mjd-end" class="form-label">End date:</label>
   <input type="datetime-local" class="form-control" id="mjd-end" name="mjd-end" value="{{ mjd_end }}" step="any" required/>
+
+  <label for="mjd-dispersion-freq" class="form-label">Add a dispersion delay for this frequency (MHz):</label>
+  <input type="number" class="form-control" id="mjd-dispersion-frequency" name="mjd-dispersion-frequency" value="{{ mjd_dispersion_frequency }}" step="any" required/>
 
   <label for="output-toa-format" class="form-label">Output TOA format:</label>
   <select id='output-toa-format' name='output-toa-format' class="form-control" required>

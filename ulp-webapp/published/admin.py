@@ -14,7 +14,7 @@ class CovarianceAdmin(admin.ModelAdmin):
 
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
-    list_display = ['ulp', 'parameter', 'stokes', 'formatted_quantity', 'article', 'owner']
+    list_display = ['ulp', 'parameter', 'stokes', 'formatted_quantity', 'article', 'owner', 'accessible_by']
     list_filter = ['ulp', 'parameter', 'access', 'article']
     fieldsets = (
         ('Main', {'fields': ('ulp', 'parameter', ('quantity', 'power_of_10'), 'article', 'date',)}),
