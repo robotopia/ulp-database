@@ -223,6 +223,7 @@ def timing_residual_view(request, pk):
     context['plot_specs'] = plot_specs
 
     # Generate list of output TOA formats:
-    # ...
+    context['output_toa_formats'] = list(Time.FORMATS)
+    context['selected_output_toa_format'] = output_toa_format
 
     return render(request, 'data/timing_residuals.html', context)
