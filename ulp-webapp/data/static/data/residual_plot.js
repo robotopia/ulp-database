@@ -1,10 +1,18 @@
+// Fixing the "JS modulo bug"
+// - https://web.archive.org/web/20090717035140if_/javascript.about.com/od/problemsolving/a/modulobug.htm
+// - https://stackoverflow.com/questions/4467539/javascript-modulo-gives-a-negative-result-for-negative-numbers
+Number.prototype.mod = function (n) {
+  "use strict";
+  return ((this % n) + n) % n;
+};
+
 // Function to calculate the pulse numbers and phases of TOAs
 function calc_pulse_phase(mjd, ephemeris) {
   // mjd and pepoch should be in days,
   // P (the folding period) in seconds
   var pulse_phase = 86400*(mjd - ephemeris.pepoch)/ephemeris.folding_period; // Dimensionless
   var pulse = Math.round(pulse_phase)
-  var phase = (pulse_phase + 0.5) % 1 - 0.5;
+  var phase = (pulse_phase + 0.5).mod(1) - 0.5;
   return {pulse: pulse, phase: phase, pulse_phase: pulse_phase};
 }
 
