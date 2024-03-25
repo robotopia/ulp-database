@@ -180,6 +180,10 @@ def timing_residual_view(request, pk):
         mjd_start = Time(request.POST.get('mjd-start'), format='isot')
         mjd_end = Time(request.POST.get('mjd-end'), format='isot')
         mjd_range = Time([request.POST.get('mjd-start'), request.POST.get('mjd-end')], format='isot')
+
+        context['mjd_start'] = mjd_start.isot
+        context['mjd_end'] = mjd_end.isot
+
         mjd_dispersion_frequency = float(request.POST.get('mjd-dispersion-frequency'))
         output_toa_format = request.POST.get('output-toa-format')
 
@@ -218,8 +222,6 @@ def timing_residual_view(request, pk):
 
             context['predicted_toas'] = predicted_toas
 
-        context['mjd_start'] = mjd_range[0].isot
-        context['mjd_end'] = mjd_range[1].isot
         context['mjd_dispersion_frequency'] = mjd_dispersion_frequency
 
     context['ephemeris'] = ephemeris
