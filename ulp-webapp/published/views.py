@@ -15,6 +15,9 @@ from astropy.coordinates import SkyCoord
 
 # Create your views here.
 
+def swap_index(request):
+    return render(request, 'published/index.html')
+
 def index(request):
     return redirect('galactic_view')
 
