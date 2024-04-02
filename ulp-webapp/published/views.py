@@ -13,6 +13,8 @@ import json
 import pygedm
 from astropy.coordinates import SkyCoord
 
+from psrcat import models as psrcat_models
+
 # Create your views here.
 
 def swap_index(request):
@@ -103,6 +105,29 @@ def ppdot_view(request):
     }
 
     return render(request, 'published/ppdot.html', context)
+
+
+def psrcat_data(request):
+
+    pulsars = psrcat_models.Pulsar.objects.using('psrcat')
+    validated_psrcat_json_data = []
+    for pulsar in pulsars:
+        F0s = pulsar.parameter_set.filter(parametertype__label='F', timederivative=0)
+        F1s = pulsar.parameter_set.filter(parametertype__label='F', timederivative=1)
+        if F0s.exists() and F1s.exists():
+            P0 = 1/float(F0s.first().value) # TODO: Get the currently accepted value instead of the 'first' value
+            P1 = -float(F1s.first().value)*P0**2 # TODO: Get the currently accepted value instead of the 'first' value
+            validated_psrcat_json_data.append(
+                {
+                    'name': pulsar.jname,
+                    'P': P0,
+                    'Pdot': P1,
+                    'Pdot_err': None,
+                    'Pdot__upper_limit': False,
+                }
+            )
+
+    return JsonResponse(validated_psrcat_json_data, safe=False)
 
 
 def mcgill_data(request):

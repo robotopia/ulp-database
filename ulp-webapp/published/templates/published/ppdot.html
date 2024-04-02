@@ -30,8 +30,8 @@
 <script>
     // set the dimensions and margins of the graph
     var margin = {top: 10, right: 50, bottom: 50, left: 80},
-        width = 400 - margin.left - margin.right,
-        height = 400 - margin.top - margin.bottom;
+        width = 800 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
     var svg = d3.select("#ppdot-plot")
@@ -60,7 +60,7 @@
 
     // Add X axis
     var x = d3.scaleLog()
-        .domain([1e-3, 1e5])
+        .domain([5e-4, 1e5])
         .range([ 0, width ]);
     var xaxis = svg.append("g")
         .attr("transform", "translate(0," + height + ")")
@@ -152,6 +152,7 @@
     }
 
     plot_dataset("{% url 'table_data' pk=1 %}", "#d090f8", ulp_link);
+    plot_dataset("{% url 'psrcat_data' %}", "#d090f8", "");
     {% if import_mcgill %}
     plot_dataset("{% url 'mcgill_data' %}", "#c0c0ff", (d) => "https://www.physics.mcgill.ca/~pulsar/magnetar/main.html");
     {% endif %}

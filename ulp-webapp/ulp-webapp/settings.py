@@ -49,6 +49,7 @@ LOGOUT_REDIRECT_URL = '/published/galactic_view'
 INSTALLED_APPS = [
     'published.apps.PublishedConfig',
     'data.apps.DataConfig',
+    'psrcat.apps.PsrcatConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -101,9 +102,16 @@ DATABASES = {
         'PASSWORD': os.environ.get('DBPASS'),
         'HOST': os.environ.get('DBHOST'),
         'PORT': os.environ.get('DBPORT'),
-    }
+    },
+    'psrcat': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(PROJECT_DIR, 'psrcat2.db'),
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+    },
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
