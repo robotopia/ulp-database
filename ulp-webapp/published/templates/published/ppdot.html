@@ -152,7 +152,7 @@
     }
 
     plot_dataset("{% url 'table_data' pk=1 %}", "#d090f8", ulp_link);
-    plot_dataset("{% url 'psrcat_data' %}", "#d090f8", "");
+    plot_dataset("{% url 'psrcat_data' %}", "#b8d8be", "");
     {% if import_mcgill %}
     plot_dataset("{% url 'mcgill_data' %}", "#c0c0ff", (d) => "https://www.physics.mcgill.ca/~pulsar/magnetar/main.html");
     {% endif %}
