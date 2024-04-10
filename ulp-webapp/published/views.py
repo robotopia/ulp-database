@@ -182,11 +182,16 @@ def galactic_view(request):
 
     model = request.GET.get('model') or 'ne2001'
     dm_dist_frac_err = float(request.GET.get('dm_dist_frac_err') or 0.3)
+    include_gcrts = request.GET.get('include_gcrts') == "1" # This means: Include Ulp objects without known periods = _potential_ ULPs
 
     parameter_set = get_object_or_404(models.ParameterSet, name="position")
     measurements = get_accessible_measurements(request, parameter_set=parameter_set)
 
-    ulps = list({measurement.ulp for measurement in measurements})
+    if include_gcrts:
+        ulps = list({measurement.ulp for measurement in measurements})
+    else:
+        ulps = list({measurement.ulp for measurement in measurements if measurement.ulp.measurements.filter(parameter__name="Period").exists()})
+
     parameters = [parameter for parameter in parameter_set.parameters.all()]
 
     distance_parameter = models.Parameter.objects.get(name='Distance')
