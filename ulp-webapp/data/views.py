@@ -168,6 +168,7 @@ def timing_residual_view(request, pk):
 
     output_toa_format = 'mjd'
     min_el = 0.0
+    max_sun_el = 90.0
 
     if request.method == "POST":
 
@@ -193,7 +194,7 @@ def timing_residual_view(request, pk):
         try:
             max_sun_el = float(request.POST.get('maximum-sun-elevation'))
         except:
-            max_sun_el = 0.0
+            max_sun_el = 90.0
 
         context['selected_telescope'] = telescope
 
