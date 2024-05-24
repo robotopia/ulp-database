@@ -9,7 +9,7 @@ from published.views import get_accessible_measurements
 
 import numpy as np
 import astropy.units as u
-from astropy.coordinates import SkyCoord, Angle
+from astropy.coordinates import SkyCoord, Angle, EarthLocation, AltAz, get_sun
 from astropy.constants import c
 from astropy.time import Time
 
@@ -167,6 +167,7 @@ def timing_residual_view(request, pk):
     ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
 
     output_toa_format = 'mjd'
+    min_el = 0.0
 
     if request.method == "POST":
 
@@ -184,6 +185,18 @@ def timing_residual_view(request, pk):
         context['mjd_start'] = mjd_start.isot
         context['mjd_end'] = mjd_end.isot
 
+        telescope = request.POST.get('telescope')
+        try:
+            min_el = float(request.POST.get('minimum-elevation'))
+        except:
+            min_el = 0.0
+        try:
+            max_sun_el = float(request.POST.get('maximum-sun-elevation'))
+        except:
+            max_sun_el = 0.0
+
+        context['selected_telescope'] = telescope
+
         mjd_dispersion_frequency = float(request.POST.get('mjd-dispersion-frequency'))
         output_toa_format = request.POST.get('output-toa-format')
 
@@ -195,7 +208,7 @@ def timing_residual_view(request, pk):
         ephemeris['DECJ'] = DECJ
 
         # If they've also provided other form values, make a table of predicted values
-        if mjd_start is not None and mjd_end is not None and mjd_dispersion_frequency is not None and PEPOCH is not None and P0 is not None:
+        if mjd_start is not None and mjd_end is not None and mjd_dispersion_frequency is not None and PEPOCH is not None and P0 is not None and telescope is not None:
             # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
             # so to get the right range, convert them to dedispersed, barycentric
             coord = ephemeris_to_skycoord(ephemeris)
@@ -207,6 +220,9 @@ def timing_residual_view(request, pk):
             predicted_topocentric_toas = predicted_barycentric_toas - bc_corr(coord, predicted_barycentric_toas)
             predicted_dispersed_toas = predicted_topocentric_toas + dmdelay
 
+            altaz = coord.transform_to(AltAz(obstime=predicted_dispersed_toas, location=EarthLocation.of_site(telescope)))
+            sun_altaz = [get_sun(predicted_dispersed_toas[i]).transform_to(AltAz(obstime=predicted_dispersed_toas[i], location=EarthLocation.of_site(telescope))) for i in range(len(predicted_barycentric_toas))]
+
             # Set to the requested format
             predicted_barycentric_toas.format = output_toa_format
             predicted_topocentric_toas.format = output_toa_format
@@ -217,7 +233,9 @@ def timing_residual_view(request, pk):
                     'bary': predicted_barycentric_toas[i],
                     'topo': predicted_topocentric_toas[i],
                     'topo_disp': predicted_dispersed_toas[i],
-                } for i in range(len(predicted_barycentric_toas))
+                    'elevation': int(np.round(altaz[i].alt.value)),
+                    'sun_elevation': int(np.round(sun_altaz[i].alt.value)),
+                } for i in range(len(predicted_barycentric_toas)) if altaz[i].alt.value >= min_el and sun_altaz[i].alt.value < max_sun_el
             ]
 
             context['predicted_toas'] = predicted_toas
@@ -267,6 +285,9 @@ def timing_residual_view(request, pk):
     # Generate list of output TOA formats:
     context['output_toa_formats'] = list(Time.FORMATS)
     context['selected_output_toa_format'] = output_toa_format
+    context['telescopes'] = EarthLocation.get_site_names()
+    context['min_el'] = min_el
+    context['max_sun_el'] = max_sun_el
 
     # For display purposes, convert RAJ and DECJ to hexagesimal format
     ephemeris['RAJ'] = Angle(ephemeris['RAJ'], unit=u.deg).to_string(unit=u.hour, sep=':')
