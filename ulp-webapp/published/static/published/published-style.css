@@ -69,3 +69,26 @@ h1, h2, h3, h4, h5 {
     white-space: nowrap !important;
     border: 0 !important;
 }
+
+.ephemeris-item {
+  display: flex;
+}
+
+.ephemeris-item > input {
+  border: 0px;
+}
+
+.ephemeris-item > label {
+  width: 100px;
+  background-color: field;
+}
+
+.ephemeris-item > input::-webkit-outer-spin-button,
+.ephemeris-item > input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.ephemeris-item > input[type=number] {
+  -moz-appearance: textfield;
+}
