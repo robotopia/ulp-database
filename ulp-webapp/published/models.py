@@ -420,7 +420,7 @@ class Measurement(models.Model):
         if self.power_of_10 != 0:
             if self.err or self.err_hi or self.err_lo:
                 quantity_str = f"({quantity_str})"
-            elif quantity != Decimal('1'):
+            if quantity != Decimal('1'):
                 quantity_str += f" × 10^{self.power_of_10}"
             else:
                 quantity_str = f"10^{self.power_of_10}"
