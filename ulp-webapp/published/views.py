@@ -40,9 +40,10 @@ def get_accessible_measurements(request, parameter_set=None, ulp=None):
         queryset = queryset.filter(
             Q(article__isnull=False) |  # It's published, and therefore automatically accessible by everyone
             Q(owner=request.user) |  # The owner can always see their own measurements
+            Q(ulp__whitelist_users=request.user) |  # Allow whitelisted users
             Q(access=models.Measurement.ACCESS_PUBLIC) |  # Include measurements explicitly marked as public
             (Q(access=models.Measurement.ACCESS_GROUP) &  # But if it's marked as group-accessible...
-             Q(access_groups__in=request.user.groups.all()))  # ...then the user must be in of the allowed groups.
+             Q(access_groups__in=request.user.groups.all()))  # ...then the user must be in one of the allowed groups
         )
     else:
         queryset = queryset.filter(

@@ -96,7 +96,7 @@ def toa_data(request, pk):
 
     # Second, they have to belong to a group that has been granted access to
     # this ULP's data
-    if not ulp.data_access_groups.filter(user=request.user).exists():
+    if not ulp.data_access_groups.filter(user=request.user).exists() and not request.user in ulp.whitelist_users.all():
         return HttpResponse(status=404)
 
     # Otherwise, grant them access, and get the TOAs!
@@ -122,8 +122,9 @@ def timing_choose_ulp_view(request):
 
     # Get ULPs to which they have access
     ulps = published_models.Ulp.objects.filter(
-        data_access_groups__user=request.user
-    )
+        Q(data_access_groups__user=request.user) |
+        Q(whitelist_users=request.user)
+    ).distinct()
 
     context = {
         'ulps': ulps,
@@ -147,7 +148,7 @@ def timing_residual_view(request, pk):
 
     # Second, they have to belong to a group that has been granted access to
     # this ULP's data
-    if not ulp.data_access_groups.filter(user=request.user).exists():
+    if not ulp.data_access_groups.filter(user=request.user).exists() and not request.user in ulp.whitelist_users.all():
         return HttpResponse(status=404)
 
     # Otherwise, grant them access, and get the TOAs!
@@ -156,8 +157,9 @@ def timing_residual_view(request, pk):
         return HttpResponse(status=404)
 
     ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
-        measurement__access_groups__user=request.user,
-        measurement__ulp=ulp,
+        Q(measurement__ulp=ulp) &
+        (Q(measurement__access_groups__user=request.user) |
+         Q(measurement__ulp__whitelist_users=request.user)),
     )
 
     if not ephemeris_measurements.exists():
@@ -253,6 +255,7 @@ def timing_residual_view(request, pk):
     periods = periods.filter(
         Q(article__isnull=False) |  # It's published, and therefore automatically accessible by everyone
         Q(owner=request.user) |  # The owner can always see their own measurements
+        Q(ulp__whitelist_users=request.user) |  # Allow whitelisted users
         Q(access=published_models.Measurement.ACCESS_PUBLIC) |  # Include measurements explicitly marked as public
         (Q(access=published_models.Measurement.ACCESS_GROUP) &  # But if it's marked as group-accessible...
          Q(access_groups__in=request.user.groups.all()))  # ...then the user must be in of the allowed groups.
