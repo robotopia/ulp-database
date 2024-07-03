@@ -12,6 +12,7 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord, Angle, EarthLocation, AltAz, get_sun
 from astropy.constants import c
 from astropy.time import Time
+from decimal import Decimal
 
 from spiceypy.spiceypy import spkezr, furnsh, j2000, spd, unload
 
@@ -84,6 +85,24 @@ def generate_toas(time_start, time_end, ephemeris):
     return mjds
 
 
+def barycentre_toas(toas, coord):
+    '''
+    toa is a queryset containing toa objects
+
+    This will check if the toa has been barycentred, and, if not,
+    it will barycentre it.
+    '''
+
+    mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
+    corrections = bc_corr(coord, mjds)
+    for i in range(len(toas)):
+        toa = toas[i]
+        if not toa.barycentred:
+            toa.mjd += Decimal(corrections[i].to('day').value)
+            toa.barycentred = True
+            toa.save()
+
+
 def toa_data(request, pk):
     # Retrieve the selected ULP
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -96,7 +115,7 @@ def toa_data(request, pk):
 
     # Second, they have to belong to a group that has been granted access to
     # this ULP's data
-    if not ulp.data_access_groups.filter(user=request.user).exists():
+    if not ulp.data_access_groups.filter(user=request.user).exists() and not request.user in ulp.whitelist_users.all():
         return HttpResponse(status=404)
 
     # Otherwise, grant them access, and get the TOAs!
@@ -122,8 +141,9 @@ def timing_choose_ulp_view(request):
 
     # Get ULPs to which they have access
     ulps = published_models.Ulp.objects.filter(
-        data_access_groups__user=request.user
-    )
+        Q(data_access_groups__user=request.user) |
+        Q(whitelist_users=request.user)
+    ).distinct()
 
     context = {
         'ulps': ulps,
@@ -147,7 +167,7 @@ def timing_residual_view(request, pk):
 
     # Second, they have to belong to a group that has been granted access to
     # this ULP's data
-    if not ulp.data_access_groups.filter(user=request.user).exists():
+    if not ulp.data_access_groups.filter(user=request.user).exists() and not request.user in ulp.whitelist_users.all():
         return HttpResponse(status=404)
 
     # Otherwise, grant them access, and get the TOAs!
@@ -156,8 +176,9 @@ def timing_residual_view(request, pk):
         return HttpResponse(status=404)
 
     ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
-        measurement__access_groups__user=request.user,
-        measurement__ulp=ulp,
+        Q(measurement__ulp=ulp) &
+        (Q(measurement__access_groups__user=request.user) |
+         Q(measurement__ulp__whitelist_users=request.user)),
     )
 
     if not ephemeris_measurements.exists():
@@ -165,6 +186,12 @@ def timing_residual_view(request, pk):
 
     # Construct a dictionary out of the ephemeris
     ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
+
+    ### WARNING: This is commented out deliberately. Only uncomment if you need to "manually"
+    ### force a bunch of topocentric TOAs to be made barycentric. This makes changes
+    ### to the database itself.
+    #coord = ephemeris_to_skycoord(ephemeris)
+    #barycentre_toas(toas, coord)
 
     output_toa_format = 'mjd'
     min_el = 0.0
@@ -253,16 +280,17 @@ def timing_residual_view(request, pk):
     periods = periods.filter(
         Q(article__isnull=False) |  # It's published, and therefore automatically accessible by everyone
         Q(owner=request.user) |  # The owner can always see their own measurements
+        Q(ulp__whitelist_users=request.user) |  # Allow whitelisted users
         Q(access=published_models.Measurement.ACCESS_PUBLIC) |  # Include measurements explicitly marked as public
         (Q(access=published_models.Measurement.ACCESS_GROUP) &  # But if it's marked as group-accessible...
          Q(access_groups__in=request.user.groups.all()))  # ...then the user must be in of the allowed groups.
     )
     context['periods'] = periods
 
-    # Calculate some sensible initial plot dimensions
     mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
     mjd_errs = [float(toa.mjd_err) for toa in toas] * u.d
 
+    # Calculate some sensible initial plot dimensions
     xdata_min = np.min(mjds).mjd
     xdata_max = np.max(mjds).mjd
     xdata_range = xdata_max - xdata_min
