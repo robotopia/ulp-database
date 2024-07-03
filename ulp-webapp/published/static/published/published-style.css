@@ -92,3 +92,35 @@ h1, h2, h3, h4, h5 {
 .ephemeris-item > input[type=number] {
   -moz-appearance: textfield;
 }
+
+
+
+.toas-row input, .toas-row select {
+  border: 0px;
+  width: 100%;
+}
+
+.toas-row > td {
+  border: 0px;
+  padding: 0px;
+  background-color: field;
+}
+
+.toas-row input::-webkit-outer-spin-button,
+.toas-row input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.toas-row input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.toas-row select {
+  -moz-appearance: textfield;
+  background-color: field;
+  padding: 0px;
+  border: 0px;
+}
+
+

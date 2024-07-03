@@ -3,8 +3,10 @@ from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from published import models as published_models
 import astropy.units as u
-from astropy.coordinates import Angle
+from astropy.coordinates import Angle, EarthLocation
 from decimal import Decimal
+
+site_names = EarthLocation.get_site_names()
 
 # Create your models here.
 class Telescope(models.Model):
@@ -109,14 +111,36 @@ class TimeOfArrival(models.Model):
         verbose_name="MJD",
     )
 
-    mjd_err = models.DecimalField(
+    toa_err = models.DecimalField(
         decimal_places=20,
         max_digits=30,
         null=True,
         blank=True,
-        help_text="The 1σ uncertainty of the time of arrival (in days).",
-        verbose_name="MJD error",
+        help_text="The 1σ uncertainty of the time of arrival",
+        verbose_name="TOA error",
     )
+
+    toa_err_units = models.CharField(
+        max_length=31,
+        default="day",
+        help_text="An astropy.units-readable unit that applies to the \"TOA err\" field",
+        verbose_name="TOA error units",
+    )
+
+    freq = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The frequency at which the TOA was detected",
+        verbose_name="Centre frequency",
+    )
+
+    freq_units = models.CharField(
+        max_length=31,
+        default="MHz",
+        help_text="An astropy.units-readable unit that applies to the \"Frequency\" field",
+        verbose_name="Centre frequency units",
+    )
+
 
     barycentred = models.BooleanField(
         default=True,
@@ -126,6 +150,14 @@ class TimeOfArrival(models.Model):
     dedispersed = models.BooleanField(
         default=True,
         help_text="Whether this TOA has been corrected for dedispersion.",
+    )
+
+    telescope = models.CharField(
+        max_length=4,
+        choices=[(str(i), site_names[i]) for i in range(len(site_names))],
+        null=True,
+        blank=True,
+        help_text="The telescope at which the detection of this TOA was made",
     )
 
     def __str__(self):

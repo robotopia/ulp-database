@@ -16,6 +16,8 @@ from decimal import Decimal
 
 from spiceypy.spiceypy import spkezr, furnsh, j2000, spd, unload
 
+site_names = EarthLocation.get_site_names()
+
 def calc_dmdelay(dm, flo, fhi):
     return 4.148808e3 * u.s * (dm.to('pc/cm3').value) * (1/flo.to('MHz').value**2 - 1/fhi.to('MHz').value**2)
 
@@ -126,7 +128,7 @@ def toa_data(request, pk):
     toas_json = [
         {
             'mjd': float(toa.mjd),
-            'mjd_err': float(toa.mjd_err),
+            'toa_err': float(toa.toa_err),
         } for toa in toas
     ]
 
@@ -150,6 +152,36 @@ def timing_choose_ulp_view(request):
     }
 
     return render(request, 'data/timing_choose_ulp.html', context)
+
+
+def edit_toas_view(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=404)
+
+    # Retrieve the selected ULP
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    # Make sure the user has the permissions to edit this ULP's TOAs
+
+    # Second, they have to belong to a group that has been granted access to
+    # this ULP's data
+    if not ulp.data_access_groups.filter(user=request.user).exists() and not request.user in ulp.whitelist_users.all():
+        return HttpResponse(status=404)
+
+    # Otherwise, grant them access, and get the TOAs!
+    toas = models.TimeOfArrival.objects.filter(ulp=ulp)
+    if not toas.exists():
+        return HttpResponse(status=404)
+
+    context = {
+        'ulp': ulp,
+        'toas': toas,
+        'telescopes': site_names,
+    }
+
+    return render(request, 'data/edit_toas.html', context)
 
 
 def timing_residual_view(request, pk):
@@ -288,15 +320,15 @@ def timing_residual_view(request, pk):
     context['periods'] = periods
 
     mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
-    mjd_errs = [float(toa.mjd_err) for toa in toas] * u.d
+    toa_errs = [(float(toa.toa_err) * u.Unit(toa.toa_err_units)).to('day') for toa in toas] * u.day
 
     # Calculate some sensible initial plot dimensions
     xdata_min = np.min(mjds).mjd
     xdata_max = np.max(mjds).mjd
     xdata_range = xdata_max - xdata_min
 
-    min_phases = (calc_pulse_phase(mjds - mjd_errs, ephemeris) + 0.5) % 1 - 0.5
-    max_phases = (calc_pulse_phase(mjds + mjd_errs, ephemeris) + 0.5) % 1 - 0.5
+    min_phases = (calc_pulse_phase(mjds - toa_errs, ephemeris) + 0.5) % 1 - 0.5
+    max_phases = (calc_pulse_phase(mjds + toa_errs, ephemeris) + 0.5) % 1 - 0.5
     ydata_min = np.min(min_phases)
     ydata_max = np.max(max_phases)
     ydata_range = ydata_max - ydata_min
@@ -314,7 +346,7 @@ def timing_residual_view(request, pk):
     # Generate list of output TOA formats:
     context['output_toa_formats'] = list(Time.FORMATS)
     context['selected_output_toa_format'] = output_toa_format
-    context['telescopes'] = EarthLocation.get_site_names()
+    context['telescopes'] = site_names
     context['min_el'] = min_el
     context['max_sun_el'] = max_sun_el
 

@@ -1,0 +1,47 @@
+{% extends "published/main.html" %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>{{ ulp }}</h1>
+
+<h2><a href="{% url 'timing_residuals' pk=ulp.pk %}">Residuals</a> > TOAs</h2>
+
+<form method="post" action="">
+  {% csrf_token %}
+
+  <table>
+    <tr>
+      <th>Frequency</th>
+      <th>Frequency units</th>
+      <th>MJD</th>
+      <th>TOA error</th>
+      <th>TOA error units</th>
+      <th>Telescope</th>
+      <th>Barycentred?</th>
+      <th>Dedispersed?</th>
+    </tr>
+    {% for toa in toas %}
+    <tr class="toas-row">
+      <td><input type="number" id="freq" name="freq" value="{{ toa.freq }}" required/></td>
+      <td><input id="freq_units" name="freq_units" value="{{ toa.freq_units }}" required/></td>
+      <td><input type="number" id="mjd" name="mjd" value="{{ toa.mjd }}" required/></td>
+      <td><input type="number" id="toa_err" name="toa_err" value="{{ toa.toa_err }}" required/></td>
+      <td><input id="toa_err_units" name="toa_err_units" value="{{ toa.toa_err_units }}" required/></td>
+      <td>
+        <select id='telescope' name='telescope' class="form-control" required>
+          <option value=''></option>
+          {% for telescope in telescopes %}
+          <option value='{{ forloop.counter0 }}' {% if telescope == toa.telescope %}selected{% endif %}>{{ telescope }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td><input type='checkbox' id="barycentred" name="barycentred" {% if toa.barycentred %}checked{% endif %}/></td>
+      <td><input type='checkbox' id="dedispersed" name="dedispersed" {% if toa.dedispersed %}checked{% endif %}/></td>
+    </tr>
+    {% endfor %}
+  </table>
+</form>
+
+{% endblock %}
