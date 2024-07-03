@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.core.exceptions import ValidationError
 from . import models
 
 from published import models as published_models
@@ -13,6 +14,7 @@ from astropy.coordinates import SkyCoord, Angle, EarthLocation, AltAz, get_sun
 from astropy.constants import c
 from astropy.time import Time
 from decimal import Decimal
+import json
 
 from spiceypy.spiceypy import spkezr, furnsh, j2000, spd, unload
 
@@ -153,6 +155,37 @@ def timing_choose_ulp_view(request):
 
     return render(request, 'data/timing_choose_ulp.html', context)
 
+def update_toa(request):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=404)
+
+    # Turn the data into a dictionary
+    data = json.loads(request.body.decode('utf-8'))
+
+    # Get the relevant TOA object
+    toa = get_object_or_404(models.TimeOfArrival, pk=data['pk'])
+
+    # Make sure the user has the permissions to edit this ULP's TOAs
+
+    # Second, they have to belong to a group that has been granted access to
+    # this ULP's data
+    if not toa.ulp.data_access_groups.filter(user=request.user).exists() and not request.user in toa.ulp.whitelist_users.all():
+        return HttpResponse(status=403)
+
+    # Set the field value
+    setattr(toa, data['field'], data['value'])
+
+    # Save the result to the database
+    try:
+        toa.save()
+    except ValidationError as err:
+        return HttpResponse(str(err), status=400)
+
+    # Return "all is well"
+    return HttpResponse(status=200)
+
 
 def edit_toas_view(request, pk):
 
@@ -178,7 +211,7 @@ def edit_toas_view(request, pk):
     context = {
         'ulp': ulp,
         'toas': toas,
-        'telescopes': site_names,
+        'telescopes': {str(i): site_names[i] for i in range(len(site_names))},
     }
 
     return render(request, 'data/edit_toas.html', context)

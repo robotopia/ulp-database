@@ -160,6 +160,28 @@ class TimeOfArrival(models.Model):
         help_text="The telescope at which the detection of this TOA was made",
     )
 
+    def validate_unique(self, *args, **kwargs):
+        # Make sure that given astropy units are valid and correct
+        try:
+            toa_err_unit = u.Unit(self.toa_err_units)
+        except:
+            raise ValidationError(f'"{self.toa_err_units}" is not a valid AstroPy unit')
+
+        if not toa_err_unit.is_equivalent('s'):
+            raise ValidationError(f'"{self.toa_err_units}" is not a unit of time')
+
+        try:
+            freq_unit = u.Unit(self.freq_units)
+        except:
+            raise ValidationError(f'"{self.freq_units}" is not a valid AstroPy unit')
+
+        if not freq_unit.is_equivalent('Hz'):
+            raise ValidationError(f'"{self.freq_units}" is not a unit of frequency')
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f'{self.mjd} ({self.ulp})'
 
