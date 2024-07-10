@@ -1,5 +1,5 @@
 astropy==6.0.0
-django==5.0.2
+django==5.0.7
 numpy==1.26.4
 psycopg2-binary==2.9.9
 pygedm==3.3.0
