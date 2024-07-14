@@ -1,0 +1,72 @@
+{% extends "published/main.html" %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>{{ ulp }}</h1>
+
+<h2><a href="{% url 'timing_residuals' pk=ulp.pk %}">Residuals</a> > TOAs</h2>
+
+<table>
+  <tr>
+    <th>Frequency</th>
+    <th>Frequency units</th>
+    <th>MJD</th>
+    <th>TOA error</th>
+    <th>TOA error units</th>
+    <th>Telescope</th>
+    <th>Barycentred?</th>
+    <th>Dedispersed?</th>
+  </tr>
+  {% for toa in toas %}
+  <tr class="toas-row">
+    <td><input type="number" id="freq" name="freq" value="{{ toa.freq }}" onchange="update_toa({{ toa.pk }}, 'freq', this);" required/></td>
+    <td><input id="freq_units" name="freq_units" value="{{ toa.freq_units }}" onchange="update_toa({{ toa.pk }}, 'freq_units', this);"/></td>
+    <td><input type="number" id="mjd" name="mjd" value="{{ toa.mjd }}" onchange="update_toa({{ toa.pk }}, 'mjd', this);"/></td>
+    <td><input type="number" id="toa_err" name="toa_err" value="{{ toa.toa_err }}" onchange="update_toa({{ toa.pk }}, 'toa_err', this);"/></td>
+    <td><input id="toa_err_units" name="toa_err_units" value="{{ toa.toa_err_units }}" onchange="update_toa({{ toa.pk }}, 'toa_err_units', this);"/></td>
+    <td>
+      <select id='telescope' name='telescope' class="form-control" onchange="update_toa({{ toa.pk }}, 'telescope', this);">
+        <option value=''></option>
+        {% for i, telescope in telescopes.items %}
+        <option value='{{ i }}' {% if toa.telescope == i %}selected{% endif %}>{{ telescope }}</option>
+        {% endfor %}
+      </select>
+    </td>
+    <td><input type='checkbox' id="barycentred" name="barycentred" {% if toa.barycentred %}checked{% endif %} onchange="update_toa({{ toa.pk }}, 'barycentred', this);"/></td>
+    <td><input type='checkbox' id="dedispersed" name="dedispersed" {% if toa.dedispersed %}checked{% endif %} onchange="update_toa({{ toa.pk }}, 'dedispersed', this);"/></td>
+  </tr>
+  {% endfor %}
+</table>
+
+<script>
+  function update_toa(pk, field, cell) {
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', "{% url 'update_toa' %}");
+    xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+    xhr.setRequestHeader("Content-type", "application/json");
+
+    const data = {
+      pk: pk,
+      field: field,
+      value: (cell.type === 'checkbox' ? cell.checked : cell.value)
+    }
+
+    xhr.onload = () => {
+      if (xhr.status != 200) {
+        cell.style.backgroundColor = "#600";
+        alert(xhr.responseText);
+        return;
+      }
+
+      cell.style.backgroundColor = "field";
+    }
+
+    xhr.send(JSON.stringify(data));
+    cell.style.backgroundColor = "#880";
+  }
+</script>
+
+{% endblock %}

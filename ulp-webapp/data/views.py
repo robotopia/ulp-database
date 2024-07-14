@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.core.exceptions import ValidationError
 from . import models
 
 from published import models as published_models
@@ -12,8 +13,12 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord, Angle, EarthLocation, AltAz, get_sun
 from astropy.constants import c
 from astropy.time import Time
+from decimal import Decimal
+import json
 
 from spiceypy.spiceypy import spkezr, furnsh, j2000, spd, unload
+
+site_names = EarthLocation.get_site_names()
 
 def calc_dmdelay(dm, flo, fhi):
     return 4.148808e3 * u.s * (dm.to('pc/cm3').value) * (1/flo.to('MHz').value**2 - 1/fhi.to('MHz').value**2)
@@ -84,6 +89,24 @@ def generate_toas(time_start, time_end, ephemeris):
     return mjds
 
 
+def barycentre_toas(toas, coord):
+    '''
+    toa is a queryset containing toa objects
+
+    This will check if the toa has been barycentred, and, if not,
+    it will barycentre it.
+    '''
+
+    mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
+    corrections = bc_corr(coord, mjds)
+    for i in range(len(toas)):
+        toa = toas[i]
+        if not toa.barycentred:
+            toa.mjd += Decimal(corrections[i].to('day').value)
+            toa.barycentred = True
+            toa.save()
+
+
 def toa_data(request, pk):
     # Retrieve the selected ULP
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -96,7 +119,7 @@ def toa_data(request, pk):
 
     # Second, they have to belong to a group that has been granted access to
     # this ULP's data
-    if not ulp.data_access_groups.filter(user=request.user).exists():
+    if not ulp.data_access_groups.filter(user=request.user).exists() and not request.user in ulp.whitelist_users.all():
         return HttpResponse(status=404)
 
     # Otherwise, grant them access, and get the TOAs!
@@ -107,7 +130,7 @@ def toa_data(request, pk):
     toas_json = [
         {
             'mjd': float(toa.mjd),
-            'mjd_err': float(toa.mjd_err),
+            'toa_err': float(toa.toa_err),
         } for toa in toas
     ]
 
@@ -122,14 +145,76 @@ def timing_choose_ulp_view(request):
 
     # Get ULPs to which they have access
     ulps = published_models.Ulp.objects.filter(
-        data_access_groups__user=request.user
-    )
+        Q(data_access_groups__user=request.user) |
+        Q(whitelist_users=request.user)
+    ).distinct()
 
     context = {
         'ulps': ulps,
     }
 
     return render(request, 'data/timing_choose_ulp.html', context)
+
+def update_toa(request):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=404)
+
+    # Turn the data into a dictionary
+    data = json.loads(request.body.decode('utf-8'))
+
+    # Get the relevant TOA object
+    toa = get_object_or_404(models.TimeOfArrival, pk=data['pk'])
+
+    # Make sure the user has the permissions to edit this ULP's TOAs
+
+    # Second, they have to belong to a group that has been granted access to
+    # this ULP's data
+    if not toa.ulp.data_access_groups.filter(user=request.user).exists() and not request.user in toa.ulp.whitelist_users.all():
+        return HttpResponse(status=403)
+
+    # Set the field value
+    setattr(toa, data['field'], data['value'])
+
+    # Save the result to the database
+    try:
+        toa.save()
+    except ValidationError as err:
+        return HttpResponse(str(err), status=400)
+
+    # Return "all is well"
+    return HttpResponse(status=200)
+
+
+def edit_toas_view(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=404)
+
+    # Retrieve the selected ULP
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    # Make sure the user has the permissions to edit this ULP's TOAs
+
+    # Second, they have to belong to a group that has been granted access to
+    # this ULP's data
+    if not ulp.data_access_groups.filter(user=request.user).exists() and not request.user in ulp.whitelist_users.all():
+        return HttpResponse(status=404)
+
+    # Otherwise, grant them access, and get the TOAs!
+    toas = models.TimeOfArrival.objects.filter(ulp=ulp)
+    if not toas.exists():
+        return HttpResponse(status=404)
+
+    context = {
+        'ulp': ulp,
+        'toas': toas,
+        'telescopes': {str(i): site_names[i] for i in range(len(site_names))},
+    }
+
+    return render(request, 'data/edit_toas.html', context)
 
 
 def timing_residual_view(request, pk):
@@ -147,7 +232,7 @@ def timing_residual_view(request, pk):
 
     # Second, they have to belong to a group that has been granted access to
     # this ULP's data
-    if not ulp.data_access_groups.filter(user=request.user).exists():
+    if not ulp.data_access_groups.filter(user=request.user).exists() and not request.user in ulp.whitelist_users.all():
         return HttpResponse(status=404)
 
     # Otherwise, grant them access, and get the TOAs!
@@ -156,8 +241,9 @@ def timing_residual_view(request, pk):
         return HttpResponse(status=404)
 
     ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
-        measurement__access_groups__user=request.user,
-        measurement__ulp=ulp,
+        Q(measurement__ulp=ulp) &
+        (Q(measurement__access_groups__user=request.user) |
+         Q(measurement__ulp__whitelist_users=request.user)),
     )
 
     if not ephemeris_measurements.exists():
@@ -165,6 +251,12 @@ def timing_residual_view(request, pk):
 
     # Construct a dictionary out of the ephemeris
     ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
+
+    ### WARNING: This is commented out deliberately. Only uncomment if you need to "manually"
+    ### force a bunch of topocentric TOAs to be made barycentric. This makes changes
+    ### to the database itself.
+    #coord = ephemeris_to_skycoord(ephemeris)
+    #barycentre_toas(toas, coord)
 
     output_toa_format = 'mjd'
     min_el = 0.0
@@ -253,22 +345,23 @@ def timing_residual_view(request, pk):
     periods = periods.filter(
         Q(article__isnull=False) |  # It's published, and therefore automatically accessible by everyone
         Q(owner=request.user) |  # The owner can always see their own measurements
+        Q(ulp__whitelist_users=request.user) |  # Allow whitelisted users
         Q(access=published_models.Measurement.ACCESS_PUBLIC) |  # Include measurements explicitly marked as public
         (Q(access=published_models.Measurement.ACCESS_GROUP) &  # But if it's marked as group-accessible...
          Q(access_groups__in=request.user.groups.all()))  # ...then the user must be in of the allowed groups.
     )
     context['periods'] = periods
 
-    # Calculate some sensible initial plot dimensions
     mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
-    mjd_errs = [float(toa.mjd_err) for toa in toas] * u.d
+    toa_errs = [(float(toa.toa_err) * u.Unit(toa.toa_err_units)).to('day') for toa in toas] * u.day
 
+    # Calculate some sensible initial plot dimensions
     xdata_min = np.min(mjds).mjd
     xdata_max = np.max(mjds).mjd
     xdata_range = xdata_max - xdata_min
 
-    min_phases = (calc_pulse_phase(mjds - mjd_errs, ephemeris) + 0.5) % 1 - 0.5
-    max_phases = (calc_pulse_phase(mjds + mjd_errs, ephemeris) + 0.5) % 1 - 0.5
+    min_phases = (calc_pulse_phase(mjds - toa_errs, ephemeris) + 0.5) % 1 - 0.5
+    max_phases = (calc_pulse_phase(mjds + toa_errs, ephemeris) + 0.5) % 1 - 0.5
     ydata_min = np.min(min_phases)
     ydata_max = np.max(max_phases)
     ydata_range = ydata_max - ydata_min
@@ -286,7 +379,7 @@ def timing_residual_view(request, pk):
     # Generate list of output TOA formats:
     context['output_toa_formats'] = list(Time.FORMATS)
     context['selected_output_toa_format'] = output_toa_format
-    context['telescopes'] = EarthLocation.get_site_names()
+    context['telescopes'] = site_names
     context['min_el'] = min_el
     context['max_sun_el'] = max_sun_el
 

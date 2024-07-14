@@ -9,12 +9,14 @@
     <tr>
         <th>Parameter</th>
         <th>Value</th>
+        <th>Frequency</th>
         <th>Reference</th>
     </tr>
     {% for measurement in measurements.all %}
     <tr>
         <td>{{ measurement.parameter }}</td>
         <td>{{ measurement.formatted_quantity_with_units }}</td>
+        <td>{% if measurement.freq_ctr != None %}{{ measurement.freq_ctr }} {{ measurement.freq_astropy_units }}{% endif %}</td>
         <td><a href="https://doi.org/{{ measurement.article.doi }}">{{ measurement.article }}</a></td>
     </tr>
     {% endfor %}

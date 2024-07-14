@@ -39,6 +39,13 @@ class Ulp(models.Model):
         related_name="data_accessible_ulps",
     )
 
+    whitelist_users = models.ManyToManyField(
+        User,
+        blank=True,
+        help_text="Any individual users that are given explicit access to this ULP's data.",
+        related_name="data_accessible_ulps",
+    )
+
     class Meta:
         verbose_name = "ULP"
         verbose_name_plural = "ULPs"
@@ -420,7 +427,7 @@ class Measurement(models.Model):
         if self.power_of_10 != 0:
             if self.err or self.err_hi or self.err_lo:
                 quantity_str = f"({quantity_str})"
-            elif quantity != Decimal('1'):
+            if quantity != Decimal('1'):
                 quantity_str += f" × 10^{self.power_of_10}"
             else:
                 quantity_str = f"10^{self.power_of_10}"
