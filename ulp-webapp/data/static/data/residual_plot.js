@@ -8,9 +8,9 @@ Number.prototype.mod = function (n) {
 
 // Function to calculate the pulse numbers and phases of TOAs
 function calc_pulse_phase(mjd, ephemeris) {
-  // mjd and pepoch should be in days,
+  // mjd and PEPOCH should be in days,
   // P (the folding period) in seconds
-  var pulse_phase = 86400*(mjd - ephemeris.pepoch)/ephemeris.folding_period; // Dimensionless
+  var pulse_phase = 86400*(mjd - ephemeris.PEPOCH)/ephemeris.P0; // Dimensionless
   var pulse = Math.round(pulse_phase)
   var phase = (pulse_phase + 0.5).mod(1) - 0.5;
   return {pulse: pulse, phase: phase, pulse_phase: pulse_phase};
@@ -18,7 +18,7 @@ function calc_pulse_phase(mjd, ephemeris) {
 
 function calc_mjd(pulse_phase, ephemeris) {
   // This is the inverse of calc_pulse_phase
-  return ephemeris.pepoch + pulse_phase*ephemeris.folding_period/86400;
+  return ephemeris.PEPOCH + pulse_phase*ephemeris.P0/86400;
 }
 
 function generate_toas(mjd_start, mjd_end, ephemeris) {
@@ -74,7 +74,7 @@ function create_residual_plot_elements(parentDivId) {
   var y2axis = g.append("g");
 
   // Add a dashed vertical line to mark PEPOCH
-  var pepoch_path = g.append("path")
+  var PEPOCH_path = g.append("path")
       .style("stroke", "#aaee1180")
       .style("stroke-width", "2")
       .style("stroke-dasharray", "7");
@@ -109,7 +109,7 @@ function create_residual_plot_elements(parentDivId) {
     y: y,
     x2: x2,
     y2: y2,
-    pepoch_path: pepoch_path,
+    PEPOCH_path: PEPOCH_path,
     period_path: period_path
   }
 }
@@ -120,7 +120,7 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
   // xlim and ylim should be of the form:
   //     [-5, 5]
   // ephemeris should be an object of the form:
-  //     {folding_period: 1000.0, pepoch: 60000.0}
+  //     {P0: 1000.0, PEPOCH: 60000.0}
   // plot should be an object returned by create_residual_plot_elements()
 
   // Attach margins amd lims to plot object
@@ -144,7 +144,7 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
 
   plot.y.domain(ylim).range([plot.height, 0]);
   plot.y2
-    .domain([ylim[0]*ephemeris.folding_period, ylim[1]*ephemeris.folding_period])
+    .domain([ylim[0]*ephemeris.P0, ylim[1]*ephemeris.P0])
     .range([plot.height, 0]);
 
   // Construct X axes
@@ -184,7 +184,7 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
   plot.y2axis.selectAll("line").style("stroke", "var(--bs-body-color)");
 
   // Plot the PEPOCH line
-  plot.pepoch_path.attr("d", "M " + plot.x2(0) + ",0 l 0," + plot.height);
+  plot.PEPOCH_path.attr("d", "M " + plot.x2(0) + ",0 l 0," + plot.height);
 }
 
 function add_residual_data(plot, toa_url, color, ephemeris) {
@@ -220,7 +220,7 @@ function add_residual_data(plot, toa_url, color, ephemeris) {
 function position_residual_data(plot, ephemeris) {
   // plot should be an object returned by create_residual_plot_elements()
   // ephemeris should be an object of the form:
-  //     {folding_period: 1000.0, pepoch: 60000.0}
+  //     {P0: 1000.0, PEPOCH: 60000.0}
 
   plot.toa_points
     .attr("cx", function (toa) { return plot.x2(calc_pulse_phase(toa.mjd, ephemeris).pulse); })
@@ -324,16 +324,16 @@ function edit_period_mousedown() {
 
 function edit_period_mousemove(plot, ephemeris, pos) {
 
-  var pepoch = pepoch_element.value;
-  var folding_period = folding_period_element.value;
+  var PEPOCH = PEPOCH_element.value;
+  var P0 = P0_element.value;
 
   // Record for later use the world coords of the clicked event, as well as the folding period
-  let mjd = plot.x.invert(pos[0] - plot.margins.left) - ephemeris.pepoch; // world coords of click pos
+  let mjd = plot.x.invert(pos[0] - plot.margins.left) - ephemeris.PEPOCH; // world coords of click pos
   let res = plot.y2.invert(pos[1] - plot.margins.top);          // world coords of click pos
   let factor = res / (mjd*86400);
 
   if (period_ref_factor !== null) {
-    ephemeris.folding_period *= (1 - (factor - period_ref_factor));
+    ephemeris.P0 *= (1 - (factor - period_ref_factor));
 
     // Update plot
     position_residual_data(plot, ephemeris);

@@ -24,13 +24,18 @@
   </div>
 
   <div class="ephemeris-item">
-    <label for="pepoch">PEPOCH</label>
-    <input type="number" id="pepoch" name="pepoch" value="{{ ephemeris.PEPOCH }}" onchange="replot()" required/>
+    <label for="PEPOCH">PEPOCH</label>
+    <input type="number" id="PEPOCH" name="PEPOCH" value="{{ ephemeris.PEPOCH }}" onchange="replot()" required/>
   </div>
 
   <div class="ephemeris-item">
     <label for="folding-period">P0</label>
     <input type="number" id="folding-period" name="folding-period" value="{{ ephemeris.P0 }}" onchange="replot()" required/>
+  </div>
+
+  <div class="ephemeris-item">
+    <label for="pdot">P1</label>
+    <input type="number" id="pdot" name="pdot" value="{{ ephemeris.P1 }}" onchange="replot()"/>
   </div>
 
   <div class="ephemeris-item">
@@ -113,8 +118,9 @@
   });
 
   // Get the folding period and the PEPOCH
-  const folding_period_element = document.getElementById("folding-period")
-  const pepoch_element = document.getElementById("pepoch")
+  const P0_element = document.getElementById("folding-period")
+  const PEPOCH_element = document.getElementById("PEPOCH")
+  const P1_element = document.getElementById("pdot")
 
   // set the dimensions and margins of the graph
   var parentDiv = document.getElementById("residual-plot");
@@ -124,11 +130,12 @@
 
   // "g" is the main group containing all plotted elements
   var margin = {top: 50, right: 80, bottom: 50, left: 80};
-  var folding_period = folding_period_element.value;
-  var pepoch = pepoch_element.value;
+  var P0 = P0_element.value;
+  var PEPOCH = PEPOCH_element.value;
   ephemeris = {
-    folding_period: folding_period_element.value,
-    pepoch: pepoch_element.value
+    P0: P0_element.value,
+    PEPOCH: PEPOCH_element.value,
+    P1: P1_element.value
   };
 
   var xlim = [{{ plot_specs.xmin }}, {{ plot_specs.xmax }}];
@@ -147,8 +154,8 @@
     scrollpos = d3.mouse(this);
 
     var ephemeris = {
-      folding_period: folding_period_element.value,
-      pepoch: pepoch_element.value
+      P0: P0_element.value,
+      PEPOCH: PEPOCH_element.value
     };
 
     plot_zoom(plot, scrollpos, ephemeris);
@@ -164,13 +171,13 @@
       let movepos = d3.mouse(this);
 
       var ephemeris = {
-        folding_period: folding_period_element.value,
-        pepoch: pepoch_element.value
+        P0: P0_element.value,
+        PEPOCH: PEPOCH_element.value
       };
       edit_period_mousemove(plot, ephemeris, movepos);
 
       // Change the value in the input field
-      folding_period_element.value = ephemeris.folding_period;
+      P0_element.value = ephemeris.P0;
     }
   });
 
