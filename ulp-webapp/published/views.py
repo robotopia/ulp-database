@@ -51,7 +51,7 @@ def get_accessible_measurements(request, parameter_set=None, ulp=None):
             Q(access=models.Measurement.ACCESS_PUBLIC)  # Include measurements explicitly marked as public
         )
 
-    return queryset
+    return queryset.distinct()
 
 
 def parameter_set_table_view(request, pk):
