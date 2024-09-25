@@ -190,8 +190,8 @@ def timing_residual_view(request, pk):
     ### WARNING: This is commented out deliberately. Only uncomment if you need to "manually"
     ### force a bunch of topocentric TOAs to be made barycentric. This makes changes
     ### to the database itself.
-    #coord = ephemeris_to_skycoord(ephemeris)
-    #barycentre_toas(toas, coord)
+    coord = ephemeris_to_skycoord(ephemeris)
+    barycentre_toas(toas, coord)
 
     output_toa_format = 'mjd'
     min_el = 0.0
