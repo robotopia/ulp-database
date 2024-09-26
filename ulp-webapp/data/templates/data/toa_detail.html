@@ -7,6 +7,7 @@
 <h1>ToA {{ toa }}</h1>
 
 <form>
+  {% csrf_token %}
   <div class="compact-form-item">
     <label for="raw-mjd">MJD</label>
     <input id="raw-mjd" name="raw_mjd" type="number" value="{{ toa.raw_mjd }}"/>
@@ -54,6 +55,14 @@
   <div class="compact-form-item">
     <label for="upper-limit">Upper limit?</label>
     <input id="upper-limit" name="upper_limit" value="{{ toa.upper_limit }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="pulse-width">Pulse width (s)</label>
+    <input id="pulse-width" name="pulse_width" type="number" value="{{ toa.pulse_width }}"/>
+  </div>
+  <div>
+    <label for="notes">Notes</label><br>
+    <textarea id="notes" name="notes" rows="10" cols="80">{{ toa.notes }}</textarea>
   </div>
 </form>
 
