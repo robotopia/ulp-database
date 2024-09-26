@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.urls import reverse
 from . import models
 
 from published import models as published_models
@@ -127,6 +128,7 @@ def toa_data(request, pk):
         {
             'mjd': float(toa.mjd),
             'mjd_err': float(toa.mjd_err),
+            'detail_link': reverse('toa_detail_view', args=[toa.pk]),
         } for toa in toas
     ]
 

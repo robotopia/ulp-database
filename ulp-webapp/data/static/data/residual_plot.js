@@ -201,6 +201,8 @@ function add_residual_data(plot, toa_url, color, ephemeris) {
       .selectAll(".err")
       .data(toas)
       .enter()
+      .append("a")
+      .attr("xlink:href", function(toa) { return toa.detail_link; })
       .append("path")
       .style("stroke", color)
       .style("stroke-width", "2");
@@ -209,6 +211,8 @@ function add_residual_data(plot, toa_url, color, ephemeris) {
       .selectAll(".data")
       .data(toas)
       .enter()
+      .append("a")
+      .attr("xlink:href", function(toa) { return toa.detail_link; })
       .append("circle")
       .attr("r", 3)
       .style("fill", color);
