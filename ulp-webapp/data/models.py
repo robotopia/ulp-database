@@ -105,7 +105,7 @@ class TimeOfArrival(models.Model):
     mjd = models.DecimalField(
         decimal_places=20,
         max_digits=30,
-        help_text="The MJD of the time of arrival.",
+        help_text="The barycentered MJD of the time of arrival.",
         verbose_name="MJD",
     )
 
@@ -116,6 +116,38 @@ class TimeOfArrival(models.Model):
         blank=True,
         help_text="The 1σ uncertainty of the time of arrival (in days).",
         verbose_name="MJD error",
+    )
+
+    raw_mjd = models.DecimalField(
+        decimal_places=20,
+        max_digits=30,
+        blank=True,
+        null=True,
+        help_text="The MJD of the time of arrival, before barycentring or dedispersing.",
+        verbose_name="Raw MJD",
+    )
+
+    backend = models.ForeignKey(
+        "Backend",
+        on_delete=models.DO_NOTHING,
+        null=True,
+        blank=True,
+        help_text="The telescope backend that made this detection.",
+        related_name="toas",
+    )
+
+    freq = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The centre frequency of this detection in MHz.",
+    )
+
+    freq_units = models.CharField(
+        max_length=31,
+        null=True,
+        blank=True,
+        default="MHz",
+        help_text="An astropy-conversant unit string that applies to the frequency.",
     )
 
     barycentred = models.BooleanField(
