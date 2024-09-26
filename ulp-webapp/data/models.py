@@ -127,6 +127,15 @@ class TimeOfArrival(models.Model):
         verbose_name="Raw MJD",
     )
 
+    telescope = models.ForeignKey(
+        "Telescope",
+        on_delete=models.DO_NOTHING,
+        null=True,
+        blank=True,
+        help_text="The telescope that made this detection.",
+        related_name="toas",
+    )
+
     backend = models.ForeignKey(
         "Backend",
         on_delete=models.DO_NOTHING,
@@ -139,7 +148,27 @@ class TimeOfArrival(models.Model):
     freq = models.FloatField(
         null=True,
         blank=True,
-        help_text="The centre frequency of this detection in MHz.",
+        help_text="The centre frequency of this detection.",
+        verbose_name="Frequency",
+    )
+
+    bw = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The bandwidth of this detection.",
+        verbose_name="Bandwidth",
+    )
+
+    spectral_index = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The spectral index of this detection.",
+    )
+
+    rotation_measure = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The rotation measure of this detection in rad/m^2.",
     )
 
     freq_units = models.CharField(
@@ -150,6 +179,23 @@ class TimeOfArrival(models.Model):
         help_text="An astropy-conversant unit string that applies to the frequency.",
     )
 
+    peak_flux_Jy = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The peak flux of the pulse in Jy.",
+    )
+
+    upper_limit = models.BooleanField(
+        default=False,
+        help_text="Whether the given peak flux is an upper limit (thereby signifying that this ToA is a \"non-detection\").",
+    )
+
+    pulse_width = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The width of the pulse in seconds.",
+    )
+
     barycentred = models.BooleanField(
         default=True,
         help_text="Whether this TOA has been barycentred.",
@@ -158,6 +204,12 @@ class TimeOfArrival(models.Model):
     dedispersed = models.BooleanField(
         default=True,
         help_text="Whether this TOA has been corrected for dedispersion.",
+    )
+
+    notes = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Any extra information about the ToA, its measurement method, or the pulse in general.",
     )
 
     def __str__(self):

@@ -97,8 +97,8 @@ def barycentre_toas(toas, coord):
     corrections = bc_corr(coord, mjds)
     for i in range(len(toas)):
         toa = toas[i]
-        if not toa.barycentred:
-            toa.mjd += Decimal(corrections[i].to('day').value)
+        if toa.raw_mjd is not None and not toa.barycentred:
+            toa.mjd = toa.raw_mjd + Decimal(corrections[i].to('day').value)
             toa.barycentred = True
             toa.save()
 
@@ -323,3 +323,19 @@ def timing_residual_view(request, pk):
     ephemeris['DECJ'] = Angle(ephemeris['DECJ'], unit=u.deg).to_string(sep=':')
 
     return render(request, 'data/timing_residuals.html', context)
+
+
+def toa_detail_view(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=404)
+
+    # Retrieve the selected ULP
+    toa = get_object_or_404(models.TimeOfArrival, pk=pk)
+
+    context = {'toa': toa}
+
+    return render(request, 'data/toa_detail.html', context)
+
+

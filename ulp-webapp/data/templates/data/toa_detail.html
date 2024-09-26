@@ -1,0 +1,16 @@
+{% extends "published/main.html" %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>{{ toa.ulp }}: ToA {{ toa }}</h1>
+
+<table>
+  <tr>
+    <td>MJD:</td>
+    <td>{{ toa.mjd }}</td>
+  </tr>
+</table>
+
+{% endblock %}
