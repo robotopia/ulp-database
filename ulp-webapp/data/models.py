@@ -212,6 +212,13 @@ class TimeOfArrival(models.Model):
         help_text="Any extra information about the ToA, its measurement method, or the pulse in general.",
     )
 
+    plots = models.ManyToManyField(
+        "Plot",
+        blank=True,
+        help_text="Plots relevant to this ToA.",
+        related_name="times_of_arrival",
+    )
+
     def __str__(self):
         return f'{self.mjd} ({self.ulp})'
 
@@ -331,3 +338,29 @@ class EphemerisMeasurement(models.Model):
 
     class Meta:
         ordering = ['measurement__ulp', 'ephemeris_parameter',]
+
+
+class Plot(models.Model):
+
+    image = models.ImageField(
+        upload_to="plots",
+        help_text="The plot itself.",
+    )
+
+    description = models.TextField(
+        null=True,
+        blank=True,
+    )
+
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plots",
+    )
+
+    def __str__(self):
+        return self.name
+
+
