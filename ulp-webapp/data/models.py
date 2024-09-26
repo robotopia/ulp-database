@@ -361,6 +361,6 @@ class Plot(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return self.image.name
 
 

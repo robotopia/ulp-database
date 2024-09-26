@@ -64,6 +64,25 @@
     <label for="notes">Notes</label><br>
     <textarea id="notes" name="notes" rows="10" cols="80">{{ toa.notes }}</textarea>
   </div>
+  <div>
+    <label for="plots">Plots</label><br>
+    <table>
+      <tr>
+        <th>Thumbnail</th>
+        <th>Description</th>
+      </tr>
+      {% for plot in toa.plots.all %}
+      <tr class="plot-table">
+        <td>
+          <a href="{{ plot.image.url }}">
+            <img src="{{ plot.image.url }}" alt="{{ plot.image.name }}" style="width: auto; height: 200px;">
+          </a>
+        </td>
+        <td>{{ plot.description }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
 </form>
 
 {% endblock %}
