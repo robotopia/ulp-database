@@ -4,13 +4,57 @@
 
 {% block body %}
 
-<h1>{{ toa.ulp }}: ToA {{ toa }}</h1>
+<h1>ToA {{ toa }}</h1>
 
-<table>
-  <tr>
-    <td>MJD:</td>
-    <td>{{ toa.mjd }}</td>
-  </tr>
-</table>
+<form>
+  <div class="compact-form-item">
+    <label for="raw-mjd">MJD</label>
+    <input id="raw-mjd" name="raw_mjd" type="number" value="{{ toa.raw_mjd }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="mjd-err">MJD error</label>
+    <input id="mjd-err" name="mjd_err" type="number" value="{{ toa.mjd_err }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="mjd">Barycentred, dedispersed MJD</label>
+    <input id="mjd" name="mjd" type="number" value="{{ toa.mjd }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="telescope">Telescope</label>
+    <input id="telescope" name="telescope" value="{{ toa.telescope }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="backend">Backend</label>
+    <input id="backend" name="backend" value="{{ toa.backend }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="freq">Frequency</label>
+    <input id="freq" name="freq" type="number" value="{{ toa.freq }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="bw">Bandwidth</label>
+    <input id="bw" name="bw" type="number" value="{{ toa.bw }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="freq-units">Frequency units</label>
+    <input id="freq-units" name="freq_units" value="{{ toa.freq_units }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="spectral-index">Spectral index</label>
+    <input id="spectral-index" name="spectral_index" type="number" value="{{ toa.spectral_index }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="rotation-measure">Rotation measure (rad/m^2)</label>
+    <input id="rotation-measure" name="rotation_measure" type="number" value="{{ toa.rotation_measure }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="peak-flux-Jy">Peak flux (Jy)</label>
+    <input id="peak-flux-Jy" name="peak_flux_Jy" type="number" value="{{ toa.peak_flux_Jy }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="upper-limit">Upper limit?</label>
+    <input id="upper-limit" name="upper_limit" value="{{ toa.upper_limit }}"/>
+  </div>
+</form>
 
 {% endblock %}

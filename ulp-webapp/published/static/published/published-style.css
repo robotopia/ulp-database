@@ -69,3 +69,27 @@ h1, h2, h3, h4, h5 {
     white-space: nowrap !important;
     border: 0 !important;
 }
+
+.compact-form-item {
+  display: flex;
+}
+
+.compact-form-item > input {
+  border: 0px;
+}
+
+.compact-form-item > label {
+  width: 100px;
+  background-color: field;
+}
+
+.compact-form-item > input::-webkit-outer-spin-button,
+.compact-form-item > input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.compact-form-item > input[type=number] {
+  -moz-appearance: textfield;
+}
+

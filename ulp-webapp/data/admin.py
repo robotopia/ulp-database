@@ -13,7 +13,7 @@ class BackendAdmin(admin.ModelAdmin):
 
 @admin.register(TimeOfArrival)
 class TimeOfArrivalAdmin(admin.ModelAdmin):
-    list_display = ['ulp', 'mjd', 'mjd_err', 'raw_mjd', 'freq', 'freq_units', 'barycentred', 'dedispersed']
+    list_display = ['pk', 'ulp', 'mjd', 'mjd_err', 'raw_mjd', 'freq', 'freq_units', 'barycentred', 'dedispersed']
     list_filter = ['ulp']
 
 @admin.register(EphemerisParameter)
