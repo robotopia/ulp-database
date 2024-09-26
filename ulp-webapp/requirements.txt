@@ -4,7 +4,7 @@ numpy==1.26.4
 psycopg2-binary==2.9.9
 pygedm==3.3.0
 python-dotenv==1.0.1
-requests==2.31.0
+requests==2.32.0
 scipy==1.12.0
 uwsgi==2.0.24
 spiceypy==6.0.0
