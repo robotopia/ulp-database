@@ -8,6 +8,11 @@ networks:
 volumes:
   uwsgi-data:
   web-static:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/www/ulp
+      o: bind
   ulp-data:
   ulp-webapp:
     driver: local
@@ -56,28 +61,28 @@ services:
       - ulp-network
     volumes:
       - uwsgi-data:/tmp/uwsgi
-      - web-static:/ulp-webapp/ulp-webapp/static
-      - web-static:/var/www/ulp-webapp/static
+      - web-static:/var/www/ulp
       - ulp-webapp:/ulp-webapp
 
   nginx:
-   hostname: nginx
-   container_name: nginx
-   image: nginx:latest
-   restart: always
-   networks:
-     - ulp-network
-   volumes:
-     - uwsgi-data:/tmp/uwsgi/
-     - ulp-webapp:/ulp-webapp
-     - ./nginx/conf/:/etc/nginx/conf.d/:ro
-     - ./certbot/www/:/var/www/certbot/:ro
-     - ./certbot/conf/:/etc/nginx/ssl/:ro
-   ports:
-     - "80:80"
-     - "443:443"
-   depends_on:
-     - django
+    hostname: nginx
+    container_name: nginx
+    image: nginx:latest
+    restart: always
+    networks:
+      - ulp-network
+    volumes:
+      - uwsgi-data:/tmp/uwsgi/
+      - ulp-webapp:/ulp-webapp
+      - web-static:/var/www/ulp
+      - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      - ./certbot/www/:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - django
 
   certbot:
     image: certbot/certbot:latest

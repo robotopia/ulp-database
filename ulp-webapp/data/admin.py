@@ -25,3 +25,8 @@ class EphemerisMeasurementAdmin(admin.ModelAdmin):
     list_display = ['pk', 'ulp', 'ephemeris_parameter', 'owner', 'value', 'measurement',]
     list_filter = ['measurement__ulp', 'ephemeris_parameter', 'measurement__owner']
 
+@admin.register(Plot)
+class PlotAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'image', 'owner']
+    list_filter = ['owner']
+
