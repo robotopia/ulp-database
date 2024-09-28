@@ -60,6 +60,7 @@
     <label for="notes">Notes</label><br>
     <textarea id="notes" name="notes" rows="10" cols="80">{{ toa.notes }}</textarea>
   </div>
+  {% if toa.plots.all.exists %}
   <div>
     <label for="plots">Plots</label><br>
     <table>
@@ -79,6 +80,7 @@
       {% endfor %}
     </table>
   </div>
+  {% endif %}
 </form>
 
 {% endblock %}

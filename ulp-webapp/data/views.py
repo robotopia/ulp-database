@@ -368,13 +368,13 @@ def toas_view(request, pk):
     # Make sure the requested display units are dimensionally correct; if not, use default
     try:
         freq_units = request.GET.get("freq_units")
-        foo = (1*u.Unit(freq_units)).to(default_freq_units)
+        foo = (1*u.Unit(freq_units)).to(toa_freq_units)
     except:
         freq_units = "MHz"
 
     try:
         mjd_err_units = request.GET.get("mjd_err_units") or "min"
-        foo = (1*u.Unit(mjd_err_units)).to(default_mjd_err_units)
+        foo = (1*u.Unit(mjd_err_units)).to(toa_mjd_err_units)
     except:
         mjd_err_units = "min"
 
