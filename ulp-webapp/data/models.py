@@ -116,6 +116,15 @@ class TimeOfArrival(AbstractPermission):
         related_name="times_of_arrival",
     )
 
+    lightcurve = models.ForeignKey(
+        "Lightcurve",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The lightcurve from which this ToA was derived.",
+        related_name="toas",
+    )
+
     def __str__(self):
         return f'{self.mjd} ({self.ulp})'
 
@@ -263,5 +272,104 @@ class Plot(models.Model):
 
     def __str__(self):
         return self.image.name
+
+
+
+class Lightcurve(AbstractPermission):
+
+    POL_I  = 'I'
+    POL_Q  = 'Q'
+    POL_U  = 'U'
+    POL_V  = 'V'
+
+    STOKES_CHOICES = [
+        (POL_I,  'Stokes I'),
+        (POL_Q,  'Stokes Q'),
+        (POL_U,  'Stokes U'),
+        (POL_V,  'Stokes V'),
+    ]
+
+    ulp = models.ForeignKey(
+        published_models.Ulp,
+        on_delete=models.CASCADE,
+        help_text="The source being observed.",
+        related_name="lightcurves",
+    )
+
+    freq = models.FloatField(
+        help_text="The centre frequency of this lightcurve, in MHz.",
+        verbose_name="Frequency (MHz)",
+    )
+
+    bw = models.FloatField(
+        help_text="The bandwidth of this lightcurve, in MHz.",
+        verbose_name="Bandwidth (MHz)",
+    )
+
+    pol = models.CharField(
+        max_length=1,
+        default=POL_I,
+        choices=STOKES_CHOICES,
+    )
+
+    t0 = models.FloatField(
+        help_text="Time of first sample (MJD)",
+        verbose_name="Start time (MJD)",
+    )
+
+    dt = models.FloatField(
+        help_text="Duration of each time bin (s)",
+        verbose_name="Time bin duration (s)",
+    )
+
+    dm = models.FloatField(
+        help_text="The dispersion measure used to make this lightcurve, in pc/cm^3.",
+        default=0.0,
+        verbose_name="DM (pc/cm^3)",
+    )
+
+    def t(self, sample_number):
+        return self.t0 + (sample_number * self.dt / 86400)  # Cheaper than astropy units
+
+    def __str__(self) -> str:
+        return f"Lightcurve ({self.ulp}, {self.t0})"
+
+    class Meta:
+        ordering = ['ulp', 't0']
+
+
+class LightcurvePoint(models.Model):
+
+    lightcurve = models.ForeignKey(
+        "Lightcurve",
+        on_delete=models.CASCADE,
+        help_text="The lightcurve to which this point belongs.",
+        related_name="points",
+    )
+
+    sample_number = models.IntegerField()
+
+    value = models.FloatField(
+        help_text="The value of this point, in Jy.",
+    )
+
+    err = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The uncertainty of this point, in Jy.",
+    )
+
+    @property
+    def t(self):
+        return self.lightcurve.t(self.sample_number)
+
+    def __str__(self) -> str:
+        return f"LightcurvePoint {self.sample_number} ({self.lightcurve.ulp}, {self.lightcurve.t0})"
+
+    class Meta:
+        ordering = ['lightcurve', 'sample_number']
+        constraints = [
+            models.UniqueConstraint(fields=['lightcurve', 'sample_number'], name="unique_lightcurve_samples"),
+        ]
 
 
