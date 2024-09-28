@@ -18,6 +18,9 @@ from astropy.time import Time
 from decimal import Decimal
 
 from spiceypy.spiceypy import spkezr, furnsh, j2000, spd, unload
+import pandas as pd
+from plotly.offline import plot
+import plotly.express as px
 
 site_names = sorted(EarthLocation.get_site_names(), key=str.casefold)
 
@@ -432,3 +435,19 @@ def update_toa(request):
 
     # Return "all is well"
     return HttpResponse(status=200)
+
+
+def lightcurve_view(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=404)
+
+    # Get the relevant Lightcurve object
+    lightcurve = get_object_or_404(models.Lightcurve, pk=pk)
+
+    if not lightcurve.can_view(request.user):
+        return HttpResponse(status=403)
+
+    
+
