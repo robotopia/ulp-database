@@ -4,11 +4,13 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.urls import reverse
 from . import models
+from common.utils import *
 
 from published import models as published_models
 from published.views import get_accessible_measurements
 
 import numpy as np
+import json
 import astropy.units as u
 from astropy.coordinates import SkyCoord, Angle, EarthLocation, AltAz, get_sun
 from astropy.constants import c
@@ -351,8 +353,10 @@ def toas_view(request, pk):
 
     # Retrieve the selected ToAs from the specified ULP
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
+    toas = ulp.times_of_arrival.all()
 
-    toas = ulp.times_of_arrival.all
+    # Now limit only to those that this user has view access to
+    toas = permitted_to_view_filter(toas, request.user)
 
     context = {
         "ulp": ulp,
@@ -378,9 +382,8 @@ def update_toa(request):
 
     # Make sure the user has the permissions to edit this ULP's TOAs
 
-    # Second, they have to belong to a group that has been granted access to
-    # this ULP's data
-    if not toa.ulp.data_access_groups.filter(user=request.user).exists() and not request.user in toa.ulp.whitelist_users.all():
+    # Second, they have to belong to a group that has been granted edit privileges
+    if not toa.can_edit(request.user):
         return HttpResponse(status=403)
 
     # Set the field value

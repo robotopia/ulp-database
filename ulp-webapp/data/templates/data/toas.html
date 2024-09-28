@@ -23,14 +23,7 @@
     <td><input type="number" id="mjd_err" name="mjd_err" value="{{ toa.mjd_err }}" onchange="update_toa({{ toa.pk }}, 'mjd_err', this);"/></td>
     <td><input type="number" id="freq" name="freq" value="{{ toa.freq }}" onchange="update_toa({{ toa.pk }}, 'freq', this);" required/></td>
     <td><input id="freq_units" name="freq_units" value="{{ toa.freq_units }}" onchange="update_toa({{ toa.pk }}, 'freq_units', this);"/></td>
-    <td>
-      <select id='telescope' name='telescope' class="form-control" onchange="update_toa({{ toa.pk }}, 'telescope', this);">
-        <option value=''></option>
-        {% for i, telescope in telescopes.items %}
-        <option value='{{ i }}' {% if toa.telescope == i %}selected{% endif %}>{{ telescope }}</option>
-        {% endfor %}
-      </select>
-    </td>
+    <td><input id='telescope' name='telescope' value="{{ toa.telescope }}"></td>
     <td>
       <select id="telescope_name" name="telescope_name" onchange="update_toa({{ toa.pk }}, 'telescope_name', this);">
         <option value="">--Select telescope--</option>
