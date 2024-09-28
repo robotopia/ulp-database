@@ -3,10 +3,11 @@ from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from published import models as published_models
 import astropy.units as u
-from astropy.coordinates import Angle
+from astropy.coordinates import Angle, EarthLocation
 from decimal import Decimal
 
-# Create your models here.
+from common.models import AbstractPermission
+
 class Telescope(models.Model):
 
     name = models.CharField(
@@ -92,7 +93,7 @@ class Backend(models.Model):
         ordering = ['telescope', 'name',]
 
 
-class TimeOfArrival(models.Model):
+class TimeOfArrival(AbstractPermission):
 
     ulp = models.ForeignKey(
         published_models.Ulp,
@@ -134,6 +135,13 @@ class TimeOfArrival(models.Model):
         blank=True,
         help_text="The telescope that made this detection.",
         related_name="toas",
+    )
+
+    telescope_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="The telescope that made this detection. Must match a string in AstroPy's EarthLocation.get_site_names().",
     )
 
     backend = models.ForeignKey(
@@ -221,6 +229,10 @@ class TimeOfArrival(models.Model):
 
     def __str__(self):
         return f'{self.mjd} ({self.ulp})'
+
+    def clean(self):
+        if self.telescope_name and self.telescope_name not in EarthLocation.get_site_names():
+            raise ValidationError(f"\"{self.telescope_name}\" is not found among AstroPy's EarthLocation's site names.")
 
     class Meta:
         ordering = ['ulp', 'mjd']

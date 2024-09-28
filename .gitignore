@@ -1,7 +1,7 @@
 __pycache__
 *.sqlite3
 .env*
-venv
+.venv
 ulp.sql
 certbot
 ulp-webapp/static
