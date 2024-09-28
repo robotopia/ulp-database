@@ -328,6 +328,12 @@ class Lightcurve(AbstractPermission):
         verbose_name="DM (pc/cm^3)",
     )
 
+    dm_freq = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The reference frequency used when dedispersing, in MHz. Leaving this field blank has a special meaning: it is equivalent to setting the reference frequency to (+ve) infinity.",
+    )
+
     def t(self, sample_number):
         return self.t0 + (sample_number * self.dt / 86400)  # Cheaper than astropy units
 
