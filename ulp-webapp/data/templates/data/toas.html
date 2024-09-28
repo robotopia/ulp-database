@@ -9,15 +9,19 @@
 <div class="toa-list">
   <span><b>ID</b></span>
   <span><b>Frequency ({{ freq_units }})</b></span>
+  <span><b>Bandwidth ({{ freq_units }})</b></span>
   <span><b>MJD</b></span>
+  <span><b>Raw MJD</b></span>
   <span><b>MJD error ({{ mjd_err_units }})</b></span>
   <span><b>Telescope name</b></span>
   {% for toa in toas %}
   <span><a href="{% url 'toa_detail_view' pk=toa.pk %}">{{ toa.pk }}</a></span>
   <input type="number" id="freq" name="freq" value="{{ toa.freq }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'freq', this, '{{ freq_units }}');" required/>
-  <input type="number" id="mjd" name="mjd" value="{{ toa.mjd }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'mjd', this);"/>
+  <input type="number" id="bw" name="bw" value="{{ toa.bw }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'bw', this, '{{ freq_units }}');" required/>
+  <input type="number" id="mjd" name="mjd" value="{{ toa.mjd }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'mjd', this, '');"/>
+  <input type="number" id="raw_mjd" name="raw_mjd" value="{{ toa.raw_mjd }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'raw_mjd', this, '');"/>
   <input type="number" id="mjd_err" name="mjd_err" value="{{ toa.mjd_err }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'mjd_err', this, '{{ mjd_err_units }}');"/>
-  <select id="telescope_name" name="telescope_name" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'telescope_name', this);">
+  <select id="telescope_name" name="telescope_name" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'telescope_name', this, '');">
     <option value="">--Select telescope--</option>
     {% for telescope in telescopes %}
     <option value="{{ telescope }}" {% if telescope == toa.telescope_name %}selected{% endif %}>{{ telescope }}</option>

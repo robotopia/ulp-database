@@ -128,29 +128,11 @@ class TimeOfArrival(AbstractPermission):
         verbose_name="Raw MJD",
     )
 
-    telescope = models.ForeignKey(
-        "Telescope",
-        on_delete=models.DO_NOTHING,
-        null=True,
-        blank=True,
-        help_text="The telescope that made this detection.",
-        related_name="toas",
-    )
-
     telescope_name = models.CharField(
         max_length=255,
         null=True,
         blank=True,
         help_text="The telescope that made this detection. Must match a string in AstroPy's EarthLocation.get_site_names().",
-    )
-
-    backend = models.ForeignKey(
-        "Backend",
-        on_delete=models.DO_NOTHING,
-        null=True,
-        blank=True,
-        help_text="The telescope backend that made this detection.",
-        related_name="toas",
     )
 
     freq = models.FloatField(

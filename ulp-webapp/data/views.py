@@ -383,7 +383,8 @@ def toas_view(request, pk):
     for toa in toas:
         toa.editable = toa.can_edit(request.user)
         # Also switch units to whatever is requested
-        toa.freq = (toa.freq * u.Unit(toa_freq_units)).to(freq_units).value
+        toa.freq = (toa.freq * u.Unit(toa_freq_units)).to(freq_units).value if toa.freq else None
+        toa.bw = (toa.bw * u.Unit(toa_freq_units)).to(freq_units).value if toa.bw else None
         toa.mjd_err = (toa.mjd_err * u.Unit(toa_mjd_err_units)).to(mjd_err_units).value
 
     context = {
@@ -417,9 +418,9 @@ def update_toa(request):
     # Set the field value
     value = data['value']
     unit = u.Unit(data['unit'])
-    if data['field'] == "mjd_err":
+    if data['field'] in ["mjd_err"]:
         value = (float(value)*unit).to(toa_mjd_err_units).value
-    if data['field'] == "freq":
+    if data['field'] in ["freq", "bw"]:
         value = (float(value)*unit).to(toa_freq_units).value
     setattr(toa, data['field'], value)
 

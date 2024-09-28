@@ -100,7 +100,7 @@ h1, h2, h3, h4, h5 {
 
 .toa-list {
   display: grid;
-  grid-template-columns: 40px 100px 300px 250px 300px;
+  grid-template-columns: 40px 100px 100px 300px 300px 250px 300px;
   gap: 0px;
   padding: 0px;
 }
