@@ -21,6 +21,10 @@ from spiceypy.spiceypy import spkezr, furnsh, j2000, spd, unload
 
 site_names = sorted(EarthLocation.get_site_names(), key=str.casefold)
 
+# Defined at the database level
+toa_freq_units = "MHz"
+toa_mjd_err_units = "d"
+
 def calc_dmdelay(dm, flo, fhi):
     return 4.148808e3 * u.s * (dm.to('pc/cm3').value) * (1/flo.to('MHz').value**2 - 1/fhi.to('MHz').value**2)
 
@@ -340,7 +344,10 @@ def toa_detail_view(request, pk):
     # Retrieve the selected ULP
     toa = get_object_or_404(models.TimeOfArrival, pk=pk)
 
-    context = {'toa': toa}
+    context = {
+        'toa': toa,
+        'freq_units': toa_freq_units,
+    }
 
     return render(request, 'data/toa_detail.html', context)
 
@@ -358,16 +365,33 @@ def toas_view(request, pk):
     # Now limit only to those that this user has view access to
     toas = permitted_to_view_filter(toas, request.user)
 
+    # Make sure the requested display units are dimensionally correct; if not, use default
+    try:
+        freq_units = request.GET.get("freq_units")
+        foo = (1*u.Unit(freq_units)).to(default_freq_units)
+    except:
+        freq_units = "MHz"
+
+    try:
+        mjd_err_units = request.GET.get("mjd_err_units") or "min"
+        foo = (1*u.Unit(mjd_err_units)).to(default_mjd_err_units)
+    except:
+        mjd_err_units = "min"
+
     # Annotate ToAs according to whether the user can edit it or not
     # See, e.g., https://stackoverflow.com/questions/41354910/how-to-annotate-the-result-of-a-model-method-to-a-django-queryset
     for toa in toas:
         toa.editable = toa.can_edit(request.user)
-        toa.freq = (toa.freq * u.Unit(toa.freq_units)).to('MHz').value
+        # Also switch units to whatever is requested
+        toa.freq = (toa.freq * u.Unit(toa_freq_units)).to(freq_units).value
+        toa.mjd_err = (toa.mjd_err * u.Unit(toa_mjd_err_units)).to(mjd_err_units).value
 
     context = {
         "ulp": ulp,
         "toas": toas,
         "telescopes": site_names,
+        "freq_units": freq_units,
+        "mjd_err_units": mjd_err_units,
     }
 
     return render(request, 'data/toas.html', context)
@@ -386,14 +410,18 @@ def update_toa(request):
     # Get the relevant TOA object
     toa = get_object_or_404(models.TimeOfArrival, pk=data['pk'])
 
-    # Make sure the user has the permissions to edit this ULP's TOAs
-
     # Second, they have to belong to a group that has been granted edit privileges
     if not toa.can_edit(request.user):
         return HttpResponse(status=403)
 
     # Set the field value
-    setattr(toa, data['field'], data['value'])
+    value = data['value']
+    unit = u.Unit(data['unit'])
+    if data['field'] == "mjd_err":
+        value = (float(value)*unit).to(toa_mjd_err_units).value
+    if data['field'] == "freq":
+        value = (float(value)*unit).to(toa_freq_units).value
+    setattr(toa, data['field'], value)
 
     # Save the result to the database
     try:

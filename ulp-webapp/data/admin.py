@@ -14,12 +14,12 @@ from common.admin import PermissionFieldset
 
 @admin.register(TimeOfArrival)
 class TimeOfArrivalAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'ulp', 'mjd', 'telescope', 'raw_mjd', 'freq', 'freq_units', 'barycentred', 'dedispersed']
+    list_display = ['pk', 'ulp', 'mjd', 'telescope', 'raw_mjd', 'freq', 'barycentred', 'dedispersed']
     list_filter = ['ulp']
     fieldsets = [
         (
             None, {
-                "fields": ["ulp", ("mjd", "mjd_err"), "raw_mjd", "telescope", "telescope_name", "backend", "freq", "bw", "spectral_index", "rotation_measure", "freq_units", "peak_flux_Jy", "upper_limit", "pulse_width", "barycentred", "dedispersed", "notes", "plots",],
+                "fields": ["ulp", ("mjd", "mjd_err"), "raw_mjd", "telescope", "telescope_name", "backend", "freq", "bw", "spectral_index", "rotation_measure", "peak_flux_Jy", "upper_limit", "pulse_width", "barycentred", "dedispersed", "notes", "plots",],
             }
         ),
         PermissionFieldset,

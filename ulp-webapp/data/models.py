@@ -179,14 +179,6 @@ class TimeOfArrival(AbstractPermission):
         help_text="The rotation measure of this detection in rad/m^2.",
     )
 
-    freq_units = models.CharField(
-        max_length=31,
-        null=True,
-        blank=True,
-        default="MHz",
-        help_text="An astropy-conversant unit string that applies to the frequency.",
-    )
-
     peak_flux_Jy = models.FloatField(
         null=True,
         blank=True,

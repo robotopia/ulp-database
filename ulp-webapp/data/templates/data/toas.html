@@ -7,16 +7,14 @@
 <h1>{{ ulp }}</h1>
 
 <div class="toa-list">
-  <span>Frequency (MHz)</span>
+  <span>Frequency ({{ freq_units }})</span>
   <span>MJD</span>
-  <span>MJD error</span>
-  <span>Telescope</span>
+  <span>MJD error ({{ mjd_err_units }})</span>
   <span>Telescope name</span>
 {% for toa in toas %}
-  <input type="number" id="freq" name="freq" value="{{ toa.freq }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'freq', this);" required/>
+<input type="number" id="freq" name="freq" value="{{ toa.freq }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'freq', this, '{{ freq_units }}');" required/>
   <input type="number" id="mjd" name="mjd" value="{{ toa.mjd }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'mjd', this);"/>
-  <input type="number" id="mjd_err" name="mjd_err" value="{{ toa.mjd_err }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'mjd_err', this);"/>
-  <input id='telescope' name='telescope' value="{{ toa.telescope }}" {% if toa.editable is False %}disabled{% endif %}>
+  <input type="number" id="mjd_err" name="mjd_err" value="{{ toa.mjd_err }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'mjd_err', this, '{{ mjd_err_units }}');"/>
   <select id="telescope_name" name="telescope_name" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'telescope_name', this);">
     <option value="">--Select telescope--</option>
     {% for telescope in telescopes %}
@@ -31,7 +29,7 @@
 </div>
 
 <script>
-  function update_toa(pk, field, cell) {
+  function update_toa(pk, field, cell, unit) {
 
     const xhr = new XMLHttpRequest();
     xhr.open('PUT', "{% url 'update_toa' %}");
@@ -41,7 +39,8 @@
     const data = {
       pk: pk,
       field: field,
-      value: (cell.type === 'checkbox' ? cell.checked : cell.value)
+      value: (cell.type === 'checkbox' ? cell.checked : cell.value),
+      unit: unit
     }
 
     xhr.onload = () => {
@@ -51,7 +50,7 @@
         return;
       }
 
-      cell.style.backgroundColor = "field";
+      cell.style.backgroundColor = "black";
     }
 
     xhr.send(JSON.stringify(data));
