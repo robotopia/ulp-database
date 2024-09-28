@@ -97,3 +97,32 @@ h1, h2, h3, h4, h5 {
 .plot-table {
   padding: 10px;
 }
+
+.toa-list {
+  display: grid;
+  grid-template-columns: 100px 300px 250px auto 250px;
+  gap: 0px;
+  padding: 0px;
+}
+
+.toa-list > * {
+  border: 0px;
+  display: inline-block;
+  background-color: black;
+}
+
+.toa-row > * {
+  border: 0px;
+  /*width: 500px;*/
+}
+
+.toa-row > input::-webkit-outer-spin-button,
+.toa-row > input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.toa-row > input[type=number] {
+  -moz-appearance: textfield;
+}
+

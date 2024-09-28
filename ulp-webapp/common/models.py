@@ -44,16 +44,16 @@ class AbstractPermission(models.Model):
         if user == self.owner:
             return True
 
-        if user in can_view_groups.user_set.all():
+        if self.can_view_groups.filter(user=user).exists():
             return True
 
-        if user in can_edit_groups.user_set.all():
+        if self.can_edit_groups.filter(user=user).exists():
             return True
 
-        if user in can_view_users.all():
+        if user in self.can_view_users.all():
             return True
 
-        if user in can_edit_users.all():
+        if user in self.can_edit_users.all():
             return True
 
         return False
@@ -62,10 +62,10 @@ class AbstractPermission(models.Model):
         if user == self.owner:
             return True
 
-        if user in can_edit_groups.user_set.all():
+        if self.can_edit_groups.filter(user=user).exists():
             return True
 
-        if user in can_edit_users.all():
+        if user in self.can_edit_users.all():
             return True
 
         return False

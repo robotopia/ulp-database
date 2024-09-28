@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, Value, BooleanField
 from django.urls import reverse
 from . import models
 from common.utils import *
@@ -19,7 +19,7 @@ from decimal import Decimal
 
 from spiceypy.spiceypy import spkezr, furnsh, j2000, spd, unload
 
-site_names = EarthLocation.get_site_names()
+site_names = sorted(EarthLocation.get_site_names(), key=str.casefold)
 
 def calc_dmdelay(dm, flo, fhi):
     return 4.148808e3 * u.s * (dm.to('pc/cm3').value) * (1/flo.to('MHz').value**2 - 1/fhi.to('MHz').value**2)
@@ -357,6 +357,12 @@ def toas_view(request, pk):
 
     # Now limit only to those that this user has view access to
     toas = permitted_to_view_filter(toas, request.user)
+
+    # Annotate ToAs according to whether the user can edit it or not
+    # See, e.g., https://stackoverflow.com/questions/41354910/how-to-annotate-the-result-of-a-model-method-to-a-django-queryset
+    for toa in toas:
+        toa.editable = toa.can_edit(request.user)
+        toa.freq = (toa.freq * u.Unit(toa.freq_units)).to('MHz').value
 
     context = {
         "ulp": ulp,
