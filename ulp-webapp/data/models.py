@@ -156,8 +156,8 @@ class TimeOfArrival(AbstractPermission):
     freq = models.FloatField(
         null=True,
         blank=True,
-        help_text="The centre frequency of this detection.",
-        verbose_name="Frequency",
+        help_text="The centre frequency of this detection, in MHz.",
+        verbose_name="Frequency (MHz)",
     )
 
     bw = models.FloatField(
