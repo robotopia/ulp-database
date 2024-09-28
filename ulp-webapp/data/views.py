@@ -17,6 +17,8 @@ from decimal import Decimal
 
 from spiceypy.spiceypy import spkezr, furnsh, j2000, spd, unload
 
+site_names = EarthLocation.get_site_names()
+
 def calc_dmdelay(dm, flo, fhi):
     return 4.148808e3 * u.s * (dm.to('pc/cm3').value) * (1/flo.to('MHz').value**2 - 1/fhi.to('MHz').value**2)
 
@@ -316,7 +318,7 @@ def timing_residual_view(request, pk):
     # Generate list of output TOA formats:
     context['output_toa_formats'] = list(Time.FORMATS)
     context['selected_output_toa_format'] = output_toa_format
-    context['telescopes'] = EarthLocation.get_site_names()
+    context['telescopes'] = site_names
     context['min_el'] = min_el
     context['max_sun_el'] = max_sun_el
 
@@ -341,3 +343,54 @@ def toa_detail_view(request, pk):
     return render(request, 'data/toa_detail.html', context)
 
 
+def toas_view(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=404)
+
+    # Retrieve the selected ToAs from the specified ULP
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    toas = ulp.times_of_arrival.all
+
+    context = {
+        "ulp": ulp,
+        "toas": toas,
+        "telescopes": site_names,
+    }
+
+    return render(request, 'data/toas.html', context)
+
+
+
+def update_toa(request):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=404)
+
+    # Turn the data into a dictionary
+    data = json.loads(request.body.decode('utf-8'))
+
+    # Get the relevant TOA object
+    toa = get_object_or_404(models.TimeOfArrival, pk=data['pk'])
+
+    # Make sure the user has the permissions to edit this ULP's TOAs
+
+    # Second, they have to belong to a group that has been granted access to
+    # this ULP's data
+    if not toa.ulp.data_access_groups.filter(user=request.user).exists() and not request.user in toa.ulp.whitelist_users.all():
+        return HttpResponse(status=403)
+
+    # Set the field value
+    setattr(toa, data['field'], data['value'])
+
+    # Save the result to the database
+    try:
+        toa.save()
+    except ValidationError as err:
+        return HttpResponse(str(err), status=400)
+
+    # Return "all is well"
+    return HttpResponse(status=200)
