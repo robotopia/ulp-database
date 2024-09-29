@@ -10,56 +10,56 @@
   {% csrf_token %}
   <div class="compact-form-item">
     <label for="raw-mjd">MJD</label>
-    <input id="raw-mjd" name="raw_mjd" type="number" value="{{ toa.raw_mjd }}"/>
+    <input id="raw-mjd" name="raw_mjd" type="number" value="{{ toa.raw_mjd|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="mjd-err">MJD error</label>
-    <input id="mjd-err" name="mjd_err" type="number" value="{{ toa.mjd_err }}"/>
+    <input id="mjd-err" name="mjd_err" type="number" value="{{ toa.mjd_err|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="mjd">Barycentred, dedispersed MJD</label>
-    <input id="mjd" name="mjd" type="number" value="{{ toa.mjd }}"/>
+    <input id="mjd" name="mjd" type="number" value="{{ toa.mjd|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
-    <label for="telescope">Telescope</label>
-    <input id="telescope" name="telescope" value="{{ toa.telescope }}"/>
-  </div>
-  <div class="compact-form-item">
-    <label for="backend">Backend</label>
-    <input id="backend" name="backend" value="{{ toa.backend }}"/>
+    <label for="telescope_name">Telescope</label>
+    <input id="telescope_name" name="telescope_name" value="{{ toa.telescope_name|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="freq">Frequency ({{ freq_units }})</label>
-    <input id="freq" name="freq" type="number" value="{{ toa.freq }}"/>
+    <input id="freq" name="freq" type="number" value="{{ toa.freq|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="bw">Bandwidth</label>
-    <input id="bw" name="bw" type="number" value="{{ toa.bw }}"/>
+    <input id="bw" name="bw" type="number" value="{{ toa.bw|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="spectral-index">Spectral index</label>
-    <input id="spectral-index" name="spectral_index" type="number" value="{{ toa.spectral_index }}"/>
+    <input id="spectral-index" name="spectral_index" type="number" value="{{ toa.spectral_index|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="rotation-measure">Rotation measure (rad/m^2)</label>
-    <input id="rotation-measure" name="rotation_measure" type="number" value="{{ toa.rotation_measure }}"/>
+    <input id="rotation-measure" name="rotation_measure" type="number" value="{{ toa.rotation_measure|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="peak-flux-Jy">Peak flux (Jy)</label>
-    <input id="peak-flux-Jy" name="peak_flux_Jy" type="number" value="{{ toa.peak_flux_Jy }}"/>
+    <input id="peak-flux-Jy" name="peak_flux_Jy" type="number" value="{{ toa.peak_flux_Jy|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="upper-limit">Upper limit?</label>
-    <input id="upper-limit" name="upper_limit" value="{{ toa.upper_limit }}"/>
+    <input id="upper-limit" name="upper_limit" value="{{ toa.upper_limit|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="pulse-width">Pulse width (s)</label>
-    <input id="pulse-width" name="pulse_width" type="number" value="{{ toa.pulse_width }}"/>
+    <input id="pulse-width" name="pulse_width" type="number" value="{{ toa.pulse_width|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
-    <label for="lightcurves">Lightcurves</label>
-    <span>
-      {% if toa.lightcurve %}<a href="{% url 'lightcurve_view' pk=toa.lightcurve.pk %}">{{ lightcurve }}</a>{% else %}<a href="{% url 'lightcurve_add' pk=toa.ulp.pk %}?{% if toa.freq %}freq={{ toa.freq }}&{% endif %}{% if toa.bw %}bw={{ toa.bw }}&{% endif %}">Add</a>{% endif %}
+    <label for="lightcurve">Lightcurve</label>
+    <span id="lightcurve">
+      {% if toa.lightcurve %}
+      <a href="{% url 'lightcurve_view' pk=toa.lightcurve.pk %}">{{ toa.lightcurve.t0 }}</a>
+      {% else %}
+      <a href="{% url 'lightcurve_add' pk=toa.ulp.pk %}?toa_pk={{ toa.pk }}&{% if toa.telescope_name %}telescope={{ toa.telescope_name }}&{% endif %}{% if toa.freq %}freq={{ toa.freq }}&{% endif %}{% if toa.bw %}bw={{ toa.bw }}{% endif %}">Add</a>
+      {% endif %}
     </span>
   </div>
   <div>

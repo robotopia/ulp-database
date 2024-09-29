@@ -11,3 +11,4 @@ spiceypy==6.0.0
 pillow==10.4.0
 pandas==2.2.3
 plotly==5.24.1
+jplephem==2.22

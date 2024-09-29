@@ -6,6 +6,9 @@
 
 <h1>Add lightcurve to {{ ulp }}</h1>
 
+<h2>Instructions</h2>
+The uploaded data file should be an ASCII file in which each row represents a timestep and each column represents a polarisation. The file is read in using NumPy's <code>loadtxt()</code> function with the default settings. The "Polarisations" field should contain a whitespace-separated list of polarisation labels that will be associated with each column in the file. The special value "<code>_</code>" (underscore) signifies a column to be ignored. For example, if it is set to "<code>YY _ V</code>", then only the first and third columns of the uploaded file with be read in, and associated with the polarisation labels "YY" and "V", respectively.
+
 <p>*Required</p>
 
 <form method="post" action="{% url 'lightcurve_add' pk=ulp.pk %}" enctype="multipart/form-data">
@@ -14,6 +17,11 @@
   <div class="compact-form-item">
     <label for="pol-cols">Polarisations (= columns in file)*</label>
     <input id="pol-cols" name="pol_cols" value="{{ request.GET.pol_cols }}" required/>
+  </div>
+
+  <div class="compact-form-item">
+    <label for="telescope">Telescope*</label>
+    <input id="telescope" name="telescope" value="{{ request.GET.telescope }}" required/>
   </div>
 
   <div class="compact-form-item">
@@ -52,11 +60,17 @@
     <input type="file" id="datafile" name="datafile" required/>
   </div>
 
+  <label for="toas">Associate ToAs ({{ ulp }}):</label><br>
+  <select name="toas" id="toas" size="{% if ulp.times_of_arrival.count > 20 %}20{% else %}{{ ulp.times_of_arrival }}{% endif %}" multiple>
+    {% for toa in ulp.times_of_arrival.all %}
+    <option value="{{ toa.pk }}" {% if toa.pk|slugify == request.GET.toa_pk %}selected{% endif %}>{{ toa.mjd }}</option>
+    {% endfor %}
+  </select>
+
+  <br>
+
   <input type="submit" value="Add"/>
 
 </form>
-
-<h2>Instructions</h2>
-The uploaded data file should be an ASCII file in which each row represents a timestep and each column represents a polarisation. The file is read in using NumPy's <code>loadtxt()</code> function with the default settings. The "Polarisations" field should contain a whitespace-separated list of polarisation labels that will be associated with each column in the file. The special value "<code>_</code>" (underscore) signifies a column to be ignored. For example, if it is set to "<code>YY _ V</code>", then only the first and third columns of the uploaded file with be read in, and associated with the polarisation labels "YY" and "V", respectively.
 
 {% endblock %}

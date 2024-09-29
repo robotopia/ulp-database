@@ -9,12 +9,12 @@ class TimeOfArrivalAdmin(admin.ModelAdmin):
     list_display = ['pk', 'ulp', 'mjd', 'telescope_name', 'raw_mjd', 'freq', 'barycentred', 'dedispersed']
     list_filter = ['ulp']
     fieldsets = [
+        PermissionFieldset,
         (
             None, {
                 "fields": ["ulp", ("mjd", "mjd_err"), "raw_mjd", "telescope_name", "freq", "bw", "spectral_index", "rotation_measure", "peak_flux_Jy", "upper_limit", "pulse_width", "barycentred", "dedispersed", "notes", "plots", "lightcurve"],
             }
         ),
-        PermissionFieldset,
     ]
 
 @admin.register(LightcurvePoint)
@@ -23,7 +23,15 @@ class LightcurvePointAdmin(admin.ModelAdmin):
 
 @admin.register(Lightcurve)
 class LightcurveAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'ulp', 't0', 'dt', 'freq', 'bw']
+    list_display = ['pk', 'ulp', 'telescope', 't0', 'freq']
+    fieldsets = [
+        PermissionFieldset,
+        (
+            None, {
+                "fields": ["ulp", "telescope", ("freq", "bw"), ("t0", "dt"), ("dm", "dm_freq")],
+            }
+        ),
+    ]
 
 @admin.register(EphemerisParameter)
 class EphemerisParameterAdmin(admin.ModelAdmin):

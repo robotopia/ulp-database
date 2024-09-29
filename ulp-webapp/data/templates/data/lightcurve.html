@@ -9,6 +9,10 @@
 <form>
   {% csrf_token %}
   <div class="compact-form-item">
+    <label for="telescope">Telescope</label>
+    <input class="compact-form-item" id="telescope" name="telescope" value="{{ lightcurve.telescope }}"/>
+  </div>
+  <div class="compact-form-item">
     <label for="freq">Frequency (MHz)</label>
     <input class="compact-form-item" id="freq" name="freq" value="{{ lightcurve.freq }}"/>
   </div>
@@ -30,14 +34,57 @@
   </div>
   <div class="compact-form-item">
     <label for="dm_freq">Reference frequency used when dedispersing (MHz)</label>
-    <input class="compact-form-item" id="dm_freq" name="dm_freq" value="{{ lightcurve.dm_freq }}"/>
+    <input class="compact-form-item" id="dm_freq" name="dm_freq" value="{{ lightcurve.dm_freq|default_if_none:'&#8734;' }}"/>
   </div>
 </form>
+
+<h2>Plot</h2>
+
+<p>
+{% if request.GET.bc == 'true' %}
+<a href="{% url 'lightcurve_view' pk=lightcurve.pk %}">Switch to topocentric</a>
+{% else %}
+<a href="{% url 'lightcurve_view' pk=lightcurve.pk %}?bc=true">Switch to barycentric</a>
+{% endif %}
+</p>
 
 {% autoescape off %}
 {{ plot_div }}
 {% endautoescape %}
 
+<h2>Associated ToAs</h2>
 
+<select name="toas" id="toas" size="{% if lightcurve.ulp.times_of_arrival.count > 20 %}20{% else %}{{ lightcurve.ulp.times_of_arrival }}{% endif %}" multiple>
+  {% for toa in lightcurve.ulp.times_of_arrival.all %}
+  <option value="{{ toa.pk }}" {% if toa in lightcurve.toas.all %}selected {% endif %}>{{ toa.mjd }}</option>
+  {% endfor %}
+</select>
+
+{% if lightcurve.owner == request.user %}
+
+<h2>Share</h2>
+
+<table>
+  <tr>
+    <th style="padding: 6px;">Group</th>
+    <th style="padding: 6px;">Can view</th>
+    <th style="padding: 6px;">Can edit</th>
+  </tr>
+  {% for group in request.user.groups.all %}
+  <tr>
+    <td>{{ group }}</td>
+    <td style="text-align: center;">
+      <input type="checkbox" id="{{ group.pk }}_can_view" {% if group in lightcurve.can_view_groups.all %}checked{% endif %} onchange="update_permissions('{% url 'update_permissions' %}', '{{ csrf_token }}', 'data', 'Lightcurve', {{ lightcurve.pk }}, 'group', '{{ group }}', 'view', this);"/>
+    </td>
+    <td style="text-align: center;">
+      <input type="checkbox" id="{{ group.pk }}_can_edit" {% if group in lightcurve.can_edit_groups.all %}checked{% endif %} onchange="update_permissions('{% url 'update_permissions' %}', '{{ csrf_token }}', 'data', 'Lightcurve', {{ lightcurve.pk }}, 'group', '{{ group }}', 'edit', this);"/>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<script type="text/javascript" src="{% static 'common/common.js' %}"></script>
+
+{% endif %}
 
 {% endblock %}

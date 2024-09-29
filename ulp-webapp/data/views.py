@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Value, BooleanField
 from django.urls import reverse
+from django.core.exceptions import ValidationError
 from . import models
 from common.utils import *
 
@@ -124,7 +125,7 @@ def toa_data(request, pk):
 
     # First of all, they have to be logged in
     if not request.user.is_authenticated:
-        return HttpResponse(status=404)
+        return HttpResponse(status=401)
 
     # Second, they have to belong to a group that has been granted access to
     # this ULP's data
@@ -151,7 +152,7 @@ def timing_choose_ulp_view(request):
 
     # First of all, they have to be logged in
     if not request.user.is_authenticated:
-        return HttpResponse(status=404)
+        return HttpResponse(status=401)
 
     # Get ULPs to which they have access
     ulps = published_models.Ulp.objects.filter(
@@ -170,7 +171,7 @@ def timing_residual_view(request, pk):
 
     # First of all, they have to be logged in
     if not request.user.is_authenticated:
-        return HttpResponse(status=404)
+        return HttpResponse(status=401)
 
     # Retrieve the selected ULP
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -343,7 +344,7 @@ def toa_detail_view(request, pk):
 
     # First of all, they have to be logged in
     if not request.user.is_authenticated:
-        return HttpResponse(status=404)
+        return HttpResponse(status=401)
 
     # Retrieve the selected ULP
     toa = get_object_or_404(models.TimeOfArrival, pk=pk)
@@ -360,7 +361,7 @@ def toas_view(request, pk):
 
     # First of all, they have to be logged in
     if not request.user.is_authenticated:
-        return HttpResponse(status=404)
+        return HttpResponse(status=401)
 
     # Retrieve the selected ToAs from the specified ULP
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -407,7 +408,7 @@ def update_toa(request):
 
     # First of all, they have to be logged in
     if not request.user.is_authenticated:
-        return HttpResponse(status=404)
+        return HttpResponse(status=401)
 
     # Turn the data into a dictionary
     data = json.loads(request.body.decode('utf-8'))
@@ -442,11 +443,12 @@ def lightcurve_view(request, pk):
 
     # First of all, they have to be logged in
     if not request.user.is_authenticated:
-        return HttpResponse(status=404)
+        return HttpResponse(status=401)
 
     # Get the relevant Lightcurve object
     lightcurve = get_object_or_404(models.Lightcurve, pk=pk)
 
+    # The user must be allowed to view this object
     if not lightcurve.can_view(request.user):
         return HttpResponse(status=403)
 
@@ -458,12 +460,34 @@ def lightcurve_view(request, pk):
 
     if lightcurve_points.exists():
 
+        # Barycentre, if requested
+        try:
+            do_bc = (request.GET['bc'] == 'true')
+        except:
+            do_bc = False
+        times = [p.t for p in lightcurve_points]
+
+        if do_bc:
+            ephemeris = {
+                param: models.EphemerisMeasurement.objects.filter(
+                           ephemeris_parameter__tempo_name=param,
+                           measurement__ulp=lightcurve.ulp
+                       ).first().measurement.quantity
+                for param in ['RAJ', 'DECJ']
+            }
+
+            direction = ephemeris_to_skycoord(ephemeris)
+            times = Time(times, format='mjd', scale='utc', location=EarthLocation.of_site(lightcurve.telescope)) # Convert to Time object
+            bc_correction = times.light_travel_time(direction, ephemeris='jpl') # Calculate correction
+            times = (times.tdb + bc_correction).value # Apply correction, and convert back to MJD values
+
+        # Prepare to plot
         data = [
             {
-                "t": p.t,
-                "value": p.value,
-                "pol": p.pol,
-            } for p in lightcurve_points
+                "t": times[i],
+                "value": lightcurve_points[i].value,
+                "pol": lightcurve_points[i].pol,
+            } for i in range(len(lightcurve_points))
         ]
 
         df = pd.DataFrame(data)
@@ -471,7 +495,7 @@ def lightcurve_view(request, pk):
         fig = px.line(
             df, x='t', y='value', color='pol',
             labels={
-                "t": "MJD",
+                "t": "MJD " + ("(barycentric)" if do_bc else "(topocentric)"),
                 "value": "Flux density (Jy)",
                 "pol": "Polarisation",
             },
@@ -496,7 +520,7 @@ def lightcurve_add(request, pk):
 
     # First of all, they have to be logged in
     if not request.user.is_authenticated:
-        return HttpResponse(status=404)
+        return HttpResponse(status=401)
 
     # Get the relevant Ulp object
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -529,6 +553,7 @@ def lightcurve_add(request, pk):
             dt=request.POST['dt'],
             dm=request.POST['dm'],
             dm_freq=request.POST['dm_freq'],
+            telescope=request.POST['telescope'],
         )
         lightcurve.save()
 
