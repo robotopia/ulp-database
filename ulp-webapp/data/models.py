@@ -277,18 +277,6 @@ class Plot(models.Model):
 
 class Lightcurve(AbstractPermission):
 
-    POL_I  = 'I'
-    POL_Q  = 'Q'
-    POL_U  = 'U'
-    POL_V  = 'V'
-
-    STOKES_CHOICES = [
-        (POL_I,  'Stokes I'),
-        (POL_Q,  'Stokes Q'),
-        (POL_U,  'Stokes U'),
-        (POL_V,  'Stokes V'),
-    ]
-
     ulp = models.ForeignKey(
         published_models.Ulp,
         on_delete=models.CASCADE,
@@ -304,12 +292,6 @@ class Lightcurve(AbstractPermission):
     bw = models.FloatField(
         help_text="The bandwidth of this lightcurve, in MHz.",
         verbose_name="Bandwidth (MHz)",
-    )
-
-    pol = models.CharField(
-        max_length=1,
-        default=POL_I,
-        choices=STOKES_CHOICES,
     )
 
     t0 = models.FloatField(

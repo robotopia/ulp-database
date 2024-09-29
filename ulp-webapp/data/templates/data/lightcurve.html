@@ -6,6 +6,34 @@
 
 <h1>{{ lightcurve }}</h1>
 
+<form>
+  {% csrf_token %}
+  <div class="compact-form-item">
+    <label for="freq">Frequency (MHz)</label>
+    <input class="compact-form-item" id="freq" name="freq" value="{{ lightcurve.freq }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="bw">Bandwidth (MHz)</label>
+    <input class="compact-form-item" id="bw" name="bw" value="{{ lightcurve.bw }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="t0">MJD of first sample</label>
+    <input class="compact-form-item" id="t0" name="t0" value="{{ lightcurve.t0 }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="dt">Duration of samples (s)</label>
+    <input class="compact-form-item" id="dt" name="dt" value="{{ lightcurve.dt }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="dm">DM used (pc/cm^3)</label>
+    <input class="compact-form-item" id="dm" name="dm" value="{{ lightcurve.dm }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="dm_freq">Reference frequency used when dedispersing (MHz)</label>
+    <input class="compact-form-item" id="dm_freq" name="dm_freq" value="{{ lightcurve.dm_freq }}"/>
+  </div>
+</form>
+
 {% autoescape off %}
 {{ plot_div }}
 {% endautoescape %}
