@@ -59,7 +59,7 @@
   <div class="compact-form-item">
     <label for="lightcurves">Lightcurves</label>
     <span>
-      {% if toa.lightcurve %}<a href="{% url 'lightcurve_view' pk=toa.lightcurve.pk %}">{{ lightcurve }}</a>{% else %}<a href="{% url 'lightcurve_add' pk=ulp.pk %}">Add</a>{% endif %}
+      {% if toa.lightcurve %}<a href="{% url 'lightcurve_view' pk=toa.lightcurve.pk %}">{{ lightcurve }}</a>{% else %}<a href="{% url 'lightcurve_add' pk=toa.ulp.pk %}">Add</a>{% endif %}
     </span>
   </div>
   <div>

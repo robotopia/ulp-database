@@ -487,14 +487,16 @@ def lightcurve_view(request, pk):
 def lightcurve_add(request, pk):
 
     # First of all, they have to be logged in
-    if not request.user.is_authenticaed:
+    if not request.user.is_authenticated:
         return HttpResponse(status=404)
 
     # Get the relevant Ulp object
-    ulp = get_object_or_404(models.Ulp, pk=pk)
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+    pols = models.LightcurvePoint.POL_CHOICES
 
     context = {
         'ulp': ulp,
+        'pols': pols,
     }
 
     return render(request, 'data/lightcurve_new.html', context)
