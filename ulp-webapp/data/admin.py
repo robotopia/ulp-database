@@ -11,7 +11,7 @@ class TimeOfArrivalAdmin(admin.ModelAdmin):
     fieldsets = [
         (
             None, {
-                "fields": ["ulp", ("mjd", "mjd_err"), "raw_mjd", "telescope_name", "freq", "bw", "spectral_index", "rotation_measure", "peak_flux_Jy", "upper_limit", "pulse_width", "barycentred", "dedispersed", "notes", "plots", "lightcurve"],
+                "fields": ["ulp", ("mjd", "mjd_err"), "raw_mjd", "telescope_name", "freq", "bw", "spectral_index", "rotation_measure", "peak_flux_Jy", "upper_limit", "pulse_width", "barycentred", "dedispersed", "notes", "plots", ("lcI", "lcQ", "lcU", "lcV")],
             }
         ),
         PermissionFieldset,
@@ -19,11 +19,7 @@ class TimeOfArrivalAdmin(admin.ModelAdmin):
 
 @admin.register(Lightcurve)
 class LightcurveAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'ulp', 't0', 'dt', 'freq', 'bw', 'pol']
-
-@admin.register(LightcurvePolarisation)
-class LightcurvePolarisationAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'lightcurve', 'pol']
+    list_display = ['pk', 'ulp', 't0', 'dt', 'freq', 'bw']
 
 @admin.register(EphemerisParameter)
 class EphemerisParameterAdmin(admin.ModelAdmin):

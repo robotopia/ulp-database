@@ -449,34 +449,37 @@ def lightcurve_view(request, pk):
     if not lightcurve.can_view(request.user):
         return HttpResponse(status=403)
 
-    lightcurve_polarisations = lightcurve.polarisations.all()
-
-    fig = make_subplots()
-
-    for pol in lightcurve_polarisations:
-        data = [
-            {
-                "t": p.t(),
-                "value": p.value,
-            } for p in lightcurve_polarisation.points
-        ]
-
-        df = pd.DataFrame(data)
-
-        trace = go.Scatter(
-            x=data['t'],
-            y=data['value'],
-            name=pol.pol,
-        )
-
-        fig.add_trace(trace)
-
-    scatter_plot = plot(fig, output_type="div")
-
     context = {
         'lightcurve': lightcurve,
-        'plot_div': scatter_plot,
     }
+
+    lightcurve_polarisations = lightcurve.polarisations.all()
+
+    if lightcurve_polarisations.exists():
+
+        fig = make_subplots()
+
+        for pol in lightcurve_polarisations:
+            data = [
+                {
+                    "t": p.t(),
+                    "value": p.value,
+                } for p in lightcurve_polarisation.points
+            ]
+
+            df = pd.DataFrame(data)
+
+            trace = go.Scatter(
+                x=data['t'],
+                y=data['value'],
+                name=pol.pol,
+            )
+
+            fig.add_trace(trace)
+
+        scatter_plot = plot(fig, output_type="div")
+
+        context['plot_div'] = scatter_plot
 
     return render(request, 'data/lightcurve.html', context)
 

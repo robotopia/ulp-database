@@ -56,6 +56,15 @@
     <label for="pulse-width">Pulse width (s)</label>
     <input id="pulse-width" name="pulse_width" type="number" value="{{ toa.pulse_width }}"/>
   </div>
+  <div class="compact-form-item">
+    <label for="lightcurves">Lightcurves</label>
+    <span>
+      {% if toa.lcI %}<a href="{% url 'lightcurve_view' pk=toa.lcI.pk %}">I</a>{% else %}+I {% endif %}
+      {% if toa.lcQ %}<a href="{% url 'lightcurve_view' pk=toa.lcQ.pk %}">Q</a>{% else %}+Q {% endif %}
+      {% if toa.lcU %}<a href="{% url 'lightcurve_view' pk=toa.lcU.pk %}">U</a>{% else %}+U {% endif %}
+      {% if toa.lcV %}<a href="{% url 'lightcurve_view' pk=toa.lcV.pk %}">V</a>{% else %}+V {% endif %}
+    </span>
+  </div>
   <div>
     <label for="notes">Notes</label><br>
     <textarea id="notes" name="notes" rows="10" cols="80">{{ toa.notes }}</textarea>

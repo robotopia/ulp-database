@@ -116,13 +116,44 @@ class TimeOfArrival(AbstractPermission):
         related_name="times_of_arrival",
     )
 
-    lightcurve = models.ForeignKey(
+    lcI = models.ForeignKey(
         "Lightcurve",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text="The lightcurve from which this ToA was derived.",
-        related_name="toas",
+        help_text="The Stokes I lightcurve from which this ToA was derived.",
+        related_name="toas_as_I",
+        verbose_name="Lightcurve (I)",
+    )
+
+    lcQ = models.ForeignKey(
+        "Lightcurve",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The Stokes Q lightcurve from which this ToA was derived.",
+        related_name="toas_as_Q",
+        verbose_name="Lightcurve (Q)",
+    )
+
+    lcU = models.ForeignKey(
+        "Lightcurve",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The Stokes U lightcurve from which this ToA was derived.",
+        related_name="toas_as_U",
+        verbose_name="Lightcurve (U)",
+    )
+
+    lcV = models.ForeignKey(
+        "Lightcurve",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The Stokes V lightcurve from which this ToA was derived.",
+        related_name="toas_as_V",
+        verbose_name="Lightcurve (V)",
     )
 
     def __str__(self):
@@ -326,50 +357,12 @@ class Lightcurve(AbstractPermission):
         ordering = ['ulp', 't0']
 
 
-class LightcurvePolarisation():
-
-    POL_I  = 'I'
-    POL_Q  = 'Q'
-    POL_U  = 'U'
-    POL_V  = 'V'
-
-    STOKES_CHOICES = [
-        (POL_I,  'Stokes I'),
-        (POL_Q,  'Stokes Q'),
-        (POL_U,  'Stokes U'),
-        (POL_V,  'Stokes V'),
-    ]
-
-    lightcurve = models.ForeignKey(
-        "Lightcurve"
-        on_delete=models.CASCADE,
-        help_text="The lightcurve to which this polarisation belongs.",
-        related_name="polarisations",
-    )
-
-    pol = models.CharField(
-        max_length=1,
-        default=POL_I,
-        choices=STOKES_CHOICES,
-        verbose_name="Polarisation",
-    )
-
-    def __str__(self) -> str:
-        return f"Lightcurve {self.pol} ({self.ulp}, {self.t0})"
-
-    class Meta:
-        ordering = ['lightcurve', 'pol']
-        constraints = [
-            models.UniqueConstraint(fields=['lightcurve', 'pol'], name="unique_lightcurve_pol"),
-        ]
-
-
 class LightcurvePoint(models.Model):
 
-    lightcurve_polarisation = models.ForeignKey(
-        "LightcurvePolarisation",
+    lightcurve = models.ForeignKey(
+        "Lightcurve",
         on_delete=models.CASCADE,
-        help_text="The lightcurve polarisation to which this point belongs.",
+        help_text="The lightcurve to which this point belongs.",
         related_name="points",
     )
 
@@ -386,10 +379,6 @@ class LightcurvePoint(models.Model):
     )
 
     @property
-    def lightcurve(self):
-        return self.lightcurve_polarisation.lightcurve
-
-    @property
     def t(self):
         return self.lightcurve.t(self.sample_number)
 
@@ -397,9 +386,9 @@ class LightcurvePoint(models.Model):
         return f"LightcurvePoint {self.sample_number} ({self.lightcurve.ulp}, {self.lightcurve.t0})"
 
     class Meta:
-        ordering = ['lightcurve_polarisation', 'sample_number']
+        ordering = ['lightcurve', 'sample_number']
         constraints = [
-            models.UniqueConstraint(fields=['lightcurve_polarisation', 'sample_number'], name="unique_lightcurve_samples"),
+            models.UniqueConstraint(fields=['lightcurve', 'sample_number'], name="unique_lightcurve_samples"),
         ]
 
 

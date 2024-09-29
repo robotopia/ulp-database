@@ -74,9 +74,11 @@ h1, h2, h3, h4, h5 {
   display: flex;
 }
 
-.compact-form-item > input {
+.compact-form-item > input,
+.compact-form-item > span {
   border: 0px;
   width: 500px;
+  background-color: field;
 }
 
 .compact-form-item > label {
