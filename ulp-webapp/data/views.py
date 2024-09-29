@@ -537,11 +537,17 @@ def lightcurve_add(request, pk):
 
         # First, try to open the file with np.loadtxt
         try:
-            values = np.loadtxt(request.FILES['datafile'])
+            values = np.loadtxt(request.FILES['datafile'], ndmin=2)
         except:
             return HttpResponse("Could not open uploaded file with NumPy's loadtxt()", status=400)
 
         # Probably should clean/validate the data here...
+        try:
+            dm_freq = float(request.POST['dm_freq'])
+        except:
+            dm_freq = None
+
+        toas = [get_object_or_404(models.TimeOfArrival, pk=toa_pk) for toa_pk in request.POST.getlist('toas')]
 
         # Add the lightcurve
         lightcurve = models.Lightcurve(
@@ -552,10 +558,15 @@ def lightcurve_add(request, pk):
             t0=request.POST['t0'],
             dt=request.POST['dt'],
             dm=request.POST['dm'],
-            dm_freq=request.POST['dm_freq'],
+            dm_freq=dm_freq,
             telescope=request.POST['telescope'],
         )
         lightcurve.save()
+
+        # Associate the TOAs
+        for toa in toas:
+            toa.lightcurve = lightcurve
+            toa.save()
 
         # Add the lightcurve points
         pols = request.POST['pol_cols'].split()
@@ -572,12 +583,12 @@ def lightcurve_add(request, pk):
                 continue
 
             # Add samples as LightcurvePoint objects
-            for i in range(len(values)):
+            for i in range(values.shape[0]):
                 lightcurve_point = models.LightcurvePoint(
                     lightcurve=lightcurve,
                     sample_number=i,
                     pol=pol,
-                    value=values[i],
+                    value=values[i,p],
                 )
                 # ^^^ YET TO DO: Figure out how to add errorbars!
 
