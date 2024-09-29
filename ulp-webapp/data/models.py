@@ -116,44 +116,13 @@ class TimeOfArrival(AbstractPermission):
         related_name="times_of_arrival",
     )
 
-    lcI = models.ForeignKey(
+    lightcurve = models.ForeignKey(
         "Lightcurve",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text="The Stokes I lightcurve from which this ToA was derived.",
-        related_name="toas_as_I",
-        verbose_name="Lightcurve (I)",
-    )
-
-    lcQ = models.ForeignKey(
-        "Lightcurve",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text="The Stokes Q lightcurve from which this ToA was derived.",
-        related_name="toas_as_Q",
-        verbose_name="Lightcurve (Q)",
-    )
-
-    lcU = models.ForeignKey(
-        "Lightcurve",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text="The Stokes U lightcurve from which this ToA was derived.",
-        related_name="toas_as_U",
-        verbose_name="Lightcurve (U)",
-    )
-
-    lcV = models.ForeignKey(
-        "Lightcurve",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text="The Stokes V lightcurve from which this ToA was derived.",
-        related_name="toas_as_V",
-        verbose_name="Lightcurve (V)",
+        help_text="The lightcurve from which this ToA was derived.",
+        related_name="toas",
     )
 
     def __str__(self):
@@ -359,6 +328,18 @@ class Lightcurve(AbstractPermission):
 
 class LightcurvePoint(models.Model):
 
+    POL_I = "I"
+    POL_Q = "Q"
+    POL_U = "U"
+    POL_V = "V"
+
+    POL_CHOICES = [
+        (POL_I, "Stokes I"),
+        (POL_Q, "Stokes Q"),
+        (POL_U, "Stokes U"),
+        (POL_V, "Stokes V"),
+    ]
+
     lightcurve = models.ForeignKey(
         "Lightcurve",
         on_delete=models.CASCADE,
@@ -367,6 +348,13 @@ class LightcurvePoint(models.Model):
     )
 
     sample_number = models.IntegerField()
+
+    pol = models.CharField(
+        max_length=2,
+        choices=POL_CHOICES,
+        default=POL_I,
+        help_text="The polarisation of this point.",
+    )
 
     value = models.FloatField(
         help_text="The value of this point, in Jy.",
