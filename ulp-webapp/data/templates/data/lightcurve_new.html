@@ -1,0 +1,62 @@
+{% extends "published/main.html" %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>Add lightcurve to {{ ulp }}</h1>
+
+<p>*Required</p>
+
+<form method="post" action="{% url 'lightcurve_add' pk=ulp.pk %}" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  <div class="compact-form-item">
+    <label for="pol-cols">Polarisations (= columns in file)*</label>
+    <input id="pol-cols" name="pol_cols" value="{{ request.GET.pol_cols }}" required/>
+  </div>
+
+  <div class="compact-form-item">
+    <label for="freq">Frequency (MHz)*</label>
+    <input id="freq" name="freq" type="number" step="any" value="{{ request.GET.freq }}" required/>
+  </div>
+
+  <div class="compact-form-item">
+    <label for="bw">Bandwidth (MHz)*</label>
+    <input id="bw" name="bw" type="number" step="any" value="{{ request.GET.bw }}" required/>
+  </div>
+
+  <div class="compact-form-item">
+    <label for="t0">MJD of first sample*</label>
+    <input id="t0" name="t0" type="number" step="any" required/>
+  </div>
+
+  <div class="compact-form-item">
+    <label for="dt">Duration of samples (s)*</label>
+    <input id="dt" name="dt" type="number" step="any" required/>
+  </div>
+
+  <div class="compact-form-item">
+    <label for="dm">DM used (pc/cm^3)*</label>
+    <input id="dm" name="dm" type="number" step="any" required/>
+  </div>
+
+  <div class="compact-form-item">
+    <label for="dm_freq">DM reference frequency (MHz)*</label>
+    <input id="dm_freq" name="dm_freq" type="number" step="any" value="{{ request.GET.freq }}" required/>
+    Use "oo" to indicate infinite frequency.
+  </div>
+
+  <div class="compact-form-item">
+    <label for="datafile">Values (Jy)*</label><br>
+    <input type="file" id="datafile" name="datafile" required/>
+  </div>
+
+  <input type="submit" value="Add"/>
+
+</form>
+
+<h2>Instructions</h2>
+The uploaded data file should be an ASCII file in which each row represents a timestep and each column represents a polarisation. The file is read in using NumPy's <code>loadtxt()</code> function with the default settings. The "Polarisations" field should contain a whitespace-separated list of polarisation labels that will be associated with each column in the file. The special value "<code>_</code>" (underscore) signifies a column to be ignored. For example, if it is set to "<code>YY _ V</code>", then only the first and third columns of the uploaded file with be read in, and associated with the polarisation labels "YY" and "V", respectively.
+
+{% endblock %}

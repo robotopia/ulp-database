@@ -17,6 +17,10 @@ class TimeOfArrivalAdmin(admin.ModelAdmin):
         PermissionFieldset,
     ]
 
+@admin.register(LightcurvePoint)
+class LightcurvePointAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'lightcurve', 'sample_number', 'pol']
+
 @admin.register(Lightcurve)
 class LightcurveAdmin(admin.ModelAdmin):
     list_display = ['pk', 'ulp', 't0', 'dt', 'freq', 'bw']

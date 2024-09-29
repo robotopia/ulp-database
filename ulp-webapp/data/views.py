@@ -503,12 +503,57 @@ def lightcurve_add(request, pk):
 
     elif request.method == 'POST':
 
-        print(request.POST)
+        # First, try to open the file with np.loadtxt
+        try:
+            values = np.loadtxt(request.FILES['datafile'])
+        except:
+            return HttpResponse("Could not open uploaded file with NumPy's loadtxt()", status=400)
+
+        # Probably should clean/validate the data here...
+
+        # Add the lightcurve
+        lightcurve = models.Lightcurve(
+            owner=request.user,
+            ulp=ulp,
+            freq=request.POST['freq'],
+            bw=request.POST['bw'],
+            t0=request.POST['t0'],
+            dt=request.POST['dt'],
+            dm=request.POST['dm'],
+            dm_freq=request.POST['dm_freq'],
+        )
+        lightcurve.save()
+
+        # Add the lightcurve points
+        pols = request.POST['pol_cols'].split()
+        pols_without_underscore = [pol for pol in pols if pol != '_']
+        no_repeats = (len(pols_without_underscore) == len(set(pols_without_underscore)))
+        if not no_repeats:
+            return HttpResponse(f"Cannot have repeated polarisations \"{request.POST['pol_cols']}\"", status=400)
+
+        for p in range(len(pols)):
+            pol = pols[p]
+
+            # Ignore polarisations marked as '_'
+            if pol == '_':
+                continue
+
+            # Add samples as LightcurvePoint objects
+            for i in len(values):
+                lightcurve_point = models.LightcurvePoint(
+                    lightcurve=lightcurve,
+                    sample_number=i,
+                    pol=pol,
+                    value=values[i],
+                )
+                # ^^^ YET TO DO: Figure out how to add errorbars!
+
+                lightcurve_point.save()
 
         context = {
             'ulp': ulp,
         }
 
-        return render(request, 'data/lightcurve_new.html', context)
+        return redirect('lightcurve_view', pk=lightcurve.pk)
 
 

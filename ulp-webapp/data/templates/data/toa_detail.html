@@ -59,7 +59,7 @@
   <div class="compact-form-item">
     <label for="lightcurves">Lightcurves</label>
     <span>
-      {% if toa.lightcurve %}<a href="{% url 'lightcurve_view' pk=toa.lightcurve.pk %}">{{ lightcurve }}</a>{% else %}<a href="{% url 'lightcurve_add' pk=toa.ulp.pk %}">Add</a>{% endif %}
+      {% if toa.lightcurve %}<a href="{% url 'lightcurve_view' pk=toa.lightcurve.pk %}">{{ lightcurve }}</a>{% else %}<a href="{% url 'lightcurve_add' pk=toa.ulp.pk %}?{% if toa.freq %}freq={{ toa.freq }}&{% endif %}{% if toa.bw %}bw={{ toa.bw }}&{% endif %}">Add</a>{% endif %}
     </span>
   </div>
   <div>
