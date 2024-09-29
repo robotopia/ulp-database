@@ -20,7 +20,8 @@ from spiceypy.spiceypy import spkezr, furnsh, j2000, spd, unload
 import pandas as pd
 from plotly.offline import plot
 import plotly.express as px
-from plotly.subplots import make_subplots
+#import plotly.graph_objects as go
+#from plotly.subplots import make_subplots
 
 site_names = sorted(EarthLocation.get_site_names(), key=str.casefold)
 
@@ -453,29 +454,36 @@ def lightcurve_view(request, pk):
         'lightcurve': lightcurve,
     }
 
-    lightcurve_polarisations = lightcurve.polarisations.all()
+    lightcurve_points = lightcurve.points.all()
 
-    if lightcurve_polarisations.exists():
+    if lightcurve_points.exists():
 
-        fig = make_subplots()
+        data = [
+            {
+                "t": p.t,
+                "value": p.value,
+                "pol": p.pol,
+            } for p in lightcurve_points
+        ]
 
-        for pol in lightcurve_polarisations:
-            data = [
-                {
-                    "t": p.t(),
-                    "value": p.value,
-                } for p in lightcurve_polarisation.points
-            ]
+        df = pd.DataFrame(data)
 
-            df = pd.DataFrame(data)
-
-            trace = go.Scatter(
-                x=data['t'],
-                y=data['value'],
-                name=pol.pol,
-            )
-
-            fig.add_trace(trace)
+        fig = px.line(
+            df, x='t', y='value', color='pol',
+            labels={
+                "t": "MJD",
+                "value": "Flux density (Jy)",
+                "pol": "Polarisation",
+            },
+        )
+        fig.update_layout(
+            font_color="rgb(222,226,230)",
+            paper_bgcolor="rgba(0,0,0,0)", # transparent
+            plot_bgcolor="rgba(0,0,0,0)", # transparent
+        )
+        fig.update_xaxes(
+            tickformat="f",
+        )
 
         scatter_plot = plot(fig, output_type="div")
 
@@ -539,7 +547,7 @@ def lightcurve_add(request, pk):
                 continue
 
             # Add samples as LightcurvePoint objects
-            for i in len(values):
+            for i in range(len(values)):
                 lightcurve_point = models.LightcurvePoint(
                     lightcurve=lightcurve,
                     sample_number=i,
