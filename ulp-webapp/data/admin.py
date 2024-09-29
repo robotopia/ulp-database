@@ -21,6 +21,10 @@ class TimeOfArrivalAdmin(admin.ModelAdmin):
 class LightcurveAdmin(admin.ModelAdmin):
     list_display = ['pk', 'ulp', 't0', 'dt', 'freq', 'bw', 'pol']
 
+@admin.register(LightcurvePolarisation)
+class LightcurvePolarisationAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'lightcurve', 'pol']
+
 @admin.register(EphemerisParameter)
 class EphemerisParameterAdmin(admin.ModelAdmin):
     list_display = ['tempo_name', 'parameter', 'tempo_astropy_units']
