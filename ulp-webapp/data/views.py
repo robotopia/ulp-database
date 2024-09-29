@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Value, BooleanField
 from django.urls import reverse
@@ -492,13 +492,23 @@ def lightcurve_add(request, pk):
 
     # Get the relevant Ulp object
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
-    pols = models.LightcurvePoint.POL_CHOICES
 
-    context = {
-        'ulp': ulp,
-        'pols': pols,
-    }
+    if request.method == 'GET':
 
-    return render(request, 'data/lightcurve_new.html', context)
+        context = {
+            'ulp': ulp,
+        }
+
+        return render(request, 'data/lightcurve_new.html', context)
+
+    elif request.method == 'POST':
+
+        print(request.POST)
+
+        context = {
+            'ulp': ulp,
+        }
+
+        return render(request, 'data/lightcurve_new.html', context)
 
 

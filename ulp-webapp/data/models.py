@@ -328,18 +328,6 @@ class Lightcurve(AbstractPermission):
 
 class LightcurvePoint(models.Model):
 
-    POL_I = "I"
-    POL_Q = "Q"
-    POL_U = "U"
-    POL_V = "V"
-
-    POL_CHOICES = [
-        (POL_I, "Stokes I"),
-        (POL_Q, "Stokes Q"),
-        (POL_U, "Stokes U"),
-        (POL_V, "Stokes V"),
-    ]
-
     lightcurve = models.ForeignKey(
         "Lightcurve",
         on_delete=models.CASCADE,
@@ -350,9 +338,8 @@ class LightcurvePoint(models.Model):
     sample_number = models.IntegerField()
 
     pol = models.CharField(
-        max_length=2,
-        choices=POL_CHOICES,
-        default=POL_I,
+        max_length=15,
+        default="I",
         help_text="The polarisation of this point.",
     )
 
