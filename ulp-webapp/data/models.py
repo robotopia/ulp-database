@@ -445,3 +445,35 @@ class WorkingEphemeris(AbstractPermission):
             models.UniqueConstraint(fields=['owner', 'ulp'], name="working_ephemeris_ulp_owner_unique"),
         ]
 
+
+class Pulse(models.Model):
+
+    lightcurve = models.ForeignKey(
+        "Lightcurve",
+        on_delete=models.CASCADE,
+        help_text="The lightcurve to which this pulse belongs.",
+        related_name="pulses",
+    )
+
+    mjd_start = models.FloatField(
+        help_text="The (topocentric) MJD defining the start of the pulse",
+    )
+
+    mjd_end = models.FloatField(
+        help_text="The (topocentric) MJD defining the end of the pulse",
+    )
+
+    tags = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Comma-separated tags that can be used to categorise different pulses into groups, e.g. \"MP\", \"IP\".",
+    )
+
+    def __str__(self) -> str:
+        return f"Pulse ({self.mjd_start}-{self.mjd_end}) for {self.lightcurve}"
+
+    class Meta:
+        ordering = ['lightcurve', 'mjd_start']
+
+
