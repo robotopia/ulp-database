@@ -3,7 +3,9 @@ from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from published import models as published_models
 import astropy.units as u
-from astropy.coordinates import Angle, EarthLocation
+from astropy.coordinates import SkyCoord, Angle, EarthLocation
+from astropy.time import Time
+import numpy as np
 from decimal import Decimal
 
 from common.models import AbstractPermission
@@ -323,8 +325,29 @@ class Lightcurve(AbstractPermission):
         help_text="The telescope that made this observation. Must match a string in AstroPy's EarthLocation.get_site_names().",
     )
 
-    def t(self, sample_number):
-        return self.t0 + (sample_number * self.dt / 86400)  # Cheaper than astropy units
+    @property
+    def times(self):
+        sample_numbers = np.array([p.sample_number for p in self.points.all()])
+        return self.t0 + (sample_numbers * self.dt / 86400)  # Cheaper than astropy units
+
+    @property
+    def bary_times(self):
+        ra, dec = [
+            EphemerisMeasurement.objects.filter(
+                ephemeris_parameter__tempo_name=param,
+                measurement__ulp=self.ulp
+            ).first().measurement.quantity for param in ['RAJ', 'DECJ']
+        ]
+
+        direction = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg), frame='icrs')
+        times = Time(self.times, format='mjd', scale='utc', location=EarthLocation.of_site(self.telescope)) # Convert to Time object
+        bc_correction = times.light_travel_time(direction, ephemeris='jpl') # Calculate correction
+        times = (times.tdb + bc_correction).value # Apply correction, and convert back to MJD values
+        return times
+
+    @property
+    def values(self):
+        return np.array([p.value for p in self.points.all()])
 
     def __str__(self) -> str:
         return f"Lightcurve ({self.ulp}, {self.t0})"
@@ -362,7 +385,7 @@ class LightcurvePoint(models.Model):
 
     @property
     def t(self):
-        return self.lightcurve.t(self.sample_number)
+        return self.lightcurve.t0 + (self.sample_number * self.lightcurve.dt / 86400)  # Cheaper than astropy units
 
     def __str__(self) -> str:
         return f"LightcurvePoint {self.sample_number} ({self.lightcurve.ulp}, {self.lightcurve.t0})"
@@ -405,6 +428,12 @@ class WorkingEphemeris(AbstractPermission):
         null=True,
         blank=True,
         help_text="The orbital period (h)",
+    )
+
+    dm = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The dispersion measure (pc/cm^3)",
     )
 
     def __str__(self) -> str:

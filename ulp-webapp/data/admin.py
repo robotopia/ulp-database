@@ -49,14 +49,14 @@ class PlotAdmin(admin.ModelAdmin):
 
 @admin.register(WorkingEphemeris)
 class WorkingEphemerisAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'owner', 'ulp', 'pepoch', 'p0', 'p1', 'pb']
+    list_display = ['pk', 'owner', 'ulp', 'pepoch', 'p0', 'p1', 'pb', 'dm']
     list_filter = ['owner', 'ulp']
     fieldsets = [
         PermissionFieldset,
         (None, {"fields": ["ulp"]}),
         (
             "Ephemeris values", {
-                "fields": ["pepoch", "p0", "p1", "pb"],
+                "fields": ["pepoch", "p0", "p1", "pb", "dm"],
             }
         ),
     ]

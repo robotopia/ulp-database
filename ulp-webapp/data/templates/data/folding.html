@@ -6,24 +6,74 @@
 
 <h1>Folding on {{ ulp }}</h1>
 
-<form>
+<form method="post" action="{% url 'folding_view' pk=ulp.pk %}">
   {% csrf_token %}
   <div class="compact-form-item">
     <label for="pepoch">PEPOCH (MJD)</label>
-    <input id="pepoch" name="pepoch" type="number" value="{{ toa.pepoch|default_if_none:'' }}"/>
+    <input id="pepoch" name="pepoch" type="number" step="any" value="{{ working_ephemeris.pepoch|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="p0">Rotational period (s)</label>
-    <input id="p0" name="p0" type="number" value="{{ toa.p0|default_if_none:'' }}"/>
+    <input id="p0" name="p0" type="number" step="any" value="{{ working_ephemeris.p0|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="p1">Rotational period derivative (s/s)</label>
-    <input id="p1" name="p1" type="number" value="{{ toa.p1|default_if_none:'' }}"/>
+    <input id="p1" name="p1" type="number" step="any" value="{{ working_ephemeris.p1|default_if_none:'' }}"/>
   </div>
   <div class="compact-form-item">
     <label for="pb">Orbital period (h)</label>
-    <input id="pb" name="pb" type="number" value="{{ toa.pb|default_if_none:'' }}"/>
+    <input id="pb" name="pb" type="number" step="any" value="{{ working_ephemeris.pb|default_if_none:'' }}"/>
   </div>
+  <div class="compact-form-item">
+    <label for="dm">Dispersion measure (pc/cm^3)</label>
+    <input id="dm" name="dm" type="number" step="any" value="{{ working_ephemeris.dm|default_if_none:'' }}"/>
+  </div>
+  <input type="submit" value="Update"/>
 </form>
+
+<div id='pulsestack'>
+</div>
+
+<script>
+  function fold(mjds, pepoch, period) {
+    let pulse_phases = mjds.map((mjd) => (mjd - pepoch)/(period/86400.0));
+    let pulses = pulse_phases.map((pulse_phase) => Math.floor(pulse_phase + 0.5));
+    let phases = [];
+    for (let i = 0; i < mjds.length; i++) {
+      phases[i] = pulse_phases[i] - pulses[i] - 0.5;
+    }
+
+    return {pulses: pulses, phases: phases}
+  }
+
+  function fold_data(data, pepoch, period) {
+    new_data = [];
+    for (let i = 0; i < data.length; i++) {
+      folded = fold(data[i].mjds, pepoch, period);
+      new_data[i] = {
+        t0: data[i].t0,
+        x: folded.phases,
+        y: data[i].values,
+        mode: 'lines',
+        type: 'scatter'
+      }
+      //console.log(new_data[i]);
+    }
+
+    return new_data;
+  }
+
+  var data = {{ data | safe }};
+  var pepoch = document.getElementById('pepoch').value
+  var p0     = document.getElementById('p0').value
+  var p1     = document.getElementById('p1').value
+  var pb     = document.getElementById('pb').value
+
+  var folded_data = fold_data(data, pepoch, p0);
+  //console.log(folded_data);
+  //console.log(data);
+
+  Plotly.newPlot('pulsestack', folded_data);
+</script>
 
 {% endblock %}

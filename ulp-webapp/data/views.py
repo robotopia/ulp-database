@@ -465,21 +465,8 @@ def lightcurve_view(request, pk):
             do_bc = (request.GET['bc'] == 'true')
         except:
             do_bc = False
-        times = [p.t for p in lightcurve_points]
 
-        if do_bc:
-            ephemeris = {
-                param: models.EphemerisMeasurement.objects.filter(
-                           ephemeris_parameter__tempo_name=param,
-                           measurement__ulp=lightcurve.ulp
-                       ).first().measurement.quantity
-                for param in ['RAJ', 'DECJ']
-            }
-
-            direction = ephemeris_to_skycoord(ephemeris)
-            times = Time(times, format='mjd', scale='utc', location=EarthLocation.of_site(lightcurve.telescope)) # Convert to Time object
-            bc_correction = times.light_travel_time(direction, ephemeris='jpl') # Calculate correction
-            times = (times.tdb + bc_correction).value # Apply correction, and convert back to MJD values
+        times = lightcurve.bary_times if do_bc else lightcurve.times
 
         # Prepare to plot
         data = [
@@ -625,14 +612,30 @@ def folding_view(request, pk):
     lightcurves = permitted_to_view_filter(ulp.lightcurves.all(), request.user)
 
     # Get all the points, organised by lightcurve
-    points = {lc: lc.points for lc in lightcurves}
+    data = [
+        {
+            't0': lc.t0,
+            'mjds': list(lc.bary_times),
+            'values': list(lc.values),
+        } for lc in lightcurves
+    ]
 
     # Throw it all together into a context
     context = {
         'ulp': ulp,
         'working_ephemeris': working_ephemeris,
-        'points': points,
+        'data': data,
     }
+
+    # If this is a POST request, save the provided values
+    if request.method == "POST":
+        for field in ['pepoch', 'p0', 'p1', 'pb', 'dm']:
+            try:
+                setattr(working_ephemeris, field, float(request.POST[field]))
+            except:
+                pass
+
+        working_ephemeris.save()
 
     return render(request, 'data/folding.html', context)
 
