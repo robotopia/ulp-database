@@ -325,13 +325,14 @@ class Lightcurve(AbstractPermission):
         help_text="The telescope that made this observation. Must match a string in AstroPy's EarthLocation.get_site_names().",
     )
 
-    @property
-    def times(self):
-        sample_numbers = np.array([p.sample_number for p in self.points.all()])
+    def times(self, pol=None):
+        if pol is None:
+            sample_numbers = np.array([p.sample_number for p in self.points.all()])
+        else:
+            sample_numbers = np.array([p.sample_number for p in self.points.all() if p.pol == pol])
         return self.t0 + (sample_numbers * self.dt / 86400)  # Cheaper than astropy units
 
-    @property
-    def bary_times(self):
+    def bary_times(self, pol=None):
         ra, dec = [
             EphemerisMeasurement.objects.filter(
                 ephemeris_parameter__tempo_name=param,
@@ -340,14 +341,16 @@ class Lightcurve(AbstractPermission):
         ]
 
         direction = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg), frame='icrs')
-        times = Time(self.times, format='mjd', scale='utc', location=EarthLocation.of_site(self.telescope)) # Convert to Time object
+        times = Time(self.times(pol=pol), format='mjd', scale='utc', location=EarthLocation.of_site(self.telescope)) # Convert to Time object
         bc_correction = times.light_travel_time(direction, ephemeris='jpl') # Calculate correction
         times = (times.tdb + bc_correction).value # Apply correction, and convert back to MJD values
         return times
 
-    @property
-    def values(self):
-        return np.array([p.value for p in self.points.all()])
+    def values(self, pol=None):
+        if pol is None:
+            return np.array([p.value for p in self.points.all()])
+        else:
+            return np.array([p.value for p in self.points.all() if p.pol == pol])
 
     def __str__(self) -> str:
         return f"Lightcurve ({self.ulp}, {self.t0})"

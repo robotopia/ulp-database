@@ -466,39 +466,18 @@ def lightcurve_view(request, pk):
         except:
             do_bc = False
 
-        times = lightcurve.bary_times if do_bc else lightcurve.times
+        times = lightcurve.bary_times() if do_bc else lightcurve.times()
 
-        # Prepare to plot
+        # An attempt to make the plot client-side...
+        pols = list({p.pol for p in lightcurve.points.all()})
         data = [
             {
-                "t": times[i],
-                "value": lightcurve_points[i].value,
-                "pol": lightcurve_points[i].pol,
-            } for i in range(len(lightcurve_points))
+                "x": list(lightcurve.bary_times(pol) if do_bc else lightcurve.times(pol)),
+                "y": list(lightcurve.values(pol)),
+                "name": pol,
+            } for pol in pols
         ]
-
-        df = pd.DataFrame(data)
-
-        fig = px.line(
-            df, x='t', y='value', color='pol',
-            labels={
-                "t": "MJD " + ("(barycentric)" if do_bc else "(topocentric)"),
-                "value": "Flux density (Jy)",
-                "pol": "Polarisation",
-            },
-        )
-        fig.update_layout(
-            font_color="rgb(222,226,230)",
-            paper_bgcolor="rgba(0,0,0,0)", # transparent
-            plot_bgcolor="rgba(0,0,0,0)", # transparent
-        )
-        fig.update_xaxes(
-            tickformat="f",
-        )
-
-        scatter_plot = plot(fig, output_type="div")
-
-        context['plot_div'] = scatter_plot
+        context['data'] = data
 
     return render(request, 'data/lightcurve.html', context)
 

@@ -35,18 +35,8 @@
 </div>
 
 <script>
-  function fold(mjds, pepoch, period) {
-    let pulse_phases = mjds.map((mjd) => (mjd - pepoch)/(period/86400.0));
-    let pulses = pulse_phases.map((pulse_phase) => Math.floor(pulse_phase + 0.5));
-    let phases = [];
-    for (let i = 0; i < mjds.length; i++) {
-      phases[i] = pulse_phases[i] - pulses[i] - 0.5;
-    }
 
-    return {pulses: pulses, phases: phases}
-  }
-
-  function fold_data(data, pepoch, period) {
+  function prepare_data(data, pepoch, period) {
     new_data = [];
     for (let i = 0; i < data.length; i++) {
       folded = fold(data[i].mjds, pepoch, period);
@@ -57,7 +47,6 @@
         mode: 'lines',
         type: 'scatter'
       }
-      //console.log(new_data[i]);
     }
 
     return new_data;
@@ -69,9 +58,7 @@
   var p1     = document.getElementById('p1').value
   var pb     = document.getElementById('pb').value
 
-  var folded_data = fold_data(data, pepoch, p0);
-  //console.log(folded_data);
-  //console.log(data);
+  var folded_data = prepare_data(data, pepoch, p0);
 
   Plotly.newPlot('pulsestack', folded_data);
 </script>

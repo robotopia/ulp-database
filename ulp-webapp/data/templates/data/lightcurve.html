@@ -52,6 +52,13 @@
 {{ plot_div }}
 {% endautoescape %}
 
+<div id='lc_plot'>
+</div>
+
+<h2>Pulses</h2>
+
+<span id="foo_test">here</span>
+
 <h2>Associated ToAs</h2>
 
 <select name="toas" id="toas" size="{% if lightcurve.ulp.times_of_arrival.count > 20 %}20{% else %}{{ lightcurve.ulp.times_of_arrival }}{% endif %}" multiple>
@@ -83,8 +90,51 @@
   {% endfor %}
 </table>
 
-<script type="text/javascript" src="{% static 'common/common.js' %}"></script>
-
 {% endif %}
+
+<script>
+  var data = {{ data | safe }};
+  plotDiv = document.getElementById('lc_plot');
+
+  data.forEach(function (d) {
+    d.mode = 'lines';
+    d.type = 'scatter';
+  });
+
+  var layout = {
+    showlegend: true,
+    legend: {
+      title: {
+        text: "Polarisation"
+      }
+    },
+    font: {
+      color: "rgb(222,226, 230)"
+    },
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor: "rgba(0,0,0,0)",
+    xaxis: {
+      tickformat: "f",
+      title: {
+        text: "MJD ({% if request.GET.bc == 'true' %}barycentric{% else %}topocentric{% endif %})"
+      }
+    },
+    yaxis: {
+      title: {
+        text: "Flux density (Jy)"
+      }
+    },
+    hovermode: 'x unified'
+  };
+
+  Plotly.newPlot('lc_plot', data, layout);
+
+  // e.g. https://plotly.com/javascript/click-events/
+  // e.g. https://codepen.io/plotly/pen/QbZmZY
+  plotDiv.on('plotly_click', function(d) {
+    foo = document.getElementById('foo_test').innerHTML = 'test ' + d.points[d.points.length - 1].x;
+  });
+
+</script>
 
 {% endblock %}
