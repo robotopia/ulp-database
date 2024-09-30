@@ -601,3 +601,38 @@ def lightcurve_add(request, pk):
         return redirect('lightcurve_view', pk=lightcurve.pk)
 
 
+def folding_view(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=401)
+
+    # Get the relevant Ulp object
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    # Get working ephemeris
+    working_ephemeris = ulp.working_ephemerides.filter(owner=request.user).first()
+
+    # If one doesn't exist for this user, make one!
+    if not working_ephemeris:
+        working_ephemeris = models.WorkingEphemeris(
+            owner=request.user,
+            ulp=ulp,
+        )
+        working_ephemeris.save()
+
+    # Get all lightcurves that this owner can view
+    lightcurves = permitted_to_view_filter(ulp.lightcurves.all(), request.user)
+
+    # Get all the points, organised by lightcurve
+    points = {lc: lc.points for lc in lightcurves}
+
+    # Throw it all together into a context
+    context = {
+        'ulp': ulp,
+        'working_ephemeris': working_ephemeris,
+        'points': points,
+    }
+
+    return render(request, 'data/folding.html', context)
+

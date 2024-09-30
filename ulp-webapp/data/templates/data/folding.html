@@ -1,0 +1,29 @@
+{% extends "published/main.html" %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>Folding on {{ ulp }}</h1>
+
+<form>
+  {% csrf_token %}
+  <div class="compact-form-item">
+    <label for="pepoch">PEPOCH (MJD)</label>
+    <input id="pepoch" name="pepoch" type="number" value="{{ toa.pepoch|default_if_none:'' }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="p0">Rotational period (s)</label>
+    <input id="p0" name="p0" type="number" value="{{ toa.p0|default_if_none:'' }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="p1">Rotational period derivative (s/s)</label>
+    <input id="p1" name="p1" type="number" value="{{ toa.p1|default_if_none:'' }}"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="pb">Orbital period (h)</label>
+    <input id="pb" name="pb" type="number" value="{{ toa.pb|default_if_none:'' }}"/>
+  </div>
+</form>
+
+{% endblock %}

@@ -374,3 +374,45 @@ class LightcurvePoint(models.Model):
         ]
 
 
+class WorkingEphemeris(AbstractPermission):
+
+    ulp = models.ForeignKey(
+        published_models.Ulp,
+        on_delete=models.CASCADE,
+        help_text="The source this ephemeris applies to",
+        related_name="working_ephemerides",
+    )
+
+    pepoch = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The reference epoch for period measurement (MJD)",
+    )
+
+    p0 = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The period at time \"pepoch\" (s)",
+    )
+
+    p1 = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The period derivative at time \"pepoch\" (s/s)",
+    )
+
+    pb = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The orbital period (h)",
+    )
+
+    def __str__(self) -> str:
+        return f"Working ephemeris for {self.ulp} ({self.owner})"
+
+    class Meta:
+        verbose_name_plural = "Working ephemerides"
+        constraints = [
+            models.UniqueConstraint(fields=['owner', 'ulp'], name="working_ephemeris_ulp_owner_unique"),
+        ]
+

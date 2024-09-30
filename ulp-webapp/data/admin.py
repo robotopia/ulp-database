@@ -47,3 +47,17 @@ class PlotAdmin(admin.ModelAdmin):
     list_display = ['pk', 'image', 'owner']
     list_filter = ['owner']
 
+@admin.register(WorkingEphemeris)
+class WorkingEphemerisAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'owner', 'ulp', 'pepoch', 'p0', 'p1', 'pb']
+    list_filter = ['owner', 'ulp']
+    fieldsets = [
+        PermissionFieldset,
+        (None, {"fields": ["ulp"]}),
+        (
+            "Ephemeris values", {
+                "fields": ["pepoch", "p0", "p1", "pb"],
+            }
+        ),
+    ]
+
