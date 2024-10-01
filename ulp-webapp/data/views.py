@@ -620,13 +620,16 @@ def folding_view(request, pk):
     lightcurves = permitted_to_view_filter(ulp.lightcurves.all(), request.user)
 
     # Get all the points, organised by lightcurve
-    data = [
-        {
+    data = []
+    for i in range(lightcurves.count()):
+        lc = lightcurves[i]
+        values = lc.values()
+        values /= np.max(values)
+        data.append({
             't0': lc.t0,
-            'mjds': list(lc.bary_times),
-            'values': list(lc.values),
-        } for lc in lightcurves
-    ]
+            'mjds': list(lc.bary_times()),
+            'values': list(values + i), # The +i is for stacking
+        })
 
     # Throw it all together into a context
     context = {

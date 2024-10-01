@@ -60,7 +60,10 @@
 
   var folded_data = prepare_data(data, pepoch, p0);
 
-  Plotly.newPlot('pulsestack', folded_data);
+  var layout = get_plotly_default_layout();
+  layout.height = 100*data.length;
+
+  Plotly.newPlot('pulsestack', folded_data, layout);
 </script>
 
 {% endblock %}

@@ -50,6 +50,16 @@ function fold(mjds, pepoch, period) {
     phases[i] = pulse_phases[i] - pulses[i] - 0.5;
   }
 
-  return {pulses: pulses, phases: phases}
+  return {pulses: pulses, phases: phases};
 }
 
+function get_plotly_default_layout() {
+  return {
+    showlegend: true,
+    font: {color: "rgb(222,226, 230)"},
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor: "rgba(0,0,0,0)",
+    xaxis: {tickformat: "f"},
+    hoverlabel: {font: {color: 'black'}}
+  };
+}

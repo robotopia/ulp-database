@@ -137,50 +137,26 @@
     d.type = 'scatter';
   });
 
-  var layout = {
-    shapes: [
-      {% for pulse in lightcurve.pulses.all %}
-      {
-        type: 'rect',
-        xref: 'x',
-        yref: 'paper',
-        x0: {{ pulse.mjd_start }},
-        x1: {{ pulse.mjd_end }},
-        y0: 0,
-        y1: 1,
-        fillcolor: '#880',
-        opacity: 0.2,
-        line: {width: 0}
-      },
-      {% endfor %}
-    ],
-    showlegend: true,
-    legend: {
-      title: {
-        text: "Polarisation"
-      }
+  var layout = get_plotly_default_layout();
+  layout.shapes = [
+    {% for pulse in lightcurve.pulses.all %}
+    {
+      type: 'rect',
+      xref: 'x',
+      yref: 'paper',
+      x0: {{ pulse.mjd_start }},
+      x1: {{ pulse.mjd_end }},
+      y0: 0,
+      y1: 1,
+      fillcolor: '#880',
+      opacity: 0.2,
+      line: {width: 0}
     },
-    font: {
-      color: "rgb(222,226, 230)"
-    },
-    paper_bgcolor: "rgba(0,0,0,0)",
-    plot_bgcolor: "rgba(0,0,0,0)",
-    xaxis: {
-      tickformat: "f",
-      title: {
-        text: "MJD (topocentric)"
-      }
-    },
-    yaxis: {
-      title: {
-        text: "Flux density (Jy)"
-      }
-    },
-    hoverlabel: {
-      font: {color: 'black'}
-    }
-  };
-  console.log(layout);
+    {% endfor %}
+  ];
+  layout.legend = {title: {text: "Polarisation"}};
+  layout.xaxis = {title: {text: "MJD (topocentric)"}};
+  layout.yaxis = {title: {text: "Flux density (Jy)"}};
 
   Plotly.newPlot('lc_plot', data, layout);
 
