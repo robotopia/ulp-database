@@ -476,6 +476,10 @@ class Pulse(models.Model):
     def __str__(self) -> str:
         return f"Pulse ({self.mjd_start}-{self.mjd_end}) for {self.lightcurve}"
 
+    def clean(self):
+        if self.mjd_start >= self.mjd_end:
+            raise ValidationError("mjd_start must be less than mjd_end")
+
     class Meta:
         ordering = ['lightcurve', 'mjd_start']
 

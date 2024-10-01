@@ -40,14 +40,6 @@
 
 <h2>Plot</h2>
 
-<p>
-{% if request.GET.bc == 'true' %}
-<a href="{% url 'lightcurve_view' pk=lightcurve.pk %}">Switch to topocentric</a>
-{% else %}
-<a href="{% url 'lightcurve_view' pk=lightcurve.pk %}?bc=true">Switch to barycentric</a>
-{% endif %}
-</p>
-
 {% autoescape off %}
 {{ plot_div }}
 {% endautoescape %}
@@ -57,7 +49,51 @@
 
 <h2>Pulses</h2>
 
-<span id="foo_test">here</span>
+<table id="pulse_table">
+  <tr>
+    <th>Start</th>
+    <th>End</th>
+    <th>Tags</th>
+    <th>Actions</th>
+  </tr>
+  {% for pulse in lightcurve.pulses.all %}
+  <tr>
+    <form method="post" action="{% url 'add_or_update_pulse' pk=lightcurve.pk %}">
+      {% csrf_token %}
+      <input id="pulse_id" name="pulse_id" value="{{ pulse.pk }}" hidden/>
+      <td>
+        <input id="mjd_start" name="mjd_start" type="number" step="any" value="{{ pulse.mjd_start }}" onchange="on_value_change(this);" required/>
+        <button type="button" onclick="select_mjd_from_plot('mjd_start');">Choose on plot</button>
+      </td>
+      <td>
+        <input id="mjd_end" name="mjd_end" type="number" step="any" value="{{ pulse.mjd_end }}" onchange="on_value_change(this);" required/>
+        <button type="button" onclick="select_mjd_from_plot('mjd_end');">Choose on plot</button>
+      </td>
+      <td>
+        <input id="tags" name="tags" value="{{ pulse.tags|default_if_none:'' }}" onchange="on_value_change(this);"/>
+      </td>
+      <td><input id="update_pulse" type="submit" value="Save changes"/></td>
+    </form>
+  </tr>
+  {% endfor %}
+  <tr>
+    <form method="post" action="{% url 'add_or_update_pulse' pk=lightcurve.pk %}">
+      {% csrf_token %}
+      <td>
+        <input id="mjd_start" name="mjd_start" type="number" step="any" required/>
+        <button type="button" onclick="select_mjd_from_plot('mjd_start');">Choose on plot</button>
+      </td>
+      <td>
+        <input id="mjd_end" name="mjd_end" type="number" step="any" required/>
+        <button type="button" onclick="select_mjd_from_plot('mjd_end');">Choose on plot</button>
+      </td>
+      <td>
+        <input id="tags" name="tags"/>
+      </td>
+      <td><input id="save_new_pulse" type="submit" value="Save new pulse"/></td>
+    </form>
+  </tr>
+</table>
 
 <h2>Associated ToAs</h2>
 
@@ -116,7 +152,7 @@
     xaxis: {
       tickformat: "f",
       title: {
-        text: "MJD ({% if request.GET.bc == 'true' %}barycentric{% else %}topocentric{% endif %})"
+        text: "MJD (topocentric)"
       }
     },
     yaxis: {
@@ -124,15 +160,37 @@
         text: "Flux density (Jy)"
       }
     },
-    hovermode: 'x unified'
+    hoverlabel: {
+      font: {color: 'black'}
+    }
   };
 
   Plotly.newPlot('lc_plot', data, layout);
 
+  // Code for handling adding pulses
+  var mjd_input;
+  const mjd_start_input = document.getElementById('mjd_start');
+  const mjd_end_input   = document.getElementById('mjd_end');
+
+  function on_value_change(element) {
+    element.style.backgroundColor = "#880";
+  }
+
+  function select_mjd_from_plot(mjd_input_id) {
+    mjd_input = document.getElementById(mjd_input_id); // either 'mjd_start' or 'mjd_end'
+    layout.hovermode = 'x unified';
+    Plotly.react('lc_plot', data, layout);
+  }
+
   // e.g. https://plotly.com/javascript/click-events/
   // e.g. https://codepen.io/plotly/pen/QbZmZY
   plotDiv.on('plotly_click', function(d) {
-    foo = document.getElementById('foo_test').innerHTML = 'test ' + d.points[d.points.length - 1].x;
+    if (mjd_input.value != d.points[0].x) {
+      mjd_input.value = d.points[0].x;
+      on_value_change(mjd_input);
+    }
+    layout.hovermode = 'closest';
+    Plotly.react('lc_plot', data, layout);
   });
 
 </script>

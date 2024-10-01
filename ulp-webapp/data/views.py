@@ -413,6 +413,33 @@ def toas_view(request, pk):
     return render(request, 'data/toas.html', context)
 
 
+def add_or_update_pulse(request, pk):
+
+    lightcurve = get_object_or_404(models.Lightcurve, pk=pk)
+
+    if request.method == "POST":
+
+        # I should be validating data here...
+
+        if 'pulse_id' in request.POST.keys():
+            # We're updating an existing pulse
+            pulse = get_object_or_404(models.Pulse, pk=int(request.POST['pulse_id']))
+            pulse.mjd_start = request.POST['mjd_start']
+            pulse.mjd_end = request.POST['mjd_end']
+            pulse.tags = request.POST['tags']
+
+        else:
+            # We're creating a new pulse
+            pulse = models.Pulse(
+                lightcurve=lightcurve,
+                mjd_start=request.POST['mjd_start'],
+                mjd_end=request.POST['mjd_end'],
+                tags=request.POST['tags'],
+            )
+
+        pulse.save()
+
+    return redirect('lightcurve_view', pk=pk)
 
 def update_toa(request):
 
@@ -470,19 +497,11 @@ def lightcurve_view(request, pk):
 
     if lightcurve_points.exists():
 
-        # Barycentre, if requested
-        try:
-            do_bc = (request.GET['bc'] == 'true')
-        except:
-            do_bc = False
-
-        times = lightcurve.bary_times() if do_bc else lightcurve.times()
-
         # An attempt to make the plot client-side...
         pols = list({p.pol for p in lightcurve.points.all()})
         data = [
             {
-                "x": list(lightcurve.bary_times(pol) if do_bc else lightcurve.times(pol)),
+                "x": list(lightcurve.times(pol)),
                 "y": list(lightcurve.values(pol)),
                 "name": pol,
             } for pol in pols
