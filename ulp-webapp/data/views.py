@@ -629,6 +629,7 @@ def folding_view(request, pk):
             't0': lc.t0,
             'mjds': list(lc.bary_times()),
             'values': list(values + i), # The +i is for stacking
+            'link': reverse('lightcurve_view', args=[lc.pk]),
         })
 
     # Throw it all together into a context

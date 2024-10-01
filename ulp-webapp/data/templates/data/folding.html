@@ -64,6 +64,11 @@
   layout.height = 100*data.length;
 
   Plotly.newPlot('pulsestack', folded_data, layout);
+
+  pulsestackDiv = document.getElementById('pulsestack');
+  pulsestackDiv.on('plotly_click', function(d) {
+    window.location.href = data[d.points[0].curveNumber].link;
+  });
 </script>
 
 {% endblock %}
