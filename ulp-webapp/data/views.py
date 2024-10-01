@@ -195,6 +195,17 @@ def timing_residual_view(request, pk):
     coord = ephemeris_to_skycoord(ephemeris)
     barycentre_toas(toas, coord)
 
+    # Do something similar for toas that are not yet dediserpsed, but for which a frequency is given
+    if 'DM' in ephemeris.keys():
+        dm = ephemeris['DM'] * u.pc / u.cm**3
+        for toa in toas:
+            if toa.freq is not None and toa.dedispersed == False:
+                delay = calc_dmdelay(dm, toa.freq*u.MHz, np.inf*u.MHz)
+                toa.mjd -= Decimal(delay.to('d').value)
+                toa.dedispersed = True
+                toa.save()
+
+
     output_toa_format = 'mjd'
     min_el = 0.0
     max_sun_el = 90.0
