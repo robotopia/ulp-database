@@ -138,6 +138,22 @@
   });
 
   var layout = {
+    shapes: [
+      {% for pulse in lightcurve.pulses.all %}
+      {
+        type: 'rect',
+        xref: 'x',
+        yref: 'paper',
+        x0: {{ pulse.mjd_start }},
+        x1: {{ pulse.mjd_end }},
+        y0: 0,
+        y1: 1,
+        fillcolor: '#880',
+        opacity: 0.2,
+        line: {width: 0}
+      },
+      {% endfor %}
+    ],
     showlegend: true,
     legend: {
       title: {
@@ -164,6 +180,7 @@
       font: {color: 'black'}
     }
   };
+  console.log(layout);
 
   Plotly.newPlot('lc_plot', data, layout);
 
