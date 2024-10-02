@@ -424,9 +424,15 @@ def add_or_update_pulse(request, pk):
         if 'pulse_id' in request.POST.keys():
             # We're updating an existing pulse
             pulse = get_object_or_404(models.Pulse, pk=int(request.POST['pulse_id']))
-            pulse.mjd_start = request.POST['mjd_start']
-            pulse.mjd_end = request.POST['mjd_end']
-            pulse.tags = request.POST['tags']
+
+            if request.POST['action'] == "Save":
+                pulse.mjd_start = request.POST['mjd_start']
+                pulse.mjd_end = request.POST['mjd_end']
+                pulse.tags = request.POST['tags']
+                pulse.save()
+            elif request.POST['action'] == "Delete":
+                print(f"about to delete {pulse}...")
+                pulse.delete()
 
         else:
             # We're creating a new pulse
@@ -437,7 +443,7 @@ def add_or_update_pulse(request, pk):
                 tags=request.POST['tags'],
             )
 
-        pulse.save()
+            pulse.save()
 
     return redirect('lightcurve_view', pk=pk)
 

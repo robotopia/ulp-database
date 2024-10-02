@@ -64,17 +64,20 @@
       {% csrf_token %}
       <input id="pulse_id" name="pulse_id" value="{{ pulse.pk }}" hidden/>
       <td>
-        <input id="mjd_start" name="mjd_start" type="number" step="any" value="{{ pulse.mjd_start }}" onchange="on_value_change(this);" required/>
-        <button type="button" onclick="select_mjd_from_plot('mjd_start');">Choose on plot</button>
+        <input id="mjd_start_{{ pulse.pk }}" name="mjd_start" type="number" step="any" value="{{ pulse.mjd_start }}" onchange="on_value_change(this);" required/>
+        <button type="button" onclick="select_mjd_from_plot('mjd_start_{{ pulse.pk }}');">Choose on plot</button>
       </td>
       <td>
-        <input id="mjd_end" name="mjd_end" type="number" step="any" value="{{ pulse.mjd_end }}" onchange="on_value_change(this);" required/>
-        <button type="button" onclick="select_mjd_from_plot('mjd_end');">Choose on plot</button>
+        <input id="mjd_end_{{ pulse.pk }}" name="mjd_end" type="number" step="any" value="{{ pulse.mjd_end }}" onchange="on_value_change(this);" required/>
+        <button type="button" onclick="select_mjd_from_plot('mjd_end_{{ pulse.pk }}');">Choose on plot</button>
       </td>
       <td>
-        <input id="tags" name="tags" value="{{ pulse.tags|default_if_none:'' }}" onchange="on_value_change(this);"/>
+        <input id="tags_{{ pulse.pk }}" name="tags" value="{{ pulse.tags|default_if_none:'' }}" onchange="on_value_change(this);"/>
       </td>
-      <td><input id="update_pulse" type="submit" value="Save changes"/></td>
+      <td>
+        <input id="update_pulse_{{ pulse.pk }}" type="submit" name="action" value="Save"/>
+        <input id="delete_pulse_{{ pulse.pk }}" type="submit" name="action" value="Delete"/>
+      </td>
     </form>
   </tr>
   {% endfor %}
