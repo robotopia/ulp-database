@@ -5,6 +5,7 @@
 {% block body %}
 
 <a href="{% url 'folding_view' pk=lightcurve.ulp.pk %}">Pulsestack</a>
+<a href="{% url 'lightcurve_add' pk=lightcurve.ulp.pk %}">Add new lightcurve</a>
 
 <h1>{{ lightcurve }}</h1>
 

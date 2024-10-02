@@ -60,6 +60,7 @@ The uploaded data file should be an ASCII file in which each row represents a ti
     <input type="file" id="datafile" name="datafile" required/>
   </div>
 
+  <!--
   <label for="toas">Associate ToAs ({{ ulp }}):</label><br>
   <select name="toas" id="toas" size="{% if ulp.times_of_arrival.count > 20 %}20{% else %}{{ ulp.times_of_arrival }}{% endif %}" multiple>
     {% for toa in ulp.times_of_arrival.all %}
@@ -68,6 +69,7 @@ The uploaded data file should be an ASCII file in which each row represents a ti
   </select>
 
   <br>
+  -->
 
   <input type="submit" value="Add"/>
 
