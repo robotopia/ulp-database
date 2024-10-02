@@ -9,6 +9,7 @@ import numpy as np
 from decimal import Decimal
 
 from common.models import AbstractPermission
+from common.utils import barycentre
 
 class TimeOfArrival(AbstractPermission):
 
@@ -333,18 +334,7 @@ class Lightcurve(AbstractPermission):
         return self.t0 + (sample_numbers * self.dt / 86400)  # Cheaper than astropy units
 
     def bary_times(self, pol=None):
-        ra, dec = [
-            EphemerisMeasurement.objects.filter(
-                ephemeris_parameter__tempo_name=param,
-                measurement__ulp=self.ulp
-            ).first().measurement.quantity for param in ['RAJ', 'DECJ']
-        ]
-
-        direction = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg), frame='icrs')
-        times = Time(self.times(pol=pol), format='mjd', scale='utc', location=EarthLocation.of_site(self.telescope)) # Convert to Time object
-        bc_correction = times.light_travel_time(direction, ephemeris='jpl') # Calculate correction
-        times = (times.tdb + bc_correction).value # Apply correction, and convert back to MJD values
-        return times
+        return barycentre(self.ulp, self.times(pol=pol), EarthLocation.of_site(self.telescope))
 
     def values(self, pol=None):
         if pol is None:

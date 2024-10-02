@@ -167,10 +167,6 @@
   const mjd_start_input = document.getElementById('mjd_start');
   const mjd_end_input   = document.getElementById('mjd_end');
 
-  function on_value_change(element) {
-    element.style.backgroundColor = "#880";
-  }
-
   function select_mjd_from_plot(mjd_input_id) {
     mjd_input = document.getElementById(mjd_input_id); // either 'mjd_start' or 'mjd_end'
     layout.hovermode = 'x unified';

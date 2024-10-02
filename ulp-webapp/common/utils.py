@@ -6,6 +6,8 @@ from django.contrib.auth.models import User, Group
 import json
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
+import astropy.units as u
+import data.models as data_models
 
 def permitted_to_view_filter(queryset, user):
 
@@ -86,3 +88,21 @@ def update_permissions(request):
     return HttpResponse(status=200)
 
 
+def barycentre(ulp, times, location):
+    '''
+    ulp is a Ulp object
+    times is an array-like object of MJDs (can be Time array)
+    '''
+
+    ra, dec = [
+        data_models.EphemerisMeasurement.objects.filter(
+            ephemeris_parameter__tempo_name=param,
+            measurement__ulp=ulp
+            ).first().measurement.quantity for param in ['RAJ', 'DECJ']
+    ]
+
+    direction = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg), frame='icrs')
+    location_times = Time(times, format='mjd', scale='utc', location=location) # Tag times with location
+    bc_correction = location_times.light_travel_time(direction, ephemeris='jpl') # Calculate correction
+    bc_times = (location_times.tdb + bc_correction).value # Apply correction, and convert back to MJD values
+    return bc_times

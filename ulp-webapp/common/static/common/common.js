@@ -43,11 +43,14 @@ function update_permissions(url, csrf_token, app, model, pk, group_or_user, name
  *   mjds = (pulses + phase)*period/86400 + pepoch
  ***********************/
 function fold(mjds, pepoch, period) {
+  //console.log("mjds: ", mjds);
+  //console.log("pepoch: ", pepoch);
+  //console.log("period: ", period);
   let pulse_phases = mjds.map((mjd) => (mjd - pepoch)/(period/86400.0));
   let pulses = pulse_phases.map((pulse_phase) => Math.floor(pulse_phase + 0.5));
   let phases = [];
   for (let i = 0; i < mjds.length; i++) {
-    phases[i] = pulse_phases[i] - pulses[i] - 0.5;
+    phases[i] = pulse_phases[i] - pulses[i];
   }
 
   return {pulses: pulses, phases: phases};
@@ -63,3 +66,8 @@ function get_plotly_default_layout() {
     hoverlabel: {font: {color: 'black'}}
   };
 }
+
+function on_value_change(element) {
+  element.style.backgroundColor = "#880";
+}
+
