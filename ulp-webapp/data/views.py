@@ -619,6 +619,10 @@ def folding_view(request, pk):
     # Get all lightcurves that this owner can view
     lightcurves = permitted_to_view_filter(ulp.lightcurves.all(), request.user)
 
+    # Extract the frequencies in order to build a colorscale
+    freqs = [lc.freq for lc in lightcurves]
+    freq_range = {'min': np.min(freqs), 'max': np.max(freqs)}
+
     # Get all the points, organised by lightcurve
     data = []
     for i in range(lightcurves.count()):
@@ -632,6 +636,7 @@ def folding_view(request, pk):
             'values': list(values + i), # The +i is for stacking
             'link': reverse('lightcurve_view', args=[lc.pk]),
             'pulses': [list(barycentre(ulp, [p.mjd_start, p.mjd_end], EarthLocation.of_site(lc.telescope))) for p in lc.pulses.all()],
+            'freq_MHz': lc.freq,
         }
         data.append(datum)
 
@@ -640,6 +645,7 @@ def folding_view(request, pk):
         'ulp': ulp,
         'working_ephemeris': working_ephemeris,
         'data': data,
+        'freq_range': freq_range,
     }
 
     # If this is a POST request, save the provided values

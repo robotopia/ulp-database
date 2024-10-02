@@ -71,3 +71,17 @@ function on_value_change(element) {
   element.style.backgroundColor = "#880";
 }
 
+function freq_color(freq, min_freq, max_freq) {
+  // Also see this very nice tool to build a custom colormap:
+  //   https://leonardocolor.io/scales.html
+
+  // However, I actually want a function to return a specific value, and
+  // interpolating a colormap manually is too hard.
+  min_h = 301;
+  max_h = 235;
+  // Map frequency in range to (0,1)
+  f = (freq - min_freq) / (max_freq - min_freq);
+  // ...then map to desired hue space
+  h = f*(max_h - min_h) + min_h;
+  return 'hsl(' + h + ',1,0.65)';
+}

@@ -49,19 +49,24 @@
 <script>
 
   function prepare_data(data, pepoch, period) {
-    new_data = [];
-    for (let i = 0; i < data.length; i++) {
-      folded = fold(data[i].mjds, pepoch, period);
-      new_data[i] = {
-        t0: data[i].t0,
-        x: folded.phases,
-        y: data[i].values,
-        mode: 'lines',
-        type: 'scatter'
-      }
-    }
-
-    return new_data;
+    return data.map((d) => {
+      phases = fold(d.mjds, pepoch, period).phases;
+      return {
+        t0: d.t0,
+        x: phases,
+        y: d.values,
+        mode: 'lines+markers',
+        type: 'scatter',
+        marker: {
+          size: 0.1,
+          color: phases.map((v) => d.freq_MHz),
+          coloraxis: 'coloraxis',
+        },
+        line: {
+          color: freq_color(d.freq_MHz, {{ freq_range.min }}, {{ freq_range.max }}),
+        },
+      };
+    });
   }
 
   var data = {{ data | safe }};
@@ -72,9 +77,22 @@
   var dm     = document.getElementById('dm').value
 
   var folded_data = prepare_data(data, pepoch, p0);
+  //console.log(folded_data);
 
   var layout = get_plotly_default_layout();
   layout.height = 100*data.length;
+  layout.showlegend = false;
+  layout.coloraxis = {
+    cmin: {{ freq_range.min }},
+    cmax: {{ freq_range.max }},
+    colorbar: {
+      title: {text: "Frequency (MHz)"},
+      ticks: "outside",
+      tickcolor: "rgb(222,226, 230)",
+    },
+    colorscale: Array.from({length: 11}, (_, i) => i/10).map((f) => [f, freq_color(f, 0, 1)]),
+  };
+  //console.log(layout.coloraxis);
 
   // Add the pulses
   layout.shapes = [];
