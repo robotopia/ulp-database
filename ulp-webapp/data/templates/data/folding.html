@@ -6,29 +6,30 @@
 
 <h1>Folding on {{ ulp }}</h1>
 
-<form method="post" action="{% url 'folding_view' pk=ulp.pk %}">
+<form method="post" action="{% url 'update_working_ephemeris' pk=ulp.pk %}">
   {% csrf_token %}
   <div class="compact-form-item">
     <label for="pepoch">PEPOCH (MJD)</label>
-    <input id="pepoch" name="pepoch" type="number" step="any" value="{{ working_ephemeris.pepoch|default_if_none:'' }}"/>
+    <input id="pepoch" name="pepoch" type="number" step="any" value="{{ working_ephemeris.pepoch|default_if_none:'' }}" onclick="on_working_ephemeris_change(this);"/>
   </div>
   <div class="compact-form-item">
     <label for="p0">Rotational period (s)</label>
-    <input id="p0" name="p0" type="number" step="any" value="{{ working_ephemeris.p0|default_if_none:'' }}"/>
+    <input id="p0" name="p0" type="number" step="any" value="{{ working_ephemeris.p0|default_if_none:'' }}" onclick="on_working_ephemeris_change(this);"/>
   </div>
   <div class="compact-form-item">
     <label for="p1">Rotational period derivative (s/s)</label>
-    <input id="p1" name="p1" type="number" step="any" value="{{ working_ephemeris.p1|default_if_none:'' }}"/>
+    <input id="p1" name="p1" type="number" step="any" value="{{ working_ephemeris.p1|default_if_none:'' }}" onclick="on_working_ephemeris_change(this);"/>
   </div>
   <div class="compact-form-item">
     <label for="pb">Orbital period (h)</label>
-    <input id="pb" name="pb" type="number" step="any" value="{{ working_ephemeris.pb|default_if_none:'' }}"/>
+    <input id="pb" name="pb" type="number" step="any" value="{{ working_ephemeris.pb|default_if_none:'' }}" onclick="on_working_ephemeris_change(this);"/>
   </div>
   <div class="compact-form-item">
     <label for="dm">Dispersion measure (pc/cm^3)</label>
-    <input id="dm" name="dm" type="number" step="any" value="{{ working_ephemeris.dm|default_if_none:'' }}"/>
+    <input id="dm" name="dm" type="number" step="any" value="{{ working_ephemeris.dm|default_if_none:'' }}" onclick="on_working_ephemeris_change(this);"/>
   </div>
   <input type="submit" value="Update"/>
+  <button type="button" onclick="reset_working_ephemeris();">Reset</button>
 </form>
 
 <h2>Pulsestack</h2>
@@ -72,6 +73,7 @@
         y: d.values.map((v) => v*parseFloat(document.getElementById('scaleheight').value) + i), // "sequential/packed" stacking
         pulses: pulses, // Store for later, switching between plot types
         values: d.values, // ditto
+        mjds: d.mjds, // ditto, but for changing the working ephemeris
         mode: 'lines+markers',
         type: 'scatter',
         marker: {
@@ -97,7 +99,8 @@
   //console.log(folded_data);
 
   var layout = get_plotly_default_layout();
-  layout.height = 100*data.length;
+  layout.height = 50*data.length;
+  layout.width = 1000;
   layout.showlegend = false;
   layout.coloraxis = {
     cmin: {{ freq_range.min }},
@@ -106,6 +109,9 @@
       title: {text: "Frequency (MHz)"},
       ticks: "outside",
       tickcolor: "rgb(222,226, 230)",
+      len: 500,
+      lenmode: "pixels",
+      yanchor: "top",
     },
     colorscale: Array.from({length: 11}, (_, i) => i/10).map((f) => [f, freq_color(f, 0, 1)]),
   };
@@ -182,6 +188,33 @@
   }
 
   //console.log(layout);
+
+  // Define behaviour of "reset working ephemeris" button
+  function reset_working_ephemeris() {
+    document.getElementById('pepoch').value = "{{ working_ephemeris.pepoch|default_if_none:'' }}";
+    document.getElementById('p0').value = "{{ working_ephemeris.p0|default_if_none:'' }}";
+    document.getElementById('p1').value = "{{ working_ephemeris.p1|default_if_none:'' }}";
+    document.getElementById('pb').value = "{{ working_ephemeris.pb|default_if_none:'' }}";
+    document.getElementById('dm').value = "{{ working_ephemeris.dm|default_if_none:'' }}";
+
+    document.getElementById('pepoch').style.backgroundColor = "field";
+    document.getElementById('p0').style.backgroundColor = "field";
+    document.getElementById('p1').style.backgroundColor = "field";
+    document.getElementById('pb').style.backgroundColor = "field";
+    document.getElementById('dm').style.backgroundColor = "field";
+  }
+
+  // Define what happens when a working ephemeris value is changed
+  function on_working_ephemeris_change(element) {
+    let pepoch = parseFloat(document.getElementById('pepoch').value);
+    let period = parseFloat(document.getElementById('p0').value);
+    on_value_change(element);
+    folded_data.forEach((d) => {
+      pulses_phases = fold(d.mjds, pepoch, period);
+      d.x = pulses_phases.phases;
+    });
+    Plotly.react('pulsestack', folded_data, layout);
+  }
 
 </script>
 

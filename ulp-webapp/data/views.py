@@ -654,8 +654,26 @@ def folding_view(request, pk):
         'freq_range': freq_range,
     }
 
+    return render(request, 'data/folding.html', context)
+
+
+def update_working_ephemeris(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=401)
+
+    # Get the relevant Ulp object
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    # Get working ephemeris
+    working_ephemeris = ulp.working_ephemerides.filter(owner=request.user).first()
+
     # If this is a POST request, save the provided values
     if request.method == "POST":
+
+        # Do some validation here...
+
         for field in ['pepoch', 'p0', 'p1', 'pb', 'dm']:
             try:
                 setattr(working_ephemeris, field, float(request.POST[field]))
@@ -664,5 +682,4 @@ def folding_view(request, pk):
 
         working_ephemeris.save()
 
-    return render(request, 'data/folding.html', context)
-
+    return redirect('folding_view', pk=ulp.pk)
