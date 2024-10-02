@@ -128,6 +128,15 @@ class TimeOfArrival(AbstractPermission):
         related_name="toas",
     )
 
+    pulse = models.ForeignKey(
+        "Pulse",
+        on_delete=models.SET_NULL, # TODO: Change to not-nullable and CASCADE when happy with everything else
+        null=True,
+        blank=True,
+        help_text="The pulse from which this ToA was derived.",
+        related_name="toas",
+    )
+
     def __str__(self):
         return f'{self.mjd} ({self.ulp})'
 

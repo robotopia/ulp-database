@@ -530,6 +530,7 @@ def lightcurve_add(request, pk):
 
         context = {
             'ulp': ulp,
+            'available_toas': ulp.times_of_arrival.filter(pulse__isnull=True),
         }
 
         return render(request, 'data/lightcurve_new.html', context)

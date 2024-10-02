@@ -52,7 +52,7 @@
   <input type="radio" id="sparse" name="stacking_type" onclick="toggle_stacking_type();">
   <label for="packed">Chronological (relative to PEPOCH)</label>
   <br>
-  <input type="number" id="scaleheight" step="any" value="1"/>
+  <input type="number" id="scaleheight" step="any" value="1" onchange="toggle_stacking_type();"/>
   <label for="scaleheight">Scale height of pulses</label>
 </fieldset>
 
@@ -69,7 +69,7 @@
       return {
         t0: d.t0,
         x: phases,
-        y: d.values.map((v) => v + i), // "sequential/packed" stacking
+        y: d.values.map((v) => v*parseFloat(document.getElementById('scaleheight').value) + i), // "sequential/packed" stacking
         pulses: pulses, // Store for later, switching between plot types
         values: d.values, // ditto
         mode: 'lines+markers',
@@ -125,7 +125,7 @@
         x0: pulse_phase.phases[0],
         x1: pulse_phase.phases[1],
         y0: d.idx,
-        y1: d.idx + 1, /// TODO set this and others to scaleheight
+        y1: d.idx + parseFloat(document.getElementById('scaleheight').value),
         pulse: pulse_phase.pulses[0], // Store for later, when switching stacking types
         idx: d.idx,                   // ditto
         fillcolor: '#880',
@@ -158,30 +158,30 @@
   }
 
   function toggle_stacking_type() {
+    let scale = parseFloat(document.getElementById('scaleheight').value);
     if (document.getElementById('packed').checked) {
       folded_data.forEach((d, p) => {
-        d.y = d.values.map((v) => v + p);
-        console.log(d.y);
+        d.y = d.values.map((v) => v*scale + p);
       });
       layout.shapes.forEach((s) => {
         s.y0 = s.idx;
-        s.y1 = s.idx + 1;
+        s.y1 = s.idx + scale;
       });
       layout.height = 100*data.length;
     } else if (document.getElementById('sparse').checked) {
       folded_data.forEach((d, p) => {
-        d.y = d.values.map((v, i) => v + d.pulses[i]);
+        d.y = d.values.map((v, i) => v*scale + d.pulses[i]);
       });
       layout.shapes.forEach((s) => {
         s.y0 = s.pulse;
-        s.y1 = s.pulse + 1;
+        s.y1 = s.pulse + scale;
       });
       layout.height = 2000;
     }
     Plotly.react('pulsestack', folded_data, layout);
   }
 
-  console.log(layout);
+  //console.log(layout);
 
 </script>
 
