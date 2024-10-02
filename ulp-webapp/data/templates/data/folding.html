@@ -43,18 +43,35 @@
   <label for="pulses_visible">Pulses</label>
 </fieldset>
 
+<fieldset>
+  <legend>Stacking type</legend>
+
+  <input type="radio" id="packed" name="stacking_type" checked onclick="toggle_stacking_type();">
+  <label for="packed">Packed (0, 1, 2, ...)</label>
+  <br>
+  <input type="radio" id="sparse" name="stacking_type" onclick="toggle_stacking_type();">
+  <label for="packed">Chronological (relative to PEPOCH)</label>
+  <br>
+  <input type="number" id="scaleheight" step="any" value="1"/>
+  <label for="scaleheight">Scale height of pulses</label>
+</fieldset>
+
 <div id='pulsestack'>
 </div>
 
 <script>
 
   function prepare_data(data, pepoch, period) {
-    return data.map((d) => {
-      phases = fold(d.mjds, pepoch, period).phases;
+    return data.map((d, i) => {
+      pulses_phases = fold(d.mjds, pepoch, period);
+      phases = pulses_phases.phases;
+      pulses = pulses_phases.pulses;
       return {
         t0: d.t0,
         x: phases,
-        y: d.values,
+        y: d.values.map((v) => v + i), // "sequential/packed" stacking
+        pulses: pulses, // Store for later, switching between plot types
+        values: d.values, // ditto
         mode: 'lines+markers',
         type: 'scatter',
         marker: {
@@ -108,7 +125,9 @@
         x0: pulse_phase.phases[0],
         x1: pulse_phase.phases[1],
         y0: d.idx,
-        y1: d.idx+1,
+        y1: d.idx + 1, /// TODO set this and others to scaleheight
+        pulse: pulse_phase.pulses[0], // Store for later, when switching stacking types
+        idx: d.idx,                   // ditto
         fillcolor: '#880',
         opacity: 0.2,
         line: {width: 0},
@@ -137,6 +156,32 @@
     });
     Plotly.react('pulsestack', folded_data, layout);
   }
+
+  function toggle_stacking_type() {
+    if (document.getElementById('packed').checked) {
+      folded_data.forEach((d, p) => {
+        d.y = d.values.map((v) => v + p);
+        console.log(d.y);
+      });
+      layout.shapes.forEach((s) => {
+        s.y0 = s.idx;
+        s.y1 = s.idx + 1;
+      });
+      layout.height = 100*data.length;
+    } else if (document.getElementById('sparse').checked) {
+      folded_data.forEach((d, p) => {
+        d.y = d.values.map((v, i) => v + d.pulses[i]);
+      });
+      layout.shapes.forEach((s) => {
+        s.y0 = s.pulse;
+        s.y1 = s.pulse + 1;
+      });
+      layout.height = 2000;
+    }
+    Plotly.react('pulsestack', folded_data, layout);
+  }
+
+  console.log(layout);
 
 </script>
 

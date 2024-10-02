@@ -639,7 +639,7 @@ def folding_view(request, pk):
             'idx': i,
             't0': lc.t0,
             'mjds': list(lc.bary_times()),
-            'values': list(values + i), # The +i is for stacking
+            'values': list(values),
             'link': reverse('lightcurve_view', args=[lc.pk]),
             'pulses': [list(barycentre(ulp, [p.mjd_start, p.mjd_end], EarthLocation.of_site(lc.telescope))) for p in lc.pulses.all()],
             'freq_MHz': lc.freq,
