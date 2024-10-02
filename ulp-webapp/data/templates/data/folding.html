@@ -36,10 +36,10 @@
 <fieldset>
   <legend>Element visibility</legend>
 
-  <input type="checkbox" id="lc_visible" checked/>
+  <input type="checkbox" id="lc_visible" checked onchange="toggle_lightcurve_visibility(this);"/>
   <label for="lc_visible">Lightcurves</label>
 
-  <input type="checkbox" id="pulses_visible"/>
+  <input type="checkbox" id="pulses_visible" onchange="toggle_pulses_visibility(this);"/>
   <label for="pulses_visible">Pulses</label>
 </fieldset>
 
@@ -92,6 +92,8 @@
     },
     colorscale: Array.from({length: 11}, (_, i) => i/10).map((f) => [f, freq_color(f, 0, 1)]),
   };
+  layout.xaxis = {title: {text: "Rotation phase"}};
+  layout.yaxis = {title: {text: "Pulse number"}};
   //console.log(layout.coloraxis);
 
   // Add the pulses
@@ -109,7 +111,8 @@
         y1: d.idx+1,
         fillcolor: '#880',
         opacity: 0.2,
-        line: {width: 0}
+        line: {width: 0},
+        visible: false, // Initialise to hidden
       });
     });
   });
@@ -121,7 +124,19 @@
     window.location.href = data[d.points[0].curveNumber].link;
   });
 
-  //function toggle_visibility
+  function toggle_lightcurve_visibility(checkbox) {
+    folded_data.forEach((d) => {
+      d.visible = checkbox.checked;
+    });
+    Plotly.react('pulsestack', folded_data, layout);
+  }
+
+  function toggle_pulses_visibility(checkbox) {
+    layout.shapes.forEach((s) => {
+      s.visible = checkbox.checked;
+    });
+    Plotly.react('pulsestack', folded_data, layout);
+  }
 
 </script>
 
