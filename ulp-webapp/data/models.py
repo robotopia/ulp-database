@@ -438,17 +438,27 @@ class WorkingEphemeris(AbstractPermission):
         help_text="The dispersion measure (pc/cm^3)",
     )
 
-    peak_value_MJD = models.FloatField(
+    siA = models.FloatField(
         null=True,
         blank=True,
-        help_text="The ToA (topocentric MJD) of the brightest point in the lightcurve within the range defined by this pulse. This field is not intended to be directly editable by the user, but is to be automatically updated whenever the pulse bounds change. It serves to save recalculating this value everytime it's needed (e.g. for a plot).",
+        help_text="The 'A' in the equation ln(S) = A*ln(f)^2 + B*ln(f) + C, where f is the frequency in GHz and S is in Jy",
     )
 
-    peak_value_Jy = models.FloatField(
+    siB = models.FloatField(
         null=True,
         blank=True,
-        help_text="The flux density (Jy) of the brightest point in the lightcurve within the range defined by this pulse. This field is not intended to be directly editable by the user, but is to be automatically updated whenever the pulse bounds change. It serves to save recalculating this value everytime it's needed (e.g. for a plot).",
+        help_text="The 'B' in the equation ln(S) = A*ln(f)^2 + B*ln(f) + C, where f is the frequency in GHz and S is in Jy",
     )
+
+    siC = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The 'C' in the equation ln(S) = A*ln(f)^2 + B*ln(f) + C, where f is the frequency in GHz and S is in Jy",
+    )
+
+    def predicted_flux_density(self, freq_MHz):
+        lnf = np.log(freq_MHz/1e3)
+        return np.exp(self.siA*lnf**2 + self.siB*lnf + self.siC)
 
     def __str__(self) -> str:
         return f"Working ephemeris for {self.ulp} ({self.owner})"
@@ -482,6 +492,18 @@ class Pulse(models.Model):
         null=True,
         blank=True,
         help_text="Comma-separated tags that can be used to categorise different pulses into groups, e.g. \"MP\", \"IP\".",
+    )
+
+    peak_value_MJD = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The ToA (topocentric MJD) of the brightest point in the lightcurve within the range defined by this pulse. This field is not intended to be directly editable by the user, but is to be automatically updated whenever the pulse bounds change. It serves to save recalculating this value everytime it's needed (e.g. for a plot).",
+    )
+
+    peak_value_Jy = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The flux density (Jy) of the brightest point in the lightcurve within the range defined by this pulse. This field is not intended to be directly editable by the user, but is to be automatically updated whenever the pulse bounds change. It serves to save recalculating this value everytime it's needed (e.g. for a plot).",
     )
 
     def __str__(self) -> str:
