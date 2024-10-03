@@ -683,17 +683,21 @@ def folding_view(request, pk):
     freqs = [lc.freq for lc in lightcurves]
     freq_range = {'min': np.min(freqs), 'max': np.max(freqs)}
 
-    # Get all the points, organised by lightcurve
+    # Get just the start and end points of each light curve
     data = []
     for i in range(lightcurves.count()):
         lc = lightcurves[i]
-        values = lc.values()
-        values /= np.max(values)
+        mjds = lc.bary_times()
+        mjd_ctr    = (mjds[-1] + mjds[0])/2
+        mjd_radius = (mjds[-1] - mjds[0])/2
+        date = Time(mjd_ctr, scale='utc', format='mjd').isot
         datum = {
             'idx': i,
             't0': lc.t0,
-            'mjds': list(lc.bary_times()),
-            'values': list(values),
+            'mjd_ctr': mjd_ctr,
+            'mjd_radius': mjd_radius,
+            'date': date,
+            'telescope': lc.telescope,
             'link': reverse('lightcurve_view', args=[lc.pk]),
             'pulses': [list(barycentre(ulp, [p.mjd_start, p.mjd_end], EarthLocation.of_site(lc.telescope))) for p in lc.pulses.all()],
             'freq_MHz': lc.freq,
