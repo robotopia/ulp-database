@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 from published import models as published_models
 import astropy.units as u
 from astropy.coordinates import SkyCoord, Angle, EarthLocation
@@ -350,6 +351,16 @@ class Lightcurve(AbstractPermission):
             return np.array([p.value for p in self.points.all()])
         else:
             return np.array([p.value for p in self.points.all() if p.pol == pol])
+
+    @property
+    def next_view(self):
+        next_lightcurve = self.ulp.lightcurves.filter(t0__gt=self.t0).earliest('t0')
+        return reverse('lightcurve_view', args=[next_lightcurve.pk]) if next_lightcurve else ''
+
+    @property
+    def prev_view(self):
+        prev_lightcurve = self.ulp.lightcurves.filter(t0__lt=self.t0).latest('t0')
+        return reverse('lightcurve_view', args=[prev_lightcurve.pk]) if prev_lightcurve else ''
 
     def __str__(self) -> str:
         return f"Lightcurve ({self.ulp}, {self.t0})"

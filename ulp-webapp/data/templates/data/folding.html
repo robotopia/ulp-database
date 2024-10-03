@@ -44,6 +44,7 @@
     <option value="pulses_chronological">Chronological pulses numbers (relative to PEPOCH)</option>
     <option value="rotation_phase">Rotation phase</option>
     <option value="orbital_phase">Orbital phase</option>
+    <option value="peak_Jy">Peak flux density (Jy)</option>
     <option value="frequency">Frequency</option>
   </select>
 
@@ -55,6 +56,7 @@
     <option value="pulses_chronological">Chronological pulses numbers (relative to PEPOCH)</option>
     <option value="rotation_phase" selected>Rotation phase</option>
     <option value="orbital_phase">Orbital phase</option>
+    <option value="peak_Jy">Peak flux density (Jy)</option>
     <option value="frequency">Frequency (MHz)</option>
   </select>
 
@@ -106,6 +108,9 @@
     } else if (xaxis == "pulses_sequential") {
       x = pulses_sequential;
       x_err = undefined;
+    } else if (xaxis == "peak_Jy") {
+      x = Array.from(data, (d) => d.peak_value_Jy);
+      x_err = undefined;
     } else if (xaxis == "frequency") {
       x = freqs;
       x_err = undefined;
@@ -117,6 +122,15 @@
     } else if (yaxis == 'orbital_phase') {
       y = fold(Array.from(data, (d) => d.mjd_ctr), pepoch, pb).phases;
       y_err = data.map((d) => d.mjd_radius*86400/pb);
+    } else if (yaxis == "pulses_chronological") {
+      y = pulses_chronological;
+      y_err = undefined;
+    } else if (yaxis == "pulses_sequential") {
+      y = pulses_sequential;
+      y_err = undefined;
+    } else if (yaxis == "peak_Jy") {
+      y = Array.from(data, (d) => d.peak_value_Jy);
+      y_err = undefined;
     } else if (yaxis == "frequency") {
       y = freqs;
       y_err = undefined;

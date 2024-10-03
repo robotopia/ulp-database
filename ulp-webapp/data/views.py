@@ -461,8 +461,8 @@ def add_or_update_pulse(request, pk):
             # We're creating a new pulse
             peak_value_MJD, peak_value_Jy = get_peak(
                 lightcurve,
-                request.POST['mjd_start'],
-                request.POST['mjd_end'],
+                float(request.POST['mjd_start']),
+                float(request.POST['mjd_end']),
             )
 
             pulse = models.Pulse(
@@ -710,49 +710,42 @@ def folding_view(request, pk):
     # Get all lightcurves that this owner can view
     lightcurves = permitted_to_view_filter(ulp.lightcurves.all(), request.user)
 
+    # Get all the pulses from these light curves. Something will only show up on this
+    # folding plot if there is an associated pulse object
+    pulses = models.Pulse.objects.filter(lightcurve__in=lightcurves)
+
     # Extract the frequencies in order to build a colorscale
-    freqs = [lc.freq for lc in lightcurves]
+    freqs = [p.lightcurve.freq for p in pulses]
     freq_range = {'min': np.min(freqs), 'max': np.max(freqs)}
 
-    # Get just the start and end points of each light curve
     data = []
-    for i in range(lightcurves.count()):
-        lc = lightcurves[i]
-        mjds = lc.bary_times()
-        mjd_ctr    = (mjds[-1] + mjds[0])/2
-        mjd_radius = (mjds[-1] - mjds[0])/2
-        date = Time(mjd_ctr, scale='utc', format='mjd').isot
+    for i in range(pulses.count()):
+        pulse = pulses[i]
+        lc    = pulse.lightcurve
+        pulse_times = barycentre(ulp, [pulse.mjd_start, pulse.mjd_end], EarthLocation.of_site(lc.telescope))
+        mjd_ctr = (pulse_times[1] + pulse_times[0])/2
+        date  = Time(mjd_ctr, scale='utc', format='mjd').isot
 
-        # Extract pulse information as well
-        pulses_info = []
-        for pulse in lc.pulses.all():
-            # Just grouping these together for efficient use of barycentre:
-            pulse_times = barycentre(ulp, [pulse.mjd_start, pulse.mjd_end], EarthLocation.of_site(lc.telescope))
-
-            # The peak_value_MJD, however, is not guaranteed to exist,
-            # so must be dealt with separately to catch errors
-            try:
-                peak_value_MJD = barycentre(ulp, p.peak_value_MJD, EarthLocation.of_site(lc.telescope))
-            except:
-                peak_value_MJD = None
-
-            pulses_info.append({
-                'mjd_start': pulse_times[0],
-                'mjd_end': pulse_times[1],
-                'peak_value_MJD': peak_value_MJD or '',
-                'peak_value_Jy': pulse.peak_value_Jy or '',
-            })
+        # The peak_value_MJD, however, is not guaranteed to exist,
+        # so must be dealt with separately to catch errors
+        try:
+            peak_value_MJD = barycentre(ulp, p.peak_value_MJD, EarthLocation.of_site(lc.telescope))
+        except:
+            peak_value_MJD = None
 
         datum = {
-            'idx': i,
+            'lc_pk': lc.pk,
             't0': lc.t0,
-            'mjd_ctr': mjd_ctr,
-            'mjd_radius': mjd_radius,
             'date': date,
             'telescope': lc.telescope,
             'link': reverse('lightcurve_view', args=[lc.pk]),
-            'pulses_info': pulses_info,
             'freq_MHz': lc.freq,
+            'mjd_start': pulse_times[0],
+            'mjd_ctr': mjd_ctr,
+            'mjd_radius': (pulse_times[1] - pulse_times[0])/2,
+            'mjd_end': pulse_times[1],
+            'peak_value_MJD': peak_value_MJD or '',
+            'peak_value_Jy': pulse.peak_value_Jy or '',
         }
         data.append(datum)
 
