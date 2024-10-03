@@ -37,15 +37,11 @@
 <h2>Pulsestack</h2>
 
 <fieldset>
-  <legend>Point type</legend>
-
-  <input type="radio" id="lc_ranges" name="point_type" checked onchange="toggle_lightcurve_visibility(this);"/>
-  <label for="lc_ranges">Lightcurve ranges</label>
-
-  <br>
-
-  <input type="radio" id="pulse_ranges" name="point_type" onchange="toggle_pulses_visibility(this);"/>
-  <label for="pulse_ranges">Pulses</label>
+  <label for="point_type">Point type</label>
+  <select id="point_type" name="point_type" onchange="redraw_plot();">
+    <option value="lightcurve_ranges" selected>Lightcurve ranges</option>
+    <option value="pulse_ranges">Pulse ranges</option>
+  </select>
 
   <br>
 
@@ -53,6 +49,8 @@
   <select id="xaxis" name="xaxis" onchange="redraw_plot();">
     <option value="pulses_sequential" selected>Sequential pulse numbers (0, 1, 2, ...)</option>
     <option value="pulses_chronological">Chronological pulses numbers (relative to PEPOCH)</option>
+    <option value="rotation_phase">Rotation phase</option>
+    <option value="orbital_phase">Orbital phase</option>
   </select>
 
   <br>
@@ -84,6 +82,25 @@
 
     lightcurve_ctrs = fold(Array.from(data, (d) => d.mjd_ctr), pepoch, period);
 
+    pulses_sequential = Array.from(lightcurve_ctrs.pulses, (_, i) => i);
+    pulses_chronological = lightcurve_ctrs.pulses;
+
+    var x, y, x_err, y_err;
+
+    if (xaxis == 'rotation_phase') {
+      x = lightcurve_ctrs.phases;
+      x_err = data.map((d) => d.mjd_radius*86400/period);
+    } else if (xaxis == 'orbital_phase') {
+      x = fold(Array.from(data, (d) => d.mjd_ctr), pepoch, pb).phases;
+      x_err = data.map((d) => d.mjd_radius*86400/pb);
+    } else if (xaxis == "pulses_chronological") {
+      x = pulses_chronological;
+      x_err = undefined;
+    } else if (xaxis == "pulses_sequential") {
+      x = pulses_sequential;
+      x_err = undefined;
+    }
+
     if (yaxis == 'rotation_phase') {
       y = lightcurve_ctrs.phases;
       y_err = data.map((d) => d.mjd_radius*86400/period);
@@ -94,15 +111,17 @@
 
     freqs = Array.from(data, (d) => d.freq_MHz);
 
-    pulses_sequential = Array.from(lightcurve_ctrs.pulses, (_, i) => i);
-    pulses_chronological = lightcurve_ctrs.pulses;
-
     return [{
       pulses_sequential: pulses_sequential,
       pulses_chronological: pulses_chronological,
-      x: xaxis == "pulses_chronological" ? pulses_chronological : pulses_sequential,
+      x: x,
       y: y,
       freqs: freqs,
+      error_x: {
+        array: x_err,
+        color: 'white',
+        thickness: 1,
+      },
       error_y: {
         array: y_err,
         color: 'white',
