@@ -64,4 +64,4 @@ class WorkingEphemerisAdmin(admin.ModelAdmin):
 @admin.register(Pulse)
 class PulseAdmin(admin.ModelAdmin):
     list_display = ['pk', 'lightcurve', 'mjd_start', 'mjd_end', 'tags']
-    list_filter = ['lightcurve__owner', 'lightcurve__ulp']
+    list_filter = ['lightcurve__owner', 'lightcurve__ulp', 'lightcurve__telescope']

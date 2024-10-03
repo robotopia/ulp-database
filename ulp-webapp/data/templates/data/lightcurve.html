@@ -161,7 +161,7 @@
     {% endfor %}
   ];
   layout.legend = {title: {text: "Polarisation"}};
-  layout.xaxis = {title: {text: "MJD (topocentric)"}};
+  layout.xaxis = {title: {text: "MJD (topocentric)"}, tickformat: "%f"};
   layout.yaxis = {title: {text: "Flux density (Jy)"}};
 
   Plotly.newPlot('lc_plot', data, layout);

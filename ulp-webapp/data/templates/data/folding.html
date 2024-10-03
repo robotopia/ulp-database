@@ -181,8 +181,7 @@
 
   residualsDiv = document.getElementById('residuals');
   residualsDiv.on('plotly_click', function(d) {
-    //window.location.href = data[d.points[0].curveNumber].link;
-    console.log(d);
+    window.location.href = data[d.points[0].pointIndex].link;
   });
 
   function toggle_lightcurve_visibility(checkbox) {

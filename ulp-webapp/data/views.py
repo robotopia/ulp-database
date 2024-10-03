@@ -421,13 +421,36 @@ def add_or_update_pulse(request, pk):
 
         # I should be validating data here...
 
+        # Retrieve the peak value in the given range
+        def get_peak(lc, mjd_start, mjd_end):
+            sample_number_start = (mjd_start - lc.t0)/(lc.dt/86400)
+            sample_number_end = (mjd_end - lc.t0)/(lc.dt/86400)
+            points = lc.points.filter(
+                sample_number__gte=sample_number_start,
+                sample_number__lte=sample_number_end,
+            )
+            peak_value_idx = int(np.argmax([p.value for p in points]))
+            peak_value_Jy = points[peak_value_idx].value
+            peak_value_sample_number = points[peak_value_idx].sample_number
+            peak_value_MJD = peak_value_sample_number*(lc.dt/86400) + lc.t0
+
+            return peak_value_MJD, peak_value_Jy
+
         if 'pulse_id' in request.POST.keys():
             # We're updating an existing pulse
             pulse = get_object_or_404(models.Pulse, pk=int(request.POST['pulse_id']))
 
+            peak_value_MJD, peak_value_Jy = get_peak(
+                lightcurve,
+                float(request.POST['mjd_start']),
+                float(request.POST['mjd_end']),
+            )
+
             if request.POST['action'] == "Save":
                 pulse.mjd_start = request.POST['mjd_start']
                 pulse.mjd_end = request.POST['mjd_end']
+                pulse.peak_value_Jy = peak_value_Jy
+                pulse.peak_value_MJD = peak_value_MJD
                 pulse.tags = request.POST['tags']
                 pulse.save()
             elif request.POST['action'] == "Delete":
@@ -436,10 +459,18 @@ def add_or_update_pulse(request, pk):
 
         else:
             # We're creating a new pulse
+            peak_value_MJD, peak_value_Jy = get_peak(
+                lightcurve,
+                request.POST['mjd_start'],
+                request.POST['mjd_end'],
+            )
+
             pulse = models.Pulse(
                 lightcurve=lightcurve,
                 mjd_start=request.POST['mjd_start'],
                 mjd_end=request.POST['mjd_end'],
+                peak_value_Jy=peak_value_Jy,
+                peak_value_MJD=peak_value_MJD,
                 tags=request.POST['tags'],
             )
 
