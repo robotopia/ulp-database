@@ -438,6 +438,18 @@ class WorkingEphemeris(AbstractPermission):
         help_text="The dispersion measure (pc/cm^3)",
     )
 
+    peak_value_MJD = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The ToA (topocentric MJD) of the brightest point in the lightcurve within the range defined by this pulse. This field is not intended to be directly editable by the user, but is to be automatically updated whenever the pulse bounds change. It serves to save recalculating this value everytime it's needed (e.g. for a plot).",
+    )
+
+    peak_value_Jy = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The flux density (Jy) of the brightest point in the lightcurve within the range defined by this pulse. This field is not intended to be directly editable by the user, but is to be automatically updated whenever the pulse bounds change. It serves to save recalculating this value everytime it's needed (e.g. for a plot).",
+    )
+
     def __str__(self) -> str:
         return f"Working ephemeris for {self.ulp} ({self.owner})"
 
