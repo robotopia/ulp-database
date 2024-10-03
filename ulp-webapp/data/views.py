@@ -722,6 +722,27 @@ def folding_view(request, pk):
         mjd_ctr    = (mjds[-1] + mjds[0])/2
         mjd_radius = (mjds[-1] - mjds[0])/2
         date = Time(mjd_ctr, scale='utc', format='mjd').isot
+
+        # Extract pulse information as well
+        pulses_info = []
+        for pulse in lc.pulses.all():
+            # Just grouping these together for efficient use of barycentre:
+            pulse_times = barycentre(ulp, [pulse.mjd_start, pulse.mjd_end], EarthLocation.of_site(lc.telescope))
+
+            # The peak_value_MJD, however, is not guaranteed to exist,
+            # so must be dealt with separately to catch errors
+            try:
+                peak_value_MJD = barycentre(ulp, p.peak_value_MJD, EarthLocation.of_site(lc.telescope))
+            except:
+                peak_value_MJD = None
+
+            pulses_info.append({
+                'mjd_start': pulse_times[0],
+                'mjd_end': pulse_times[1],
+                'peak_value_MJD': peak_value_MJD or '',
+                'peak_value_Jy': pulse.peak_value_Jy or '',
+            })
+
         datum = {
             'idx': i,
             't0': lc.t0,
@@ -730,7 +751,7 @@ def folding_view(request, pk):
             'date': date,
             'telescope': lc.telescope,
             'link': reverse('lightcurve_view', args=[lc.pk]),
-            'pulses': [list(barycentre(ulp, [p.mjd_start, p.mjd_end], EarthLocation.of_site(lc.telescope))) for p in lc.pulses.all()],
+            'pulses_info': pulses_info,
             'freq_MHz': lc.freq,
         }
         data.append(datum)

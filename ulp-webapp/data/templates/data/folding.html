@@ -37,13 +37,6 @@
 <h2>Pulsestack</h2>
 
 <fieldset>
-  <label for="point_type">Point type</label>
-  <select id="point_type" name="point_type" onchange="redraw_plot();">
-    <option value="lightcurve_ranges" selected>Lightcurve ranges</option>
-    <option value="pulse_ranges">Pulse ranges</option>
-  </select>
-
-  <br>
 
   <label for="xaxis">X-axis:</label>
   <select id="xaxis" name="xaxis" onchange="redraw_plot();">
@@ -51,15 +44,27 @@
     <option value="pulses_chronological">Chronological pulses numbers (relative to PEPOCH)</option>
     <option value="rotation_phase">Rotation phase</option>
     <option value="orbital_phase">Orbital phase</option>
+    <option value="frequency">Frequency</option>
   </select>
 
   <br>
 
   <label for="yaxis">Y-axis:</label>
   <select id="yaxis" name="yaxis" onchange="redraw_plot();">
+    <option value="pulses_sequential">Sequential pulse numbers (0, 1, 2, ...)</option>
+    <option value="pulses_chronological">Chronological pulses numbers (relative to PEPOCH)</option>
     <option value="rotation_phase" selected>Rotation phase</option>
     <option value="orbital_phase">Orbital phase</option>
+    <option value="frequency">Frequency (MHz)</option>
   </select>
+
+  <br>
+
+  <input type="checkbox" id="log_xaxis" onchange="redraw_plot();"/>
+  <label for="xaxis-log">Log x-axis</label>
+
+  <input type="checkbox" id="log_yaxis" onchange="redraw_plot();"/>
+  <label for="yaxis-log">Log y-axis</label>
 
 </fieldset>
 
@@ -71,8 +76,8 @@
   var data = {{ data | safe }};
 
   function prepare_data() {
-    var xaxis = document.getElementById('xaxis').value;
-    var yaxis = document.getElementById('yaxis').value;
+    var xaxis      = document.getElementById('xaxis').value;
+    var yaxis      = document.getElementById('yaxis').value;
 
     var pepoch = document.getElementById('pepoch').value
     var period = document.getElementById('p0').value
@@ -84,6 +89,8 @@
 
     pulses_sequential = Array.from(lightcurve_ctrs.pulses, (_, i) => i);
     pulses_chronological = lightcurve_ctrs.pulses;
+
+    freqs = Array.from(data, (d) => d.freq_MHz);
 
     var x, y, x_err, y_err;
 
@@ -99,6 +106,9 @@
     } else if (xaxis == "pulses_sequential") {
       x = pulses_sequential;
       x_err = undefined;
+    } else if (xaxis == "frequency") {
+      x = freqs;
+      x_err = undefined;
     }
 
     if (yaxis == 'rotation_phase') {
@@ -107,9 +117,10 @@
     } else if (yaxis == 'orbital_phase') {
       y = fold(Array.from(data, (d) => d.mjd_ctr), pepoch, pb).phases;
       y_err = data.map((d) => d.mjd_radius*86400/pb);
+    } else if (yaxis == "frequency") {
+      y = freqs;
+      y_err = undefined;
     }
-
-    freqs = Array.from(data, (d) => d.freq_MHz);
 
     return [{
       pulses_sequential: pulses_sequential,
@@ -156,12 +167,22 @@
       },
       colorscale: Array.from({length: 11}, (_, i) => i/10).map((f) => [f, freq_color(f, 0, 1)]),
     };
-    layout.yaxis = {title: {
-      text: document.getElementById('yaxis').options[document.getElementById('yaxis').selectedIndex].text, // FIX ME!
-    }};
-    layout.xaxis = {title: {text: "Pulse number"}};
+    layout.yaxis = {
+      title: {
+        text: document.getElementById('yaxis').options[document.getElementById('yaxis').selectedIndex].text, // FIX ME!
+      },
+      type: document.getElementById('log_yaxis').checked ? 'log' : '-',
+    };
+    layout.xaxis = {
+      title: {
+        text: document.getElementById('xaxis').options[document.getElementById('xaxis').selectedIndex].text, // FIX ME!
+      },
+      type: document.getElementById('log_xaxis').checked ? 'log' : '-',
+    };
     //console.log(layout.coloraxis);
   }
+
+  console.log(data[0]);
 
   var folded_data;
   function redraw_plot() {
