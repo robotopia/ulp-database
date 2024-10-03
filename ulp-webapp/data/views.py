@@ -602,6 +602,60 @@ def lightcurve_add(request, pk):
         return redirect('lightcurve_view', pk=lightcurve.pk)
 
 
+def pulsestack_view(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=401)
+
+    # Get the relevant Ulp object
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    # Get working ephemeris
+    working_ephemeris = ulp.working_ephemerides.filter(owner=request.user).first()
+
+    # If one doesn't exist for this user, make one!
+    if not working_ephemeris:
+        working_ephemeris = models.WorkingEphemeris(
+            owner=request.user,
+            ulp=ulp,
+        )
+        working_ephemeris.save()
+
+    # Get all lightcurves that this owner can view
+    lightcurves = permitted_to_view_filter(ulp.lightcurves.all(), request.user)
+
+    # Extract the frequencies in order to build a colorscale
+    freqs = [lc.freq for lc in lightcurves]
+    freq_range = {'min': np.min(freqs), 'max': np.max(freqs)}
+
+    # Get all the points, organised by lightcurve
+    data = []
+    for i in range(lightcurves.count()):
+        lc = lightcurves[i]
+        values = lc.values()
+        values /= np.max(values)
+        datum = {
+            'idx': i,
+            't0': lc.t0,
+            'mjds': list(lc.bary_times()),
+            'values': list(values),
+            'link': reverse('lightcurve_view', args=[lc.pk]),
+            'freq_MHz': lc.freq,
+        }
+        data.append(datum)
+
+    # Throw it all together into a context
+    context = {
+        'ulp': ulp,
+        'working_ephemeris': working_ephemeris,
+        'data': data,
+        'freq_range': freq_range,
+    }
+
+    return render(request, 'data/pulsestack.html', context)
+
+
 def folding_view(request, pk):
 
     # First of all, they have to be logged in

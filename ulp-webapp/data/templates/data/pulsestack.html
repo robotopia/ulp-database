@@ -4,45 +4,30 @@
 
 {% block body %}
 
-<h1>Folding on {{ ulp }}</h1>
+<h1>Pulsestack for {{ ulp }}</h1>
 
-<form method="post" action="{% url 'update_working_ephemeris' pk=ulp.pk %}">
-  {% csrf_token %}
-  <div class="compact-form-item">
-    <label for="pepoch">PEPOCH (MJD)</label>
-    <input id="pepoch" name="pepoch" type="number" step="any" value="{{ working_ephemeris.pepoch|default_if_none:'' }}" onchange="on_working_ephemeris_change(this);"/>
-  </div>
-  <div class="compact-form-item">
-    <label for="p0">Rotational period (s)</label>
-    <input id="p0" name="p0" type="number" step="any" value="{{ working_ephemeris.p0|default_if_none:'' }}" onchange="on_working_ephemeris_change(this);"/>
-  </div>
-  <div class="compact-form-item">
-    <label for="p1">Rotational period derivative (s/s)</label>
-    <input id="p1" name="p1" type="number" step="any" value="{{ working_ephemeris.p1|default_if_none:'' }}" onchange="on_working_ephemeris_change(this);"/>
-  </div>
-  <div class="compact-form-item">
-    <label for="pb">Orbital period (h)</label>
-    <input id="pb" name="pb" type="number" step="any" value="{{ working_ephemeris.pb|default_if_none:'' }}" onchange="on_working_ephemeris_change(this);"/>
-  </div>
-  <div class="compact-form-item">
-    <label for="dm">Dispersion measure (pc/cm^3)</label>
-    <input id="dm" name="dm" type="number" step="any" value="{{ working_ephemeris.dm|default_if_none:'' }}" onchange="on_working_ephemeris_change(this);"/>
-  </div>
-  <input type="submit" value="Update"/>
-  <button type="button" onclick="reset_working_ephemeris();">Reset</button>
-</form>
+<div class="compact-form-item">
+  <label for="pepoch">PEPOCH (MJD)</label>
+  <input id="pepoch" name="pepoch" type="number" step="any" value="{{ working_ephemeris.pepoch|default_if_none:'' }}" onchange="on_working_ephemeris_change(this);"/>
+</div>
+<div class="compact-form-item">
+  <label for="p0">Rotational period (s)</label>
+  <input id="p0" name="p0" type="number" step="any" value="{{ working_ephemeris.p0|default_if_none:'' }}" onchange="on_working_ephemeris_change(this);"/>
+</div>
+<div class="compact-form-item">
+  <label for="p1">Rotational period derivative (s/s)</label>
+  <input id="p1" name="p1" type="number" step="any" value="{{ working_ephemeris.p1|default_if_none:'' }}" onchange="on_working_ephemeris_change(this);"/>
+</div>
+<div class="compact-form-item">
+  <label for="pb">Orbital period (h)</label>
+  <input id="pb" name="pb" type="number" step="any" value="{{ working_ephemeris.pb|default_if_none:'' }}" onchange="on_working_ephemeris_change(this);"/>
+</div>
+<div class="compact-form-item">
+  <label for="dm">Dispersion measure (pc/cm^3)</label>
+  <input id="dm" name="dm" type="number" step="any" value="{{ working_ephemeris.dm|default_if_none:'' }}" onchange="on_working_ephemeris_change(this);"/>
+</div>
 
-<h2>Pulsestack</h2>
-
-<fieldset>
-  <legend>Element visibility</legend>
-
-  <input type="checkbox" id="lc_visible" checked onchange="toggle_lightcurve_visibility(this);"/>
-  <label for="lc_visible">Lightcurves</label>
-
-  <input type="checkbox" id="pulses_visible" onchange="toggle_pulses_visibility(this);"/>
-  <label for="pulses_visible">Pulses</label>
-</fieldset>
+<button type="button" onclick="reset_working_ephemeris();">Reset</button>
 
 <fieldset>
   <legend>Stacking type</legend>
@@ -119,29 +104,6 @@
   layout.yaxis = {title: {text: "Pulse number"}};
   //console.log(layout.coloraxis);
 
-  // Add the pulses
-  layout.shapes = [];
-  data.filter((d) => (d.pulses.length > 0)).forEach((d) => {
-    d.pulses.forEach((p) => {
-      pulse_phase = fold(p, pepoch, p0);
-      layout.shapes.push({
-        type: 'rect',
-        xref: 'x',
-        yref: 'y',
-        x0: pulse_phase.phases[0],
-        x1: pulse_phase.phases[1],
-        y0: d.idx,
-        y1: d.idx + parseFloat(document.getElementById('scaleheight').value),
-        pulse: pulse_phase.pulses[0], // Store for later, when switching stacking types
-        idx: d.idx,                   // ditto
-        fillcolor: '#880',
-        opacity: 0.2,
-        line: {width: 0},
-        visible: false, // Initialise to hidden
-      });
-    });
-  });
-
   Plotly.newPlot('pulsestack', folded_data, layout);
 
   pulsestackDiv = document.getElementById('pulsestack');
@@ -149,38 +111,16 @@
     window.location.href = data[d.points[0].curveNumber].link;
   });
 
-  function toggle_lightcurve_visibility(checkbox) {
-    folded_data.forEach((d) => {
-      d.visible = checkbox.checked;
-    });
-    Plotly.react('pulsestack', folded_data, layout);
-  }
-
-  function toggle_pulses_visibility(checkbox) {
-    layout.shapes.forEach((s) => {
-      s.visible = checkbox.checked;
-    });
-    Plotly.react('pulsestack', folded_data, layout);
-  }
-
   function toggle_stacking_type() {
     let scale = parseFloat(document.getElementById('scaleheight').value);
     if (document.getElementById('packed').checked) {
       folded_data.forEach((d, p) => {
         d.y = d.values.map((v) => v*scale + p);
       });
-      layout.shapes.forEach((s) => {
-        s.y0 = s.idx;
-        s.y1 = s.idx + scale;
-      });
       layout.height = 100*data.length;
     } else if (document.getElementById('sparse').checked) {
       folded_data.forEach((d, p) => {
         d.y = d.values.map((v, i) => v*scale + d.pulses[i]);
-      });
-      layout.shapes.forEach((s) => {
-        s.y0 = s.pulse;
-        s.y1 = s.pulse + scale;
       });
       layout.height = 2000;
     }
