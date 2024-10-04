@@ -30,6 +30,18 @@
     <label for="dm">Dispersion measure (pc/cm^3)</label>
     <input id="dm" name="dm" type="number" step="any" value="{{ working_ephemeris.dm|default_if_none:'' }}" onchange="redraw_plot();"/>
   </div>
+  <div class="compact-form-item">
+    <label for="spec_S1GHz">Spectrum: S_1GHz (Jy)</label>
+    <input id="spec_S1GHz" name="spec_S1GHz" type="number" step="any" value="{{ working_ephemeris.spec_1GHz|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); redraw_plot();"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="spec_alpha">Spectrum: &alpha;</label>
+    <input id="spec_alpha" name="spec_alpha" type="number" step="any" value="{{ working_ephemeris.spec_alpha|default_if_none:'' }}" onchange="toggle_scale_flux_disable(); dredraw_plot();"/>
+  </div>
+  <div class="compact-form-item">
+    <label for="spec_q">Spectrum: q</label>
+    <input id="spec_q" name="spec_q" type="number" step="any" placeholder="0.0" value="{{ working_ephemeris.spec_q|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); redraw_plot();"/>
+  </div>
   <input type="submit" value="Update"/>
   <button type="button" onclick="reset_working_ephemeris(); redraw_plot();">Reset</button>
 </form>
@@ -65,8 +77,19 @@
   <input type="checkbox" id="log_xaxis" onchange="redraw_plot();"/>
   <label for="xaxis-log">Log x-axis</label>
 
+  <br>
+
   <input type="checkbox" id="log_yaxis" onchange="redraw_plot();"/>
   <label for="yaxis-log">Log y-axis</label>
+
+  <br>
+
+  <div id="scale_fluxes">
+    <input type="checkbox" id="scale_fluxes_checkbox"/>
+    <label for="scale_fluxes_checkbox">Scale fluxes to</label>
+    <input type="number" step="any" id="scale_fluxes_freq_MHz" value="1000"/>
+    <label for="scale_fluxes_freq_MHz">MHz</label>
+  </div>
 
 </fieldset>
 
@@ -265,6 +288,18 @@
     document.getElementById('p1').style.backgroundColor = "field";
     document.getElementById('pb').style.backgroundColor = "field";
     document.getElementById('dm').style.backgroundColor = "field";
+  }
+
+  function toggle_scale_flux_disabled() {
+    S1GHz = document.getElementById('spec_S1GHz').value;
+    alpha = document.getElementById('spec_alpha').value;
+    q     = document.getElementById('spec_q').value;
+
+    for (child in document.getElementById('scale_fluxes').children) {
+      console.log(child, asdf, child.disabled, (S1GHz.length > 0 && alpha.length > 0));
+      child.disabled = (S1GHz.length > 0 && alpha.length > 0);
+      console.log(child, child.disabled, (S1GHz.length > 0 && alpha.length > 0));
+    }
   }
 
 </script>

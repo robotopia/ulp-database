@@ -449,22 +449,22 @@ class WorkingEphemeris(AbstractPermission):
         help_text="The dispersion measure (pc/cm^3)",
     )
 
-    siA = models.FloatField(
+    spec_s1GHz = models.FloatField(
         null=True,
         blank=True,
-        help_text="The 'A' in the equation ln(S) = A*ln(f)^2 + B*ln(f) + C, where f is the frequency in GHz and S is in Jy",
+        help_text="The flux density (Jy) at 1 GHz. The 'S1GHz' in the equation S = S1GHz * f^alpha * exp(q*ln(f)^2), where f is the frequency in GHz and S is in Jy.",
     )
 
-    siB = models.FloatField(
+    spec_alpha = models.FloatField(
         null=True,
         blank=True,
-        help_text="The 'B' in the equation ln(S) = A*ln(f)^2 + B*ln(f) + C, where f is the frequency in GHz and S is in Jy",
+        help_text="The spectral index. The 'alpha' in the equation S = S1GHz * f^alpha * exp(q*ln(f)^2), where f is the frequency in GHz and S is in Jy.",
     )
 
-    siC = models.FloatField(
+    spec_q = models.FloatField(
         null=True,
         blank=True,
-        help_text="The 'C' in the equation ln(S) = A*ln(f)^2 + B*ln(f) + C, where f is the frequency in GHz and S is in Jy",
+        help_text="The 'q' in the equation S = S1GHz * f^alpha * exp(q*ln(f)^2), where f is the frequency in GHz and S is in Jy",
     )
 
     def predicted_flux_density(self, freq_MHz):

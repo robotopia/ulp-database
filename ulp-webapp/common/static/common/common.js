@@ -85,3 +85,10 @@ function freq_color(freq, min_freq, max_freq) {
   h = f*(max_h - min_h) + min_h;
   return 'hsl(' + h + ',1,0.65)';
 }
+
+
+function scale_flux(freq_MHz, S1GHz, alpha, q=0) {
+  let f = freq_MHz / 1e3; // Convert to GHz
+  let lnf = Math.log(f);
+  return S1GHz * Math.pow(f, alpha) * Math.exp(q * lnf * lnf);
+}

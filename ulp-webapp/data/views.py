@@ -777,7 +777,7 @@ def update_working_ephemeris(request, pk):
 
         # Do some validation here...
 
-        for field in ['pepoch', 'p0', 'p1', 'pb', 'dm']:
+        for field in ['pepoch', 'p0', 'p1', 'pb', 'dm', 'spec_s1GHz', 'spec_alpha', 'spec_q']:
             try:
                 setattr(working_ephemeris, field, float(request.POST[field]))
             except:
