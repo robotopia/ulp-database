@@ -41,6 +41,8 @@ function update_permissions(url, csrf_token, app, model, pk, group_or_user, name
  * Phase is defined to go from -0.5 to 0.5. The resulting phase and pulse must
  * satisfy:
  *   mjds = (pulses + phase)*period/86400 + pepoch
+ *
+ * Compare: fold() in common/utils.py
  ***********************/
 function fold(mjds, pepoch, period) {
   //console.log("mjds: ", mjds);

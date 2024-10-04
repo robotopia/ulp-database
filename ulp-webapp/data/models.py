@@ -550,8 +550,12 @@ class Template(AbstractPermission):
         related_name="templates",
     )
 
-    def y(self, phase):
-        return np.sum([component.y(phase) for component in self.components.all()])
+    def values(self, phases):
+        return np.sum([component.values(phases) for component in self.components.all()])
+
+    def values_whole_period(self, npoints):
+        phases = np.linspace(-0.5, 0.5, num=npoints, endpoint=False)
+        return self.values(phases)
 
     def __str__(self) -> str:
         return f"Template for {self.ulp} ({self.owner})"
@@ -590,8 +594,8 @@ class TemplateComponent(models.Model):
     mu = models.FloatField(help_text="In units of pulse phase.")
     sigma = models.FloatField(help_text="In units of pulse phase.")
 
-    def y(self, phase):
-        return self.weight*np.exp(0.5*((phase - self.mu)/self.sigma)**2)
+    def values(self, phases):
+        return self.weight*np.exp(0.5*((phases - self.mu)/self.sigma)**2)
 
     def clean(self):
         if self.sigma <= 0.0:

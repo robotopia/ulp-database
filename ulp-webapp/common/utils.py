@@ -8,6 +8,7 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
 import astropy.units as u
 import data.models as data_models
+import numpy as np
 
 def permitted_to_view_filter(queryset, user):
 
@@ -106,3 +107,93 @@ def barycentre(ulp, times, location):
     bc_correction = location_times.light_travel_time(direction, ephemeris='jpl') # Calculate correction
     bc_times = (location_times.tdb + bc_correction).value # Apply correction, and convert back to MJD values
     return bc_times
+
+
+# Compare fold() in common.js
+def fold(mjds, working_ephemeris):
+    pepoch = working_ephemeris.pepoch
+    period = working_ephemeris.p0
+
+    pulses_phases = (mjds - pepoch) / (period/86400.0)
+    phases, pulses = np.modf(pulses_phases + 0.5)
+    phases -= 0.5
+
+    return pulses, phases
+
+
+def unfold(pulses, phases, working_ephemeris):
+    pepoch = working_ephemeris.pepoch
+    period = working_ephemeris.p0
+    mjds = pepoch + period*(pulses + phases)
+    return mjds
+
+
+def pulses_from_pulse_number(pulse_number, working_ephemeris):
+    mjd_start, mjd_end = unfold(pulse_number, np.array([-0.5, 0.5]), working_ephemeris)
+    return models.Pulse.objects.filter(mjd_start__gte=mjd_start, mjd_start__lte=mjd_end)
+
+
+def dm_correction(lightcurve, working_ephemeris):
+    '''
+    This functions solves the problem of when the lightcurve was dedispersed using
+    some particular DM and some arbitrary reference frequency, whereas the working
+    ephemeris is assuming a different DM. We can't change the channel dispersion
+    delays, but we can find the absolute time offset to approximate how (and when)
+    the lightcurve appears if it had been dedispersed to infinite frequency.
+
+    Returns time offset in units of days, in order that it can be easily to applied
+    to ToAs, which are in MJD.
+    '''
+
+    D = 4.148808e3/86400 # Dispersion constant in the appropriate units
+
+    total_offset = D * (lightcurve.dm - working_ephemeris.dm) / lightcurve.dm_freq**2
+
+    # If the above ^^^ formula is not clear, see the following "spelled out" code:
+    '''
+    ###################
+    # Recover the time offset needed to put the lightcurve back to its "native"
+    # frequency
+    native_offset = D * lightcurve.dm / lightcurve.dm_freq**2
+    
+    # An now the time offset to get it to infinite frequency assuming the
+    # "working" DM
+    inf_offset = D * working_ephemeris.dm / lightcurve.dm_freq**2
+
+    # We define "dm correction" as the amount you have to *add* in order to
+    # get the corrected amount
+    total_offset = native_offset - inf_offset
+    ##################
+    '''
+
+    return total_offset
+
+
+def calc_and_create_toa(pulse_number, template, working_ephemeris):
+
+    # Get the pulses we'll be working with
+    pulses = pulses_from_pulse_number(pulse_number, working_ephemeris)
+
+    # Extract the lightcurves and shift them to infinite frequency
+    times = np.concatenate([p.lightcurve.bary_times() + dm_correction(lightcurve, working_ephemeris) for p in pulses])
+    values = np.concatenate([p.lightcurve.values() for p in values])
+
+    # If there are more than one pulse, then there is more work to be done in getting
+    # a straightforward array which we can use for cross correlating with the template.
+    # Current plan is:
+    # 1. Order the samples
+    # 2. Interpolate and resample (scipy) to some fixed sampling time
+    # For now, however, this will remain a job for tomorrow me.
+    # TODO
+    if len(pulses) > 1:
+        raise ValueError("Currently do not support creating ToAs when multiple 'pulses' are present in the same pulse")
+
+    # Convert the times into phases
+    _, phases = fold(times, working_ephemeris)
+
+    # Create a period-sized template at the same sampling rate as the data
+    # (TODO: this needs to be more intelligent when multiple pulses are included)
+    dph = pulses[0].lightcurve.dt/working_ephemeris.p0 # (dph = "Delta phase")
+
+    # Construct a template that ....
+    # TODO Finish me!
