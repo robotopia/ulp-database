@@ -59,6 +59,11 @@ class WorkingEphemerisAdmin(admin.ModelAdmin):
                 "fields": ["pepoch", "p0", "p1", "pb", "dm"],
             }
         ),
+        (
+            "Spectrum", {
+                "fields": ["spec_s1GHz", "spec_alpha", "spec_q"],
+            }
+        ),
     ]
 
 @admin.register(Pulse)
