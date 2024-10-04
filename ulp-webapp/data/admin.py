@@ -61,7 +61,7 @@ class WorkingEphemerisAdmin(admin.ModelAdmin):
         ),
         (
             "Spectrum", {
-                "fields": ["spec_s1GHz", "spec_alpha", "spec_q"],
+                "fields": ["spec_alpha", "spec_q"],
             }
         ),
     ]
@@ -70,3 +70,25 @@ class WorkingEphemerisAdmin(admin.ModelAdmin):
 class PulseAdmin(admin.ModelAdmin):
     list_display = ['pk', 'lightcurve', 'mjd_start', 'mjd_end', 'tags']
     list_filter = ['lightcurve__owner', 'lightcurve__ulp', 'lightcurve__telescope']
+
+@admin.register(Template)
+class TemplateAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'ulp', 'owner', 'updated']
+    fieldsets = [
+        PermissionFieldset,
+        (
+            None, {
+                "fields": ["ulp"],
+            }
+        ),
+    ]
+
+@admin.register(TemplateComponent)
+class TemplateComponentAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'template', 'weight', 'mu', 'sigma']
+
+
+@admin.register(Toa)
+class ToaAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'toa_mjd', 'toa_err_s', 'template', 'pulse_number']
+    list_filter = ['template__ulp']

@@ -290,6 +290,9 @@ class Plot(models.Model):
 
 class Lightcurve(AbstractPermission):
 
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
     ulp = models.ForeignKey(
         published_models.Ulp,
         on_delete=models.CASCADE,
@@ -412,6 +415,9 @@ class LightcurvePoint(models.Model):
 
 class WorkingEphemeris(AbstractPermission):
 
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
     ulp = models.ForeignKey(
         published_models.Ulp,
         on_delete=models.CASCADE,
@@ -449,12 +455,6 @@ class WorkingEphemeris(AbstractPermission):
         help_text="The dispersion measure (pc/cm^3)",
     )
 
-    spec_s1GHz = models.FloatField(
-        null=True,
-        blank=True,
-        help_text="The flux density (Jy) at 1 GHz. The 'S1GHz' in the equation S = S1GHz * f^alpha * exp(q*ln(f)^2), where f is the frequency in GHz and S is in Jy.",
-    )
-
     spec_alpha = models.FloatField(
         null=True,
         blank=True,
@@ -482,6 +482,9 @@ class WorkingEphemeris(AbstractPermission):
 
 
 class Pulse(models.Model):
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     lightcurve = models.ForeignKey(
         "Lightcurve",
@@ -528,3 +531,112 @@ class Pulse(models.Model):
         ordering = ['lightcurve', 'mjd_start']
 
 
+class Template(AbstractPermission):
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    ulp = models.ForeignKey(
+        published_models.Ulp,
+        on_delete=models.CASCADE,
+        help_text="The source this template applies to",
+        related_name="templates",
+    )
+
+    included_pulses = models.ManyToManyField(
+        "Pulse",
+        through="TemplatePulse",
+        through_fields=("template", "pulse"),
+        related_name="templates",
+    )
+
+    def y(self, phase):
+        return np.sum([component.y(phase) for component in self.components.all()])
+
+    def __str__(self) -> str:
+        return f"Template for {self.ulp} ({self.owner})"
+
+    class Meta:
+        ordering = ['ulp', 'updated']
+
+
+class TemplatePulse(models.Model):
+
+    template = models.ForeignKey(
+        "Template",
+        on_delete=models.CASCADE,
+    )
+
+    pulse = models.ForeignKey(
+        "Pulse",
+        on_delete=models.CASCADE,
+    )
+
+    def clean(self):
+        if self.pulse.lightcurve.ulp != self.template.ulp:
+            raise ValidationError(f"The pulse's Ulp ({self.pulse.lightcurve.ulp}) must be the same as the template's Ulp ({self.template.ulp}).")
+
+
+class TemplateComponent(models.Model):
+
+    template = models.ForeignKey(
+        "Template",
+        on_delete=models.CASCADE,
+        help_text="The template to which this component belongs.",
+        related_name="components",
+    )
+
+    weight = models.FloatField()
+    mu = models.FloatField(help_text="In units of pulse phase.")
+    sigma = models.FloatField(help_text="In units of pulse phase.")
+
+    def y(self, phase):
+        return self.weight*np.exp(0.5*((phase - self.mu)/self.sigma)**2)
+
+    def clean(self):
+        if self.sigma <= 0.0:
+            raise ValidationError(f"The component cannot have negative width")
+
+
+
+class Toa(models.Model):
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    pulse_number = models.IntegerField(
+        help_text="The pulse number as derived from the linked working ephemeris.",
+    )
+
+    template = models.ForeignKey(
+        "Template",
+        on_delete=models.CASCADE,
+        help_text="The template used to derive this ToA.",
+        related_name="toas",
+    )
+
+    working_ephemeris = models.ForeignKey(
+        "WorkingEphemeris",
+        on_delete=models.CASCADE,
+        help_text="The working ephemeris used to derive this ToA.",
+        related_name="toas",
+    )
+
+    toa_mjd = models.DecimalField(
+        decimal_places=20,
+        max_digits=30,
+        help_text="The barycentered MJD of the ToA.",
+        verbose_name="ToA (MJD)",
+    )
+
+    toa_err_s = models.DecimalField(
+        decimal_places=20,
+        max_digits=30,
+        help_text="The 1σ uncertainty of the time of arrival (in seconds).",
+        verbose_name="ToA error (s)",
+    )
+
+    class Meta:
+        verbose_name = "ToA"
+        verbose_name_plural = "ToAs"
+        ordering = ["template", "pulse_number"]

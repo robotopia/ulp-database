@@ -31,10 +31,6 @@
     <input id="dm" name="dm" type="number" step="any" value="{{ working_ephemeris.dm|default_if_none:'' }}" onchange="redraw_plot();"/>
   </div>
   <div class="compact-form-item">
-    <label for="spec_s1GHz">Spectrum: S_1GHz (Jy)</label>
-    <input id="spec_s1GHz" name="spec_s1GHz" type="number" step="any" value="{{ working_ephemeris.spec_s1GHz|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); redraw_plot();"/>
-  </div>
-  <div class="compact-form-item">
     <label for="spec_alpha">Spectrum: &alpha;</label>
     <input id="spec_alpha" name="spec_alpha" type="number" step="any" value="{{ working_ephemeris.spec_alpha|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); dredraw_plot();"/>
   </div>
@@ -284,12 +280,11 @@
   }
 
   function toggle_scale_flux_disabled() {
-    s1GHz = document.getElementById('spec_s1GHz').value;
     alpha = document.getElementById('spec_alpha').value;
     q     = document.getElementById('spec_q').value;
 
     // Toggle the scale flux elements' disabled
-    let disabled = (s1GHz.length == 0 || alpha.length == 0);
+    let disabled = (alpha.length == 0);
     document.getElementById('scale_fluxes_checkbox').disabled = disabled;
     document.getElementById('scale_fluxes_freq_MHz').disabled = disabled;
   }
