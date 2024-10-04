@@ -85,9 +85,9 @@
   <br>
 
   <div id="scale_fluxes">
-    <input type="checkbox" id="scale_fluxes_checkbox"/>
+    <input type="checkbox" id="scale_fluxes_checkbox" onchange="redraw_plot();"/>
     <label for="scale_fluxes_checkbox">Scale fluxes to</label>
-    <input type="number" step="any" id="scale_fluxes_freq_MHz" placeholder="1000"/>
+    <input type="number" step="any" id="scale_fluxes_freq_MHz" placeholder="1000" onchange="redraw_plot();"/>
     <label for="scale_fluxes_freq_MHz">MHz</label>
   </div>
 
@@ -117,6 +117,12 @@
 
     freqs = Array.from(data, (d) => d.freq_MHz);
 
+    // A function for determining whether the fluxes should be scaled or not
+    function is_scale_fluxes() {
+      checkbox = document.getElementById("scale_fluxes_checkbox");
+      return (checkbox.disabled == false && checkbox.checked);
+    }
+
     var x, y, x_err, y_err;
 
     if (xaxis == 'rotation_phase') {
@@ -132,7 +138,13 @@
       x = pulses_sequential;
       x_err = undefined;
     } else if (xaxis == "peak_Jy") {
-      x = Array.from(data, (d) => d.peak_value_Jy);
+      if (is_scale_fluxes()) {
+        alpha = parseFloat(document.getElementById("spec_s1GHz").value);
+        q = parseFloat(document.getElementById("spec_q").value);
+        x = Array.from(data, (d) => scale_flux(d.freq_MHz, d.peak_value_Jy, alpha, q));
+      } else {
+        x = Array.from(data, (d) => d.peak_value_Jy);
+      }
       x_err = undefined;
     } else if (xaxis == "frequency") {
       x = freqs;
@@ -152,7 +164,13 @@
       y = pulses_sequential;
       y_err = undefined;
     } else if (yaxis == "peak_Jy") {
-      y = Array.from(data, (d) => d.peak_value_Jy);
+      if (is_scale_fluxes()) {
+        alpha = parseFloat(document.getElementById("spec_s1GHz").value);
+        q = parseFloat(document.getElementById("spec_q").value);
+        y = Array.from(data, (d) => scale_flux(d.freq_MHz, d.peak_value_Jy, alpha, q));
+      } else {
+        y = Array.from(data, (d) => d.peak_value_Jy);
+      }
       y_err = undefined;
     } else if (yaxis == "frequency") {
       y = freqs;
@@ -229,33 +247,8 @@
   redraw_plot();
   //console.log(folded_data);
 
-  /*
-  // Add the pulses
-  layout.shapes = [];
-  data.filter((d) => (d.pulses.length > 0)).forEach((d) => {
-    d.pulses.forEach((p) => {
-      pulse_phase = fold(p, pepoch, p0);
-      layout.shapes.push({
-        type: 'rect',
-        xref: 'x',
-        yref: 'y',
-        x0: d.idx,
-        x1: d.idx + parseFloat(document.getElementById('scaleheight').value),
-        y0: pulse_phase.phases[0],
-        y1: pulse_phase.phases[1],
-        pulse: pulse_phase.pulses[0], // Store for later, when switching stacking types
-        idx: d.idx,                   // ditto
-        fillcolor: '#880',
-        opacity: 0.2,
-        line: {width: 0},
-        //visible: false, // Initialise to hidden
-      });
-    });
-  });
-  */
-
-  residualsDiv = document.getElementById('residuals');
-  residualsDiv.on('plotly_click', function(d) {
+  plotDiv = document.getElementById('residuals');
+  plotDiv.on('plotly_click', function(d) {
     window.location.href = data[d.points[0].pointIndex].link;
   });
 
