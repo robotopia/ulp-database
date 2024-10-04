@@ -87,7 +87,7 @@
   <div id="scale_fluxes">
     <input type="checkbox" id="scale_fluxes_checkbox" onchange="redraw_plot();"/>
     <label for="scale_fluxes_checkbox">Scale fluxes to</label>
-    <input type="number" step="any" id="scale_fluxes_freq_MHz" placeholder="1000" onchange="redraw_plot();"/>
+    <input type="number" step="any" id="scale_fluxes_freq_MHz" value="1000" onchange="redraw_plot();"/>
     <label for="scale_fluxes_freq_MHz">MHz</label>
   </div>
 
@@ -139,9 +139,10 @@
       x_err = undefined;
     } else if (xaxis == "peak_Jy") {
       if (is_scale_fluxes()) {
-        alpha = parseFloat(document.getElementById("spec_s1GHz").value);
+        alpha = parseFloat(document.getElementById("spec_alpha").value);
         q = parseFloat(document.getElementById("spec_q").value);
-        x = Array.from(data, (d) => scale_flux(d.freq_MHz, d.peak_value_Jy, alpha, q));
+        freq_target_MHz = parseFloat(document.getElementById("scale_fluxes_freq_MHz").value);
+        x = Array.from(data, (d) => scale_flux(d.freq_MHz, d.peak_value_Jy, freq_target_MHz, alpha, q));
       } else {
         x = Array.from(data, (d) => d.peak_value_Jy);
       }
@@ -165,9 +166,10 @@
       y_err = undefined;
     } else if (yaxis == "peak_Jy") {
       if (is_scale_fluxes()) {
-        alpha = parseFloat(document.getElementById("spec_s1GHz").value);
+        alpha = parseFloat(document.getElementById("spec_alpha").value);
         q = parseFloat(document.getElementById("spec_q").value);
-        y = Array.from(data, (d) => scale_flux(d.freq_MHz, d.peak_value_Jy, alpha, q));
+        freq_target_MHz = parseFloat(document.getElementById("scale_fluxes_freq_MHz").value);
+        y = Array.from(data, (d) => scale_flux(d.freq_MHz, d.peak_value_Jy, freq_target_MHz, alpha, q));
       } else {
         y = Array.from(data, (d) => d.peak_value_Jy);
       }

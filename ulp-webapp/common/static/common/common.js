@@ -87,8 +87,23 @@ function freq_color(freq, min_freq, max_freq) {
 }
 
 
-function scale_flux(freq_MHz, S_freq, alpha, q=0) {
+function scale_flux(freq_MHz, S_freq, freq_target_MHz, alpha, q=0) {
   let f = freq_MHz / 1e3; // Convert to GHz
   let lnf = Math.log(f);
-  return S_freq / (Math.pow(f, alpha) * Math.exp(q * lnf * lnf));
+  let f_target = freq_target_MHz / 1e3; //
+  let lnf_target = Math.log(f);
+
+  let S1GHz = S_freq / (Math.pow(f, alpha) * Math.exp(q * lnf * lnf));
+  let S_target = S1GHz * Math.pow(f_target, alpha) * Math.exp(q * lnf_target * lnf_target);
+  /*
+  console.log({
+    freq_MHz: freq_MHz,
+    S_freq: S_freq,
+    freq_target_MHz: freq_target_MHz,
+    S_target: S_target,
+    alpha: alpha,
+    q: q,
+  });
+  */
+  return S_target;
 }
