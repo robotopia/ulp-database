@@ -7,10 +7,11 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord, Angle, EarthLocation
 from astropy.time import Time
 import numpy as np
+from scipy.stats import vonmises
 from decimal import Decimal
 
 from common.models import AbstractPermission
-from common.utils import barycentre
+from common.utils import barycentre, scale_to_frequency
 
 class TimeOfArrival(AbstractPermission):
 
@@ -536,13 +537,6 @@ class Template(AbstractPermission):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-    ulp = models.ForeignKey(
-        published_models.Ulp,
-        on_delete=models.CASCADE,
-        help_text="The source this template applies to",
-        related_name="templates",
-    )
-
     included_pulses = models.ManyToManyField(
         "Pulse",
         through="TemplatePulse",
@@ -550,18 +544,40 @@ class Template(AbstractPermission):
         related_name="templates",
     )
 
-    def values(self, phases):
-        return np.sum([component.values(phases) for component in self.components.all()])
+    working_ephemeris = models.ForeignKey(
+        "WorkingEphemeris",
+        on_delete=models.CASCADE,
+        help_text="The ephemeris used for constructing this template.",
+        related_name="templates",
+    )
 
-    def values_whole_period(self, npoints):
-        phases = np.linspace(-0.5, 0.5, num=npoints, endpoint=False)
-        return self.values(phases)
+    def values(self, phases):
+        '''
+        Returns template values normalised so that the whole template has unity area under curve
+        '''
+        sum_of_components = np.sum([component.values(phases) for component in self.components.all()], axis=0)
+        sum_of_weights = np.sum([component.weight for component in self.components.all()])
+        return sum_of_components/sum_of_weights
+
+    def values_npoints(self, npoints, ph_ctr=0.0):
+        phases = np.linspace(ph_ctr-0.5, ph_ctr+0.5, num=npoints, endpoint=False)
+        return phases, self.values(phases)
+
+    def values_dph(self, dph, ph_ctr=0.0):
+        # For a given "delta phase" (dph), it won't generally be the case that a whole number
+        # of samples will fit into one period. The strategy is to extend slightly beyond
+        # the phase range (ph_ctr-0.5, ph_ctr+0.5) as minimally as possible. It is assumed that
+        # contributions near the extremes of this range are minimal
+        npoints = int(np.ceil(1/dph))
+        phase_range = npoints*dph
+        phases = np.linspace(ph_ctr - phase_range/2, ph_ctr + phase_range/2, num=npoints, endpoint=False)
+        return phases, self.values(npoints)
 
     def __str__(self) -> str:
-        return f"Template for {self.ulp} ({self.owner})"
+        return f"Template for {self.working_ephemeris.ulp} ({self.owner})"
 
     class Meta:
-        ordering = ['ulp', 'updated']
+        ordering = ['working_ephemeris', 'updated']
 
 
 class TemplatePulse(models.Model):
@@ -577,8 +593,8 @@ class TemplatePulse(models.Model):
     )
 
     def clean(self):
-        if self.pulse.lightcurve.ulp != self.template.ulp:
-            raise ValidationError(f"The pulse's Ulp ({self.pulse.lightcurve.ulp}) must be the same as the template's Ulp ({self.template.ulp}).")
+        if self.pulse.lightcurve.ulp != self.template.working_ephemeris.ulp:
+            raise ValidationError(f"The pulse's Ulp ({self.pulse.lightcurve.ulp}) must be the same as the template's Ulp ({self.template.working_ephemeris.ulp}).")
 
 
 class TemplateComponent(models.Model):
@@ -595,7 +611,12 @@ class TemplateComponent(models.Model):
     sigma = models.FloatField(help_text="In units of pulse phase.")
 
     def values(self, phases):
-        return self.weight*np.exp(0.5*((phases - self.mu)/self.sigma)**2)
+        # If using Gaussians, which we're not:
+        #return self.weight*np.exp(0.5*((phases - self.mu)/self.sigma)**2)
+
+        # von Mises function, with everything multiplied by 2pi to convert
+        # it to the support expected by the pdf:
+        return self.weight*vonmises.pdf(2*np.pi*phases, loc=2*np.pi*self.mu, kappa=1/(2*np.pi*self.sigma)**2)
 
     def clean(self):
         if self.sigma <= 0.0:
@@ -619,13 +640,6 @@ class Toa(models.Model):
         related_name="toas",
     )
 
-    working_ephemeris = models.ForeignKey(
-        "WorkingEphemeris",
-        on_delete=models.CASCADE,
-        help_text="The working ephemeris used to derive this ToA.",
-        related_name="toas",
-    )
-
     toa_mjd = models.DecimalField(
         decimal_places=20,
         max_digits=30,
@@ -640,7 +654,22 @@ class Toa(models.Model):
         verbose_name="ToA error (s)",
     )
 
+    ampl = models.FloatField(
+        help_text="The amplitude of the fitted template that matched the data scaled to 'ampl_ref_freq'.",
+    )
+
+    ampl_err = models.FloatField(
+        help_text="The uncertainaty of the amplitude.",
+    )
+
+    ampl_ref_freq = models.FloatField(
+        help_text="The reference frequency used (when scaling the data) to derive the amplitude.",
+    )
+
     class Meta:
         verbose_name = "ToA"
         verbose_name_plural = "ToAs"
         ordering = ["template", "pulse_number"]
+        constraints = [
+            models.UniqueConstraint(fields=['template', 'pulse_number'], name="unique_toa_per_pulse_and_template"),
+        ]

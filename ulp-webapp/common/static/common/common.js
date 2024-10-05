@@ -89,11 +89,12 @@ function freq_color(freq, min_freq, max_freq) {
 }
 
 
+// Compare scale_to_frequency() in common/utils.py
 function scale_flux(freq_MHz, S_freq, freq_target_MHz, alpha, q=0) {
   let f = freq_MHz / 1e3; // Convert to GHz
   let lnf = Math.log(f);
   let f_target = freq_target_MHz / 1e3; //
-  let lnf_target = Math.log(f);
+  let lnf_target = Math.log(f_target);
 
   let S1GHz = S_freq / (Math.pow(f, alpha) * Math.exp(q * lnf * lnf));
   let S_target = S1GHz * Math.pow(f_target, alpha) * Math.exp(q * lnf_target * lnf_target);

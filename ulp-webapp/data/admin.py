@@ -73,12 +73,13 @@ class PulseAdmin(admin.ModelAdmin):
 
 @admin.register(Template)
 class TemplateAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'ulp', 'owner', 'updated']
+    list_display = ['pk', 'working_ephemeris', 'owner', 'updated']
+    list_filter = ['working_ephemeris__ulp']
     fieldsets = [
         PermissionFieldset,
         (
             None, {
-                "fields": ["ulp"],
+                "fields": ["working_ephemeris"],
             }
         ),
     ]
@@ -91,4 +92,4 @@ class TemplateComponentAdmin(admin.ModelAdmin):
 @admin.register(Toa)
 class ToaAdmin(admin.ModelAdmin):
     list_display = ['pk', 'toa_mjd', 'toa_err_s', 'template', 'pulse_number']
-    list_filter = ['template__ulp']
+    list_filter = ['template__working_ephemeris__ulp']

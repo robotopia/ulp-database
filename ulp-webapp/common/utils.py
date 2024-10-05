@@ -9,6 +9,7 @@ from astropy.coordinates import SkyCoord, EarthLocation
 import astropy.units as u
 import data.models as data_models
 import numpy as np
+from scipy.optimize import curve_fit
 
 def permitted_to_view_filter(queryset, user):
 
@@ -124,13 +125,13 @@ def fold(mjds, working_ephemeris):
 def unfold(pulses, phases, working_ephemeris):
     pepoch = working_ephemeris.pepoch
     period = working_ephemeris.p0
-    mjds = pepoch + period*(pulses + phases)
+    mjds = pepoch + (period/86400.0)*(pulses + phases)
     return mjds
 
 
 def pulses_from_pulse_number(pulse_number, working_ephemeris):
     mjd_start, mjd_end = unfold(pulse_number, np.array([-0.5, 0.5]), working_ephemeris)
-    return models.Pulse.objects.filter(mjd_start__gte=mjd_start, mjd_start__lte=mjd_end)
+    return data_models.Pulse.objects.filter(mjd_start__gte=mjd_start, mjd_start__lte=mjd_end)
 
 
 def dm_correction(lightcurve, working_ephemeris):
@@ -147,18 +148,20 @@ def dm_correction(lightcurve, working_ephemeris):
 
     D = 4.148808e3/86400 # Dispersion constant in the appropriate units
 
-    total_offset = D * (lightcurve.dm - working_ephemeris.dm) / lightcurve.dm_freq**2
+    lc_dm_freq = lightcurve.dm_freq or np.inf # Since we stipulated that an empty field (i.e. null value) "means" infinite frequency
+
+    total_offset = D * (lightcurve.dm - working_ephemeris.dm) / lc_dm_freq**2
 
     # If the above ^^^ formula is not clear, see the following "spelled out" code:
     '''
     ###################
     # Recover the time offset needed to put the lightcurve back to its "native"
     # frequency
-    native_offset = D * lightcurve.dm / lightcurve.dm_freq**2
+    native_offset = D * lightcurve.dm / lc_dm_freq**2
     
     # An now the time offset to get it to infinite frequency assuming the
     # "working" DM
-    inf_offset = D * working_ephemeris.dm / lightcurve.dm_freq**2
+    inf_offset = D * working_ephemeris.dm / lc_dm_freq**2
 
     # We define "dm correction" as the amount you have to *add* in order to
     # get the corrected amount
@@ -169,31 +172,81 @@ def dm_correction(lightcurve, working_ephemeris):
     return total_offset
 
 
-def calc_and_create_toa(pulse_number, template, working_ephemeris):
+def scale_to_frequency(freq_MHz, S_freq, freq_target_MHz, alpha, q=0):
+    '''
+    Compare scale_flux() in common.js
+    '''
+    # Convert things to GHz, as that is what was assumed to be used to produce
+    # alpha and q
+    f = freq_MHz / 1e3
+    lnf = np.log(f)
+    f_target = freq_target_MHz / 1e3
+    lnf_target = np.log(f_target)
+
+    S1GHz = S_freq / (f**alpha * np.exp(q*lnf**2))
+    S_target = S1GHz * f_target**alpha * np.exp(q*lnf_target**2)
+
+    return S_target
+
+
+def calc_and_create_toa(pulse_number, template, freq_target_MHz=1000):
+
+    # Get a shorthand variable for the (w)orking (e)phemeris
+    we = template.working_ephemeris
 
     # Get the pulses we'll be working with
-    pulses = pulses_from_pulse_number(pulse_number, working_ephemeris)
+    pulses = pulses_from_pulse_number(pulse_number, template.working_ephemeris)
 
-    # Extract the lightcurves and shift them to infinite frequency
-    times = np.concatenate([p.lightcurve.bary_times() + dm_correction(lightcurve, working_ephemeris) for p in pulses])
-    values = np.concatenate([p.lightcurve.values() for p in values])
+    if len(pulses) == 0:
+        return
 
-    # If there are more than one pulse, then there is more work to be done in getting
-    # a straightforward array which we can use for cross correlating with the template.
-    # Current plan is:
-    # 1. Order the samples
-    # 2. Interpolate and resample (scipy) to some fixed sampling time
-    # For now, however, this will remain a job for tomorrow me.
-    # TODO
-    if len(pulses) > 1:
-        raise ValueError("Currently do not support creating ToAs when multiple 'pulses' are present in the same pulse")
+    # Extract the lightcurves, shift them to infinite frequency, and
+    # scale them all to the same (arbitrary) frequency
+    times = np.concatenate([p.lightcurve.bary_times() + dm_correction(p.lightcurve, we) for p in pulses])
+    values = np.concatenate([scale_to_frequency(
+        p.lightcurve.freq,
+        p.lightcurve.values(),
+        freq_target_MHz,
+        we.spec_alpha,
+        we.spec_q,
+    ) for p in pulses])
 
-    # Convert the times into phases
-    _, phases = fold(times, working_ephemeris)
+    # Because of the awkwardness of dealing with lightcurves with generally different
+    # sampling rates, we simply fit the template to the points, rather than
+    # trying to use a method based on cross-correlation.
+    #
+    # Keep in mind that the template defines a *shape*, so any fitting function should have
+    # an "amplitude" as a free parameter. This fitted amplitude can be stored with the ToA
+    # as a fitted parameter
 
-    # Create a period-sized template at the same sampling rate as the data
-    # (TODO: this needs to be more intelligent when multiple pulses are included)
-    dph = pulses[0].lightcurve.dt/working_ephemeris.p0 # (dph = "Delta phase")
+    # Convert the times to phases to prepare for fitting the template
+    _, phases = fold(times, we)
 
-    # Construct a template that ....
-    # TODO Finish me!
+    def template_func(phase, ph_offset, ampl):
+        return ampl*template.values(phases - ph_offset)
+
+    p0 = (0.0, np.max(values))
+    popt, pcov = curve_fit(template_func, phases, values, p0=p0)
+
+    # Unpack the fitted values
+    ph_offset, ampl = popt
+    ph_offset_err, ampl_err = np.sqrt(np.diag(pcov))
+
+    # Convert the fitted phase offsets back to ToA units
+    toa_mjd = unfold(pulse_number, ph_offset, we)
+    toa_err_s = ph_offset_err * we.p0
+
+    # Pack the results into a bona fide ToA
+    toa = data_models.Toa(
+        pulse_number=pulse_number,
+        template=template,
+        toa_mjd=toa_mjd,
+        toa_err_s=toa_err_s,
+        ampl=ampl,
+        ampl_err=ampl_err,
+        ampl_ref_freq=freq_target_MHz,
+    )
+    toa.save()
+
+    # Return the new Toa
+    return toa
