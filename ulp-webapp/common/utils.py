@@ -110,30 +110,6 @@ def barycentre(ulp, times, location):
     return bc_times
 
 
-# Compare fold() in common.js
-def fold(mjds, working_ephemeris):
-    pepoch = working_ephemeris.pepoch
-    period = working_ephemeris.p0
-
-    pulses_phases = (mjds - pepoch) / (period/86400.0)
-    phases, pulses = np.modf(pulses_phases + 0.5)
-    phases -= 0.5
-
-    return pulses, phases
-
-
-def unfold(pulses, phases, working_ephemeris):
-    pepoch = working_ephemeris.pepoch
-    period = working_ephemeris.p0
-    mjds = pepoch + (period/86400.0)*(pulses + phases)
-    return mjds
-
-
-def pulses_from_pulse_number(pulse_number, working_ephemeris):
-    mjd_start, mjd_end = unfold(pulse_number, np.array([-0.5, 0.5]), working_ephemeris)
-    return data_models.Pulse.objects.filter(mjd_start__gte=mjd_start, mjd_start__lte=mjd_end)
-
-
 def dm_correction(lightcurve, working_ephemeris):
     '''
     This functions solves the problem of when the lightcurve was dedispersed using
@@ -189,13 +165,10 @@ def scale_to_frequency(freq_MHz, S_freq, freq_target_MHz, alpha, q=0):
     return S_target
 
 
-def calc_and_create_toa(pulse_number, template, freq_target_MHz=1000):
-
-    # Get a shorthand variable for the (w)orking (e)phemeris
-    we = template.working_ephemeris
+def extract_lightcurves_from_pulse_number(pulse_number, working_ephemeris, freq_target_MHz):
 
     # Get the pulses we'll be working with
-    pulses = pulses_from_pulse_number(pulse_number, template.working_ephemeris)
+    pulses = we.pulses_from_pulse_number(pulse_number)
 
     if len(pulses) == 0:
         return
@@ -211,6 +184,17 @@ def calc_and_create_toa(pulse_number, template, freq_target_MHz=1000):
         we.spec_q,
     ) for p in pulses])
 
+    return times, values
+
+
+def calc_and_create_toa(pulse_number, template, freq_target_MHz=1000):
+
+    # Get a shorthand variable for the (w)orking (e)phemeris
+    we = template.working_ephemeris
+
+    # Get all lightcurves in this pulse number
+    times, values = extract_lightcurves_from_pulse_number(pulse_number, we, freq_target_MHz)
+
     # Because of the awkwardness of dealing with lightcurves with generally different
     # sampling rates, we simply fit the template to the points, rather than
     # trying to use a method based on cross-correlation.
@@ -220,7 +204,7 @@ def calc_and_create_toa(pulse_number, template, freq_target_MHz=1000):
     # as a fitted parameter
 
     # Convert the times to phases to prepare for fitting the template
-    _, phases = fold(times, we)
+    _, phases = we.fold(times)
 
     def template_func(phase, ph_offset, ampl):
         return ampl*template.values(phases - ph_offset)
@@ -233,7 +217,7 @@ def calc_and_create_toa(pulse_number, template, freq_target_MHz=1000):
     ph_offset_err, ampl_err = np.sqrt(np.diag(pcov))
 
     # Convert the fitted phase offsets back to ToA units
-    toa_mjd = unfold(pulse_number, ph_offset, we)
+    toa_mjd = we.unfold(pulse_number, ph_offset)
     toa_err_s = ph_offset_err * we.p0
 
     # Pack the results into a bona fide ToA

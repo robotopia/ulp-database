@@ -11,7 +11,7 @@ from scipy.stats import vonmises
 from decimal import Decimal
 
 from common.models import AbstractPermission
-from common.utils import barycentre, scale_to_frequency
+from common.utils import barycentre, scale_to_frequency, dm_correction
 
 class TimeOfArrival(AbstractPermission):
 
@@ -472,8 +472,50 @@ class WorkingEphemeris(AbstractPermission):
         lnf = np.log(freq_MHz/1e3)
         return np.exp(self.siA*lnf**2 + self.siB*lnf + self.siC)
 
+    def fold(self, mjds):
+        # Compare fold() in common.js
+        pepoch = self.pepoch
+        period = self.p0
+
+        pulses_phases = (mjds - pepoch) / (period/86400.0)
+        phases, pulses = np.modf(pulses_phases + 0.5)
+        phases -= 0.5
+
+        return pulses, phases
+
+    def unfold(self, pulses, phases):
+        pepoch = self.pepoch
+        period = self.p0
+        mjds = pepoch + (period/86400.0)*(pulses + phases)
+        return mjds
+
+    def pulses_from_pulse_number(self, pulse_number):
+        mjd_start, mjd_end = self.unfold(pulse_number, np.array([-0.5, 0.5]))
+        return Pulse.objects.filter(mjd_start__gte=mjd_start, mjd_start__lte=mjd_end)
+
+    def extract_lightcurves_from_pulse_number(self, pulse_number, freq_target_MHz):
+
+        # Get the pulses we'll be working with
+        pulses = self.pulses_from_pulse_number(pulse_number)
+
+        if len(pulses) == 0:
+            return
+
+        # Extract the lightcurves, shift them to infinite frequency, and
+        # scale them all to the same (arbitrary) frequency
+        times = np.concatenate([p.lightcurve.bary_times() + dm_correction(p.lightcurve, self) for p in pulses])
+        values = np.concatenate([scale_to_frequency(
+            p.lightcurve.freq,
+            p.lightcurve.values(),
+            freq_target_MHz,
+            self.spec_alpha,
+            self.spec_q,
+        ) for p in pulses])
+
+        return times, values
+
     def __str__(self) -> str:
-        return f"Working ephemeris for {self.ulp} ({self.owner})"
+        return f"Working ephemeris for {self.ulp}"
 
     class Meta:
         verbose_name_plural = "Working ephemerides"
@@ -574,7 +616,7 @@ class Template(AbstractPermission):
         return phases, self.values(npoints)
 
     def __str__(self) -> str:
-        return f"Template for {self.working_ephemeris.ulp} ({self.owner})"
+        return f"Template for {self.working_ephemeris.ulp}"
 
     class Meta:
         ordering = ['working_ephemeris', 'updated']
@@ -666,10 +708,13 @@ class Toa(models.Model):
         help_text="The reference frequency used (when scaling the data) to derive the amplitude.",
     )
 
+    def __str__(self):
+        return f"ToA from {self.template} ({self.toa_mjd})"
+
     class Meta:
         verbose_name = "ToA"
         verbose_name_plural = "ToAs"
-        ordering = ["template", "pulse_number"]
+        ordering = ["pk", "pulse_number"]
         constraints = [
             models.UniqueConstraint(fields=['template', 'pulse_number'], name="unique_toa_per_pulse_and_template"),
         ]

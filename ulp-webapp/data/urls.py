@@ -6,8 +6,9 @@ from common.utils import update_permissions
 urlpatterns = [
     re_path(r'^timing/$', views.timing_choose_ulp_view, name="timing_choose_ulp"),
     re_path(r'^timing/(?P<pk>[0-9]+)$', views.timing_residual_view, name="timing_residuals"),
-    re_path(r'^timing/toa/(?P<pk>[0-9]+)$', views.toa_detail_view, name="toa_detail_view"),
+    re_path(r'^timing/toa_detail/(?P<pk>[0-9]+)$', views.toa_detail_view, name="toa_detail_view"),
     re_path(r'^timing/toas/(?P<pk>[0-9]+)$', views.toas_view, name="toas_view"),
+    re_path(r'^timing/toa/(?P<pk>[0-9]+)$', views.toa_view, name="toa_view"),  # Different sort of ToA to the above ones!!
     re_path(r'^timing/lightcurve/(?P<pk>[0-9]+)$', views.lightcurve_view, name="lightcurve_view"),
     re_path(r'^timing/lightcurve_add/(?P<pk>[0-9]+)$', views.lightcurve_add, name="lightcurve_add"),
     re_path(r'^timing/folding/(?P<pk>[0-9]+)$', views.folding_view, name="folding_view"),

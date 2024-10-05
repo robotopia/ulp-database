@@ -786,3 +786,19 @@ def update_working_ephemeris(request, pk):
         working_ephemeris.save()
 
     return redirect('folding_view', pk=ulp.pk)
+
+
+def toa_view(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=401)
+
+    # Get the relevant Toa object
+    toa = get_object_or_404(models.Toa, pk=pk)
+
+    context = {
+        'toa': toa,
+    }
+
+    return render(request, 'data/toa.html', context)
