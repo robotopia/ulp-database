@@ -760,6 +760,46 @@ def folding_view(request, pk):
     return render(request, 'data/folding.html', context)
 
 
+def folding_toa_view(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=401)
+
+    # Get the relevant Ulp object
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    # Get working ephemeris
+    working_ephemeris = ulp.working_ephemerides.filter(owner=request.user).first()
+
+    # Get all ToAs for this ULP
+    toas = models.Toa.objects.filter(template__working_ephemeris=working_ephemeris)
+
+    data = []
+    for toa in toas:
+        datum = {
+            'toa_pk': toa.pk,
+            'date': Time(toa.toa_mjd, scale='utc', format='mjd').isot,
+            'link': reverse('toa_view', args=[toa.pk]),
+            'toa_mjd': float(toa.toa_mjd),
+            'toa_err_s': toa.toa_err_s,
+            'pulse_number': toa.pulse_number,
+            'ampl': toa.ampl,
+            'ampl_err': toa.ampl_err,
+        }
+        data.append(datum)
+
+    # Throw it all together into a context
+    context = {
+        'toas': toas,
+        'ulp': ulp,
+        'working_ephemeris': working_ephemeris,
+        'data': data,
+    }
+
+    return render(request, 'data/folding_toa.html', context)
+
+
 def update_working_ephemeris(request, pk):
 
     # First of all, they have to be logged in
@@ -797,8 +837,28 @@ def toa_view(request, pk):
     # Get the relevant Toa object
     toa = get_object_or_404(models.Toa, pk=pk)
 
+    # A shorthand variable
+    we = toa.template.working_ephemeris
+
+    # Get lightcurves
+    freq_target_MHz = 1000 # For now, just use a fixed frequency (for scaling)
+    lc_times, lc_values = we.extract_lightcurves_from_pulse_number(toa.pulse_number, freq_target_MHz)
+    _, lc_phases = we.fold(lc_times)
+
+    # Sample the template at N points between the first and last data point
+    N = 500
+    template_phases = np.linspace(np.min(lc_phases), np.max(lc_phases), N)
+    template_values = toa.ampl * toa.template.values(template_phases - toa.residual)
+
+    toa_err_ph = toa.toa_err_s / we.p0
+
     context = {
         'toa': toa,
+        'lc_phases': list(lc_phases),
+        'lc_values': list(lc_values),
+        'toa_err_ph': toa_err_ph,
+        'template_phases': list(template_phases),
+        'template_values': list(template_values),
     }
 
     return render(request, 'data/toa.html', context)

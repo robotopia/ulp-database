@@ -4,7 +4,7 @@
 
 {% block body %}
 
-<h1>Folding on {{ ulp }}</h1>
+<h1>Folding on {{ ulp }} (ToA view)</h1>
 
 <h2>Working ephemeris</h2>
 
@@ -52,8 +52,7 @@
     <option value="pulses_chronological">Chronological pulses numbers (relative to PEPOCH)</option>
     <option value="rotation_phase">Rotation phase</option>
     <option value="orbital_phase">Orbital phase</option>
-    <option value="peak_Jy">Peak flux density (Jy)</option>
-    <option value="frequency">Frequency</option>
+    <option value="ampl">Fitted ToA amplitudes (Jy)</option>
   </select>
 
   <br>
@@ -64,8 +63,7 @@
     <option value="pulses_chronological">Chronological pulses numbers (relative to PEPOCH)</option>
     <option value="rotation_phase" selected>Rotation phase</option>
     <option value="orbital_phase">Orbital phase</option>
-    <option value="peak_Jy">Peak flux density (Jy)</option>
-    <option value="frequency">Frequency (MHz)</option>
+    <option value="ampl">Fitted ToA amplitudes (Jy)</option>
   </select>
 
   <br>
@@ -77,15 +75,6 @@
 
   <input type="checkbox" id="log_yaxis" onchange="redraw_plot();"/>
   <label for="yaxis-log">Log y-axis</label>
-
-  <br>
-
-  <div id="scale_fluxes">
-    <input type="checkbox" id="scale_fluxes_checkbox" onchange="redraw_plot();"/>
-    <label for="scale_fluxes_checkbox">Scale fluxes to</label>
-    <input type="number" step="any" id="scale_fluxes_freq_MHz" value="1000" onchange="redraw_plot();"/>
-    <label for="scale_fluxes_freq_MHz">MHz</label>
-  </div>
 
 </fieldset>
 
@@ -106,73 +95,46 @@
     var pb     = document.getElementById('pb').value * 3600.0; // Convert to seconds
     var dm     = document.getElementById('dm').value
 
-    lightcurve_ctrs = fold(Array.from(data, (d) => d.mjd_ctr), pepoch, period);
+    toas = fold(Array.from(data, (d) => d.toa_mjd), pepoch, period);
+    console.log(toas);
 
-    pulses_sequential = Array.from(lightcurve_ctrs.pulses, (_, i) => i);
-    pulses_chronological = lightcurve_ctrs.pulses;
-
-    freqs = Array.from(data, (d) => d.freq_MHz);
-
-    // A function for determining whether the fluxes should be scaled or not
-    function is_scale_fluxes() {
-      checkbox = document.getElementById("scale_fluxes_checkbox");
-      return (checkbox.disabled == false && checkbox.checked);
-    }
+    pulses_sequential = Array.from(toas.pulses, (_, i) => i);
+    pulses_chronological = toas.pulses;
 
     var x, y, x_err, y_err;
 
     if (xaxis == 'rotation_phase') {
-      x = lightcurve_ctrs.phases;
-      x_err = data.map((d) => d.mjd_radius*86400/period);
+      x = toas.phases;
+      x_err = data.map((d) => d.toa_err_s/period);
     } else if (xaxis == 'orbital_phase') {
-      x = fold(Array.from(data, (d) => d.mjd_ctr), pepoch, pb).phases;
-      x_err = data.map((d) => d.mjd_radius*86400/pb);
+      x = fold(Array.from(data, (d) => d.toa_mjd), pepoch, pb).phases;
+      x_err = data.map((d) => d.toa_err_s/pb);
     } else if (xaxis == "pulses_chronological") {
       x = pulses_chronological;
       x_err = undefined;
     } else if (xaxis == "pulses_sequential") {
       x = pulses_sequential;
       x_err = undefined;
-    } else if (xaxis == "peak_Jy") {
-      if (is_scale_fluxes()) {
-        alpha = parseFloat(document.getElementById("spec_alpha").value);
-        q = parseFloat(document.getElementById("spec_q").value);
-        freq_target_MHz = parseFloat(document.getElementById("scale_fluxes_freq_MHz").value);
-        x = Array.from(data, (d) => scale_flux(d.freq_MHz, d.peak_value_Jy, freq_target_MHz, alpha, q));
-      } else {
-        x = Array.from(data, (d) => d.peak_value_Jy);
-      }
-      x_err = undefined;
-    } else if (xaxis == "frequency") {
-      x = freqs;
-      x_err = undefined;
+    } else if (xaxis == "ampl") {
+      x = Array.from(data, (d) => d.ampl);
+      x_err = Array.from(data, (d) => d.ampl_err);
     }
 
     if (yaxis == 'rotation_phase') {
-      y = lightcurve_ctrs.phases;
-      y_err = data.map((d) => d.mjd_radius*86400/period);
+      y = toas.phases;
+      y_err = data.map((d) => d.toa_err_s/period);
     } else if (yaxis == 'orbital_phase') {
-      y = fold(Array.from(data, (d) => d.mjd_ctr), pepoch, pb).phases;
-      y_err = data.map((d) => d.mjd_radius*86400/pb);
+      y = fold(Array.from(data, (d) => d.toa_mjd), pepoch, pb).phases;
+      y_err = data.map((d) => d.toa_err_s/pb);
     } else if (yaxis == "pulses_chronological") {
       y = pulses_chronological;
       y_err = undefined;
     } else if (yaxis == "pulses_sequential") {
       y = pulses_sequential;
       y_err = undefined;
-    } else if (yaxis == "peak_Jy") {
-      if (is_scale_fluxes()) {
-        alpha = parseFloat(document.getElementById("spec_alpha").value);
-        q = parseFloat(document.getElementById("spec_q").value);
-        freq_target_MHz = parseFloat(document.getElementById("scale_fluxes_freq_MHz").value);
-        y = Array.from(data, (d) => scale_flux(d.freq_MHz, d.peak_value_Jy, freq_target_MHz, alpha, q));
-      } else {
-        y = Array.from(data, (d) => d.peak_value_Jy);
-      }
-      y_err = undefined;
-    } else if (yaxis == "frequency") {
-      y = freqs;
-      y_err = undefined;
+    } else if (xaxis == "ampl") {
+      y = Array.from(data, (d) => d.ampl);
+      y_err = Array.from(data, (d) => d.ampl_err);
     }
 
     return [{
@@ -180,28 +142,16 @@
       pulses_chronological: pulses_chronological,
       x: x,
       y: y,
-      freqs: freqs,
       error_x: {
         array: x_err,
-        color: 'white',
-        thickness: 1,
       },
       error_y: {
         array: y_err,
-        color: 'white',
-        thickness: 1,
       },
       mode: 'markers',
       type: 'scatter',
-      marker: {
-        size: 5,
-        color: freqs,
-        coloraxis: 'coloraxis',
-      },
-      hovertemplate: data.map((d, i) => "Ephemeris pulse #" + pulses_chronological[i] + "<br>" +
-        "Date: " + d.date + "<br>" +
-        "Telescope: " + d.telescope + "<br>" +
-        "Frequency: " + d.freq_MHz + " MHz" +
+      hovertemplate: data.map((d, i) => "ToA #" + pulses_chronological[i] + "<br>" +
+        "MJD: " + d.toa_mjd + "<br>" +
         "<extra></extra>"),
     }];
   }
@@ -209,17 +159,6 @@
   var layout = get_plotly_default_layout();
 
   function update_layout() {
-    layout.showlegend = false;
-    layout.coloraxis = {
-      cmin: {{ freq_range.min }},
-      cmax: {{ freq_range.max }},
-      colorbar: {
-        title: {text: "Frequency (MHz)"},
-        ticks: "outside",
-        tickcolor: "rgb(222,226, 230)",
-      },
-      colorscale: Array.from({length: 11}, (_, i) => i/10).map((f) => [f, freq_color(f, 0, 1)]),
-    };
     layout.yaxis = {
       title: {
         text: document.getElementById('yaxis').options[document.getElementById('yaxis').selectedIndex].text, // FIX ME!
@@ -282,19 +221,6 @@
     document.getElementById('spec_alpha').style.backgroundColor = "field";
     document.getElementById('spec_q').style.backgroundColor = "field";
   }
-
-  function toggle_scale_flux_disabled() {
-    alpha = document.getElementById('spec_alpha').value;
-    q     = document.getElementById('spec_q').value;
-
-    // Toggle the scale flux elements' disabled
-    let disabled = (alpha.length == 0);
-    document.getElementById('scale_fluxes_checkbox').disabled = disabled;
-    document.getElementById('scale_fluxes_freq_MHz').disabled = disabled;
-  }
-
-  // Initialise the scale flux form to be disabled or not
-  toggle_scale_flux_disabled();
 
 </script>
 

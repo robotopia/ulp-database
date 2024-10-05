@@ -1,0 +1,59 @@
+{% extends "published/main.html" %}
+
+{% load static %}
+
+{% block body %}
+
+<a href="{% url 'folding_view' pk=toa.template.working_ephemeris.ulp.pk %}">Pulsestack</a>
+<br>
+<a href="{{ toa.prev_view }}">Prev</a>
+<a href="{{ toa.next_view }}">Next</a>
+
+<h1>{{ toa }}</h1>
+
+<div id="toa_plot">
+</div>
+
+<script>
+
+  var data = [
+    // Lightcurve
+    {
+      x: {{ lc_phases | safe }},
+      y: {{ lc_values | safe }},
+      mode: 'lines',
+      type: 'scatter',
+      name: 'Lightcurve',
+    },
+    // Mark the ToA itself
+    {
+      y: [0.0],
+      yref: "paper",
+      x: [{{ toa.residual }}],
+      error_x: {
+        array: [{{ toa_err_ph }}],
+      },
+      mode: 'markers',
+      type: 'scatter',
+      name: 'ToA',
+    },
+    // The template
+    {
+      x: {{ template_phases | safe }},
+      y: {{ template_values | safe }},
+      mode: 'lines',
+      type: 'scatter',
+      name: 'Template',
+    },
+  ];
+
+  var layout = get_plotly_default_layout();
+  layout.xaxis = {title: {text: "Pulse phase"}};
+  layout.yaxis = {title: {text: "Flux density (Jy)"}};
+
+  //plotDiv = document.getElementById('toa_plot');
+  Plotly.react('toa_plot', data, layout);
+  
+</script>
+
+{% endblock %}

@@ -12,6 +12,7 @@ urlpatterns = [
     re_path(r'^timing/lightcurve/(?P<pk>[0-9]+)$', views.lightcurve_view, name="lightcurve_view"),
     re_path(r'^timing/lightcurve_add/(?P<pk>[0-9]+)$', views.lightcurve_add, name="lightcurve_add"),
     re_path(r'^timing/folding/(?P<pk>[0-9]+)$', views.folding_view, name="folding_view"),
+    re_path(r'^timing/folding_toa/(?P<pk>[0-9]+)$', views.folding_toa_view, name="folding_toa_view"),
     re_path(r'^timing/pulsestack/(?P<pk>[0-9]+)$', views.pulsestack_view, name="pulsestack_view"),
     re_path(r'^timing/update_working_ephemeris/(?P<pk>[0-9]+)$', views.update_working_ephemeris, name="update_working_ephemeris"),
     re_path(r'^timing/add_or_update_pulse/(?P<pk>[0-9]+)$', views.add_or_update_pulse, name="add_or_update_pulse"),

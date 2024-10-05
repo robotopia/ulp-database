@@ -689,9 +689,7 @@ class Toa(models.Model):
         verbose_name="ToA (MJD)",
     )
 
-    toa_err_s = models.DecimalField(
-        decimal_places=20,
-        max_digits=30,
+    toa_err_s = models.FloatField(
         help_text="The 1σ uncertainty of the time of arrival (in seconds).",
         verbose_name="ToA error (s)",
     )
@@ -707,6 +705,25 @@ class Toa(models.Model):
     ampl_ref_freq = models.FloatField(
         help_text="The reference frequency used (when scaling the data) to derive the amplitude.",
     )
+
+    @property
+    def residual(self):
+        '''
+        Returns the residual in units of phase
+        '''
+        we = self.template.working_ephemeris
+        _, phase = we.fold(float(self.toa_mjd))
+        return phase
+
+    @property
+    def next_view(self):
+        next_toa = self.template.toas.filter(toa_mjd__gt=self.toa_mjd).earliest('toa_mjd')
+        return reverse('toa_view', args=[next_toa.pk]) if next_toa else ''
+
+    @property
+    def prev_view(self):
+        prev_toa = self.template.toas.filter(toa_mjd__lt=self.toa_mjd).latest('toa_mjd')
+        return reverse('toa_view', args=[prev_toa.pk]) if prev_toa else ''
 
     def __str__(self):
         return f"ToA from {self.template} ({self.toa_mjd})"
