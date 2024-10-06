@@ -490,8 +490,17 @@ class WorkingEphemeris(AbstractPermission):
         return mjds
 
     def pulses_from_pulse_number(self, pulse_number):
-        mjd_start, mjd_end = self.unfold(pulse_number, np.array([-0.5, 0.5]))
-        return Pulse.objects.filter(mjd_start__gte=mjd_start, mjd_start__lte=mjd_end)
+        pulse_start, pulse_end = self.unfold(pulse_number, np.array([-0.5, 0.5]))
+        # ^^^ These still need to be barycentred
+        pulses = [] # <-- where we will put the pulses that match
+        for pulse in Pulse.objects.all():
+            # ^^^ I can't think of a cheaper way of doing this, since Earth locations
+            # can differ from pulse to pulse, and since barycentric conversions can't
+            # be done at the database level...
+            bary_mjd_start, _ = pulse.bary_start_end() 
+            if bary_mjd_start >= pulse_start and bary_mjd_start <= pulse_end:
+                pulses.append(pulse)
+        return pulses
 
     def extract_lightcurves_from_pulse_number(self, pulse_number, freq_target_MHz):
 
@@ -562,6 +571,10 @@ class Pulse(models.Model):
         blank=True,
         help_text="The flux density (Jy) of the brightest point in the lightcurve within the range defined by this pulse. This field is not intended to be directly editable by the user, but is to be automatically updated whenever the pulse bounds change. It serves to save recalculating this value everytime it's needed (e.g. for a plot).",
     )
+
+    def bary_start_end(self):
+        # Converts the start and end times to barycentre
+        return barycentre(self.lightcurve.ulp, [self.mjd_start, self.mjd_end], EarthLocation.of_site(self.lightcurve.telescope))
 
     def __str__(self) -> str:
         return f"Pulse ({self.mjd_start}-{self.mjd_end}) for {self.lightcurve}"
