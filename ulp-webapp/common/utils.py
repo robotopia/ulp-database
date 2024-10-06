@@ -188,7 +188,8 @@ def calc_and_create_toa(pulse_number, template, freq_target_MHz=1000):
         return ampl*template.values(phases - ph_offset)
 
     p0 = (0.0, np.max(values))
-    popt, pcov = curve_fit(template_func, phases, values, p0=p0)
+    bounds = ((-np.inf, 0.0), (np.inf, np.inf))
+    popt, pcov = curve_fit(template_func, phases, values, p0=p0, bounds=bounds)
 
     # Unpack the fitted values
     ph_offset, ampl = popt

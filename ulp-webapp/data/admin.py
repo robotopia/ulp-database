@@ -91,5 +91,5 @@ class TemplateComponentAdmin(admin.ModelAdmin):
 
 @admin.register(Toa)
 class ToaAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'toa_mjd', 'toa_err_s', 'template', 'pulse_number']
+    list_display = ['pk', 'toa_mjd', 'toa_err_s', 'template', 'pulse_number', 'ampl']
     list_filter = ['template__working_ephemeris__ulp']
