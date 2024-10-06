@@ -499,7 +499,7 @@ class WorkingEphemeris(AbstractPermission):
         pulses = self.pulses_from_pulse_number(pulse_number)
 
         if len(pulses) == 0:
-            return
+            raise Exception(f"No pulses with this pulse number ({pulse_number})")
 
         # Extract the lightcurves, shift them to infinite frequency, and
         # scale them all to the same (arbitrary) frequency

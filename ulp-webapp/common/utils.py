@@ -165,35 +165,13 @@ def scale_to_frequency(freq_MHz, S_freq, freq_target_MHz, alpha, q=0):
     return S_target
 
 
-def extract_lightcurves_from_pulse_number(pulse_number, working_ephemeris, freq_target_MHz):
-
-    # Get the pulses we'll be working with
-    pulses = we.pulses_from_pulse_number(pulse_number)
-
-    if len(pulses) == 0:
-        return
-
-    # Extract the lightcurves, shift them to infinite frequency, and
-    # scale them all to the same (arbitrary) frequency
-    times = np.concatenate([p.lightcurve.bary_times() + dm_correction(p.lightcurve, we) for p in pulses])
-    values = np.concatenate([scale_to_frequency(
-        p.lightcurve.freq,
-        p.lightcurve.values(),
-        freq_target_MHz,
-        we.spec_alpha,
-        we.spec_q,
-    ) for p in pulses])
-
-    return times, values
-
-
 def calc_and_create_toa(pulse_number, template, freq_target_MHz=1000):
 
     # Get a shorthand variable for the (w)orking (e)phemeris
     we = template.working_ephemeris
 
     # Get all lightcurves in this pulse number
-    times, values = extract_lightcurves_from_pulse_number(pulse_number, we, freq_target_MHz)
+    times, values = we.extract_lightcurves_from_pulse_number(pulse_number, freq_target_MHz)
 
     # Because of the awkwardness of dealing with lightcurves with generally different
     # sampling rates, we simply fit the template to the points, rather than
