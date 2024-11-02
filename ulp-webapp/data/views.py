@@ -10,6 +10,7 @@ from published import models as published_models
 from published.views import get_accessible_measurements
 
 import numpy as np
+from scipy.optimize import curve_fit
 import json
 import astropy.units as u
 from astropy.coordinates import SkyCoord, Angle, EarthLocation, AltAz, get_sun
@@ -775,19 +776,58 @@ def folding_toa_view(request, pk):
     # Get all ToAs for this ULP
     toas = models.Toa.objects.filter(template__working_ephemeris=working_ephemeris)
 
-    data = []
-    for toa in toas:
-        datum = {
-            'toa_pk': toa.pk,
-            'date': Time(toa.toa_mjd, scale='utc', format='mjd').isot,
-            'link': reverse('toa_view', args=[toa.pk]),
-            'toa_mjd': float(toa.toa_mjd),
-            'toa_err_s': toa.toa_err_s,
-            'pulse_number': toa.pulse_number,
-            'ampl': toa.ampl,
-            'ampl_err': toa.ampl_err,
-        }
-        data.append(datum)
+    def pack_data(toas, include_pk=True):
+        return [
+            {
+                'toa_pk': toa.pk if include_pk else 0,
+                'date': Time(toa.toa_mjd, scale='utc', format='mjd').isot,
+                'link': reverse('toa_view', args=[toa.pk]) if include_pk else '',
+                'toa_mjd': float(toa.toa_mjd),
+                'toa_err_s': toa.toa_err_s,
+                'pulse_number': toa.pulse_number,
+                'ampl': toa.ampl,
+                'ampl_err': toa.ampl_err,
+            } for toa in toas
+        ]
+    data = pack_data(toas)
+
+    # Make a new working ephemeris to hold the best fitting solution
+    def fold_for_curve_fit(pulse_numbers, pepoch, period):
+        # Use the folding function defined in the WorkingEphemeris model
+        # to produce the predicted phases
+        we = models.WorkingEphemeris(
+            ulp=ulp,
+            pepoch=pepoch,
+            p0=period,
+        )
+        mjds = we.unfold(pulse_numbers, np.zeros(pulse_numbers.shape))
+
+        return mjds
+
+    x = np.array([toa.pulse_number for toa in toas])
+    y = np.array([toa.toa_mjd for toa in toas])
+    p0 = [working_ephemeris.pepoch, working_ephemeris.p0] # 1st "p0" means "initial parameters for curve_fit"; 2nd "p0" means "period"
+    popt, pcov = curve_fit(fold_for_curve_fit, x, y, p0=p0)
+    predicted_y = fold_for_curve_fit(x, *popt)
+    fitted_working_ephemeris = models.WorkingEphemeris(
+        ulp=ulp,
+        pepoch=popt[0],
+        p0=popt[1],
+    )
+
+    # Create predicted ToAs based on fit
+    predicted_toas = [
+        models.Toa(
+            pulse_number=x[i],
+            template=toas[i].template,
+            toa_mjd=Decimal(predicted_y[i]),
+            toa_err_s=0.0,
+            ampl=0.0,
+            ampl_err=0.0,
+            ampl_ref_freq=0.0,
+        ) for i in range(len(x))
+    ]
+    predicted_data = pack_data(predicted_toas, include_pk=False)
 
     # Throw it all together into a context
     context = {
@@ -795,6 +835,10 @@ def folding_toa_view(request, pk):
         'ulp': ulp,
         'working_ephemeris': working_ephemeris,
         'data': data,
+        'fit': {
+            'working_ephemeris': fitted_working_ephemeris,
+            'data': predicted_data,
+        },
     }
 
     return render(request, 'data/folding_toa.html', context)
@@ -825,7 +869,7 @@ def update_working_ephemeris(request, pk):
 
         working_ephemeris.save()
 
-    return redirect('folding_view', pk=ulp.pk)
+    return redirect('folding_toa_view', pk=ulp.pk)
 
 
 def toa_view(request, pk):

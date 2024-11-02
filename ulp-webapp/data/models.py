@@ -473,12 +473,13 @@ class WorkingEphemeris(AbstractPermission):
         return np.exp(self.siA*lnf**2 + self.siB*lnf + self.siC)
 
     def fold(self, mjds):
+        # WARNING: Duplicated code!
         # Compare fold() in common.js
         pepoch = self.pepoch
         period = self.p0
 
         pulses_phases = (mjds - pepoch) / (period/86400.0)
-        phases, pulses = np.modf(pulses_phases + 0.5)
+        pulses, phases = np.divmod(pulses_phases + 0.5, 1)
         phases -= 0.5
 
         return pulses, phases
@@ -628,6 +629,10 @@ class Template(AbstractPermission):
         phases = np.linspace(ph_ctr - phase_range/2, ph_ctr + phase_range/2, num=npoints, endpoint=False)
         return phases, self.values(npoints)
 
+    @property
+    def out_of_date(self):
+        return self.updated < self.working_ephemeris.updated
+
     def __str__(self) -> str:
         return f"Template for {self.working_ephemeris.ulp}"
 
@@ -738,13 +743,17 @@ class Toa(models.Model):
         prev_toa = self.template.toas.filter(toa_mjd__lt=self.toa_mjd).latest('toa_mjd')
         return reverse('toa_view', args=[prev_toa.pk]) if prev_toa else ''
 
+    @property
+    def out_of_date(self):
+        return self.updated < self.template.updated
+
     def __str__(self):
         return f"ToA from {self.template} ({self.toa_mjd})"
 
     class Meta:
         verbose_name = "ToA"
         verbose_name_plural = "ToAs"
-        ordering = ["pk", "pulse_number"]
+        ordering = ["pulse_number"]
         constraints = [
             models.UniqueConstraint(fields=['template', 'pulse_number'], name="unique_toa_per_pulse_and_template"),
         ]

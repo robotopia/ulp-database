@@ -12,31 +12,31 @@
   {% csrf_token %}
   <div class="compact-form-item">
     <label for="pepoch">PEPOCH (MJD)</label>
-    <input id="pepoch" name="pepoch" type="number" step="any" value="{{ working_ephemeris.pepoch|default_if_none:'' }}" onchange="redraw_plot();"/>
+    <input id="pepoch" name="pepoch" type="number" step="any" value="{{ working_ephemeris.pepoch|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.pepoch|default_if_none:'' }});"/>
   </div>
   <div class="compact-form-item">
     <label for="p0">Rotational period (s)</label>
-    <input id="p0" name="p0" type="number" step="any" value="{{ working_ephemeris.p0|default_if_none:'' }}" onchange="redraw_plot();"/>
+    <input id="p0" name="p0" type="number" step="any" value="{{ working_ephemeris.p0|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.p0|default_if_none:'' }});"/>
   </div>
-  <div class="compact-form-item">
-    <label for="p1">Rotational period derivative (s/s) (not yet implemented)</label>
-    <input id="p1" name="p1" type="number" step="any" value="{{ working_ephemeris.p1|default_if_none:'' }}" onchange="redraw_plot();" disabled/>
+  <div class="compact-form-item" hidden>
+    <label for="p1">Rotational period derivative (s/s)</label>
+    <input id="p1" name="p1" type="number" step="any" value="{{ working_ephemeris.p1|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.p1|default_if_none:'' }});" disabled/>
   </div>
   <div class="compact-form-item">
     <label for="pb">Orbital period (h)</label>
-    <input id="pb" name="pb" type="number" step="any" value="{{ working_ephemeris.pb|default_if_none:'' }}" onchange="redraw_plot();"/>
+    <input id="pb" name="pb" type="number" step="any" value="{{ working_ephemeris.pb|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.pb|default_if_none:'' }});"/>
   </div>
   <div class="compact-form-item">
     <label for="dm">Dispersion measure (pc/cm^3)</label>
-    <input id="dm" name="dm" type="number" step="any" value="{{ working_ephemeris.dm|default_if_none:'' }}" onchange="redraw_plot();"/>
+    <input id="dm" name="dm" type="number" step="any" value="{{ working_ephemeris.dm|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.dm|default_if_none:'' }});"/>
   </div>
   <div class="compact-form-item">
     <label for="spec_alpha">Spectrum: &alpha;</label>
-    <input id="spec_alpha" name="spec_alpha" type="number" step="any" value="{{ working_ephemeris.spec_alpha|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); dredraw_plot();"/>
+    <input id="spec_alpha" name="spec_alpha" type="number" step="any" value="{{ working_ephemeris.spec_alpha|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); update_ephemeris_value(this, {{ working_ephemeris.spec_alpha|default_if_none:'' }});"/>
   </div>
   <div class="compact-form-item">
     <label for="spec_q">Spectrum: q</label>
-    <input id="spec_q" name="spec_q" type="number" step="any" placeholder="0.0" value="{{ working_ephemeris.spec_q|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); redraw_plot();"/>
+    <input id="spec_q" name="spec_q" type="number" step="any" placeholder="0.0" value="{{ working_ephemeris.spec_q|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); update_ephemeris_value(this, {{ working_ephemeris.spec_q|default_if_none:'' }});"/>
   </div>
   <input type="submit" value="Update"/>
   <button type="button" onclick="reset_working_ephemeris(); redraw_plot();">Reset</button>
@@ -76,6 +76,12 @@
   <input type="checkbox" id="log_yaxis" onchange="redraw_plot();"/>
   <label for="yaxis-log">Log y-axis</label>
 
+  <br>
+
+  <input type="checkbox" id="fit_visible" onchange="redraw_plot();"/>
+  <label for="fit_visible">Best fit ephemeris</label>
+  <button onclick="apply_fit();">Apply</button>
+
 </fieldset>
 
 <div id='residuals'>
@@ -84,8 +90,9 @@
 <script>
 
   var data = {{ data | safe }};
+  var fitted_data = {{ fit.data | safe }};
 
-  function prepare_data() {
+  function prepare_data(data) {
     var xaxis      = document.getElementById('xaxis').value;
     var yaxis      = document.getElementById('yaxis').value;
 
@@ -96,7 +103,6 @@
     var dm     = document.getElementById('dm').value
 
     toas = fold(Array.from(data, (d) => d.toa_mjd), pepoch, period);
-    console.log(toas);
 
     pulses_sequential = Array.from(toas.pulses, (_, i) => i);
     pulses_chronological = toas.pulses;
@@ -137,7 +143,7 @@
       y_err = Array.from(data, (d) => d.ampl_err);
     }
 
-    return [{
+    return {
       pulses_sequential: pulses_sequential,
       pulses_chronological: pulses_chronological,
       x: x,
@@ -153,7 +159,7 @@
       hovertemplate: data.map((d, i) => "ToA #" + pulses_chronological[i] + "<br>" +
         "MJD: " + d.toa_mjd + "<br>" +
         "<extra></extra>"),
-    }];
+    };
   }
 
   var layout = get_plotly_default_layout();
@@ -176,13 +182,34 @@
 
   var folded_data;
   function redraw_plot() {
-    folded_data = prepare_data();
+    folded_data = prepare_data(data);
+    folded_data.name = "Data";
+
+    plots = [folded_data];
+
+    if (document.getElementById("fit_visible").checked) {
+      let folded_fit = prepare_data(fitted_data);
+      folded_fit.name = "Fit";
+      folded_fit.mode = "lines";
+      folded_fit.opacity = 0.5;
+      plots.push(folded_fit)
+    }
+
     update_layout();
     console.log("Redrawing...");
-    Plotly.react('residuals', folded_data, layout);
+    Plotly.react('residuals', plots, layout);
   }
   redraw_plot();
   //console.log(folded_data);
+
+  function update_ephemeris_value(element, orig_value) {
+    if (element.value != orig_value) {
+      element.style.backgroundColor = "#880";
+    } else {
+      element.style.backgroundColor = "field";
+    }
+    redraw_plot();
+  }
 
   plotDiv = document.getElementById('residuals');
   plotDiv.on('plotly_click', function(d) {
@@ -220,6 +247,25 @@
     document.getElementById('dm').style.backgroundColor = "field";
     document.getElementById('spec_alpha').style.backgroundColor = "field";
     document.getElementById('spec_q').style.backgroundColor = "field";
+  }
+
+  // Define the function to "apply" the fitted ephemeris, which only means
+  // replacing the working ephemeris loaded in memory (and displayed in the form)
+  // with the fitted values.
+  function apply_fit() {
+    {% if fit.working_ephemeris.pepoch != working_ephemeris.pepoch %}
+    var element = document.getElementById('pepoch');
+    element.value = "{{ fit.working_ephemeris.pepoch|default_if_none:'' }}";
+    element.style.backgroundColor = "#880";
+    {% endif %}
+
+    {% if fit.working_ephemeris.p0 != working_ephemeris.p0 %}
+    var element = document.getElementById('p0');
+    element.value = "{{ fit.working_ephemeris.p0|default_if_none:'' }}";
+    element.style.backgroundColor = "#880";
+    {% endif %}
+
+    redraw_plot();
   }
 
 </script>
