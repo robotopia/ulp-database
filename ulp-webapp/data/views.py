@@ -808,11 +808,17 @@ def folding_toa_view(request, pk):
     y = np.array([toa.toa_mjd for toa in toas])
     p0 = [working_ephemeris.pepoch, working_ephemeris.p0] # 1st "p0" means "initial parameters for curve_fit"; 2nd "p0" means "period"
     popt, pcov = curve_fit(fold_for_curve_fit, x, y, p0=p0)
+    covariance = models.WorkingEphemerisCovariance(
+        pepoch_pepoch=pcov[0,0],
+        pepoch_p0=pcov[0,1],
+        p0_p0=pcov[1,1],
+    )
     predicted_y = fold_for_curve_fit(x, *popt)
     fitted_working_ephemeris = models.WorkingEphemeris(
         ulp=ulp,
         pepoch=popt[0],
         p0=popt[1],
+        covariance=covariance,
     )
 
     # Create predicted ToAs based on fit
@@ -867,6 +873,14 @@ def update_working_ephemeris(request, pk):
             except:
                 pass
 
+        # Now update the covariance
+        # First, drop the old one, if it exists
+        if working_ephemeris.covariance is not None:
+            working_ephemeris.covariance.delete()
+        covariance = models.WorkingEphemerisCovariance.from_str(request.POST['covariance_list'])
+        covariance.save()
+
+        working_ephemeris.covariance = covariance
         working_ephemeris.save()
 
     return redirect('folding_toa_view', pk=ulp.pk)

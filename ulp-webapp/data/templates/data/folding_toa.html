@@ -13,31 +13,39 @@
   <div class="compact-form-item">
     <label for="pepoch">PEPOCH (MJD)</label>
     <input id="pepoch" name="pepoch" type="number" step="any" value="{{ working_ephemeris.pepoch|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.pepoch|default_if_none:'' }});"/>
+    <label id="pepoch_err">± {{ working_ephemeris.pepoch_err|default_if_none:'' }}</label>
   </div>
   <div class="compact-form-item">
     <label for="p0">Rotational period (s)</label>
     <input id="p0" name="p0" type="number" step="any" value="{{ working_ephemeris.p0|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.p0|default_if_none:'' }});"/>
+    <label id="p0_err">± {{ working_ephemeris.p0_err|default_if_none:'' }}</label>
   </div>
   <div class="compact-form-item" hidden>
     <label for="p1">Rotational period derivative (s/s)</label>
     <input id="p1" name="p1" type="number" step="any" value="{{ working_ephemeris.p1|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.p1|default_if_none:'' }});" disabled/>
+    <label id="p1_err">± {{ working_ephemeris.p1_err|default_if_none:'' }}</label>
   </div>
   <div class="compact-form-item">
     <label for="pb">Orbital period (h)</label>
     <input id="pb" name="pb" type="number" step="any" value="{{ working_ephemeris.pb|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.pb|default_if_none:'' }});"/>
+    <label id="pb_err">± {{ working_ephemeris.pb_err|default_if_none:'' }}</label>
   </div>
   <div class="compact-form-item">
     <label for="dm">Dispersion measure (pc/cm^3)</label>
     <input id="dm" name="dm" type="number" step="any" value="{{ working_ephemeris.dm|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.dm|default_if_none:'' }});"/>
+    <label id="dm_err">± {{ working_ephemeris.dm_err|default_if_none:'' }}</label>
   </div>
   <div class="compact-form-item">
     <label for="spec_alpha">Spectrum: &alpha;</label>
     <input id="spec_alpha" name="spec_alpha" type="number" step="any" value="{{ working_ephemeris.spec_alpha|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); update_ephemeris_value(this, {{ working_ephemeris.spec_alpha|default_if_none:'' }});"/>
+    <label id="spec_alpha_err">± {{ working_ephemeris.spec_alpha_err|default_if_none:'' }}</label>
   </div>
   <div class="compact-form-item">
     <label for="spec_q">Spectrum: q</label>
     <input id="spec_q" name="spec_q" type="number" step="any" placeholder="0.0" value="{{ working_ephemeris.spec_q|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); update_ephemeris_value(this, {{ working_ephemeris.spec_q|default_if_none:'' }});"/>
+    <label id="spec_q_err">± {{ working_ephemeris.spec_q_err|default_if_none:'' }}</label>
   </div>
+  <input id="covariance_list" name="covariance_list" value="{{ fit.working_ephemeris.covariance|default_if_none:'' }}" hidden/>
   <input type="submit" value="Update"/>
   <button type="button" onclick="reset_working_ephemeris(); redraw_plot();">Reset</button>
 </form>
@@ -260,10 +268,14 @@
     {% endif %}
 
     {% if fit.working_ephemeris.p0 != working_ephemeris.p0 %}
-    var element = document.getElementById('p0');
+    element = document.getElementById('p0');
     element.value = "{{ fit.working_ephemeris.p0|default_if_none:'' }}";
     element.style.backgroundColor = "#880";
     {% endif %}
+
+    // Update the covariance input
+    element = document.getElementById('covariance_list')
+    element.value = "[{{ pcov.0.0 }},{{ pcov.0.1 }},{{ pcov.1.1 }}]";
 
     redraw_plot();
   }
