@@ -7,4 +7,5 @@ Largely followed the advice on <https://mindsers.blog/en/post/https-using-nginx-
 To renew certificate:
 ```
 docker compose run --rm certbot renew
+docker container restart nginx
 ```
