@@ -24,6 +24,7 @@ from published import views
 urlpatterns = [
     path('published/', include("published.urls")),
     path('data/', include("data.urls")),
+    path('polarisation/', include("polarisation.urls")),
     path('admin/', admin.site.urls),
     path('', views.index),
 ]
