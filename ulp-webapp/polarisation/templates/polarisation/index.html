@@ -4,6 +4,69 @@
 
 {% block body %}
 
+<h1>Polarisation</h1>
 
+This page is a dumping ground of information on the polarisation of the objects in the database.
+
+<h2>CHIME J0630+25</h2>
+
+
+<h2>GLEAM-X J0704-37</h2>
+
+
+<h2>GLEAM-X J162759.5-523504.3</h2>
+
+
+<h2>ASKAP J172755-343119</h2>
+
+
+<h2>GCRT J1745-3009	</h2>
+
+<p>Quoting Caleb et al. (2024): "Varying circular polarization was ... found in one of the pulses."</p>
+
+<h2>ASKAP J175154.89-255135.3</h2>
+
+
+<h2>ASKAP J175534.9-252749.1</h2>
+
+
+<h2>ASKAP J1832-0911</h2>
+
+
+<h2>ASKAP J1839-0756</h2>
+
+
+<h2>GPM J1839-10</h2>
+
+
+<h2>ASKAP J193505.1+214841.0</h2>
+
+<p>The polarisation of ASKAP J193505.1+214841.0 depends on the "emission state" (analogous to pulsar "modes"):</p>
+
+<dl>
+  <dt>Bright pulse state</dt>
+  <dd>Pulses with widths of 10-50 seconds are highly (> 90%) linearly polarised (seen with ASKAP).</dd>
+
+  <dt>Weak pulse state</dt>
+  <dd>Pulses with widths of ~370 ms are highly circularly polarised (> 70%) and somewhat linearly polarised (~40%) (seen with MeerKAT).</dd>
+
+  <dt>Quiescent state</dt>
+  <dd>No emission is seen of any kind, polarised or otherwise.</dd>
+</dl>
+
+<h3>Figures</h3>
+
+<h4>Fig.2 in <a href="https://doi.org/10.1038/s41550-024-02277-w">Caleb et al. (2024)</a></h4>
+
+<div>
+  <div>
+    <img src="{% get_media_prefix %}Figure2A.png" width=500 style="background-color: white;">
+    <img src="{% get_media_prefix %}Figure2B.png" width=500 style="background-color: white;">
+  </div>
+  <div>
+    <b>The dynamic spectra and polarization pulse profiles of ASKAP J1935+2148 from the MeerKAT beamformed data.</b> Left: a bright detection on 3 February 2023. Right: a weaker detection on 8 May 2023. The data have a time resolution of 2.4 ms and are de-dispersed to a DM of 145.8 pc cm-3 and corrected for an RM of +159.3 rad m-2. Top: the polarization position angle (PA; for values of linear polarization greater than three times the off-pulse noise), which is observed to be flat across the main pulse profile in the left panel. The insufficient signal-to-noise ratio during the detection on 8 May 2023 prevented robust measurements of polarization position angles. Middle: the Stokes parameter pulse profiles for ASKAP J1935+2148 at 1,284 MHz where black represents the total intensity, magenta represents linear polarization and blue represents circular polarization. The flux density is in arbitrary units as the data are not flux calibrated. The arrows indicate the positions of the pre- and postcursor bursts for the detection on 3 February 2023 (left). Bottom: the dynamic spectra where the backwards sweeping striations across the observing band in
+the left panel correspond to ~50 Hz radio-frequency interference.
+  </div>
+</div>
 
 {% endblock %}
