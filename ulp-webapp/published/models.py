@@ -419,10 +419,10 @@ class Measurement(models.Model):
             quantity_str = f"{quantity}"
             if self.err_hi:
                 err_hi = self.err_hi.quantize(precision)
-                quantity_str += f"^+{err_hi}"
+                quantity_str += f" (+{err_hi})"
             if self.err_lo:
                 err_lo = self.err_lo.quantize(precision)
-                quantity_str += f"^+{err_lo}"
+                quantity_str += f" (-{err_lo})"
 
         if self.power_of_10 != 0:
             if self.err or self.err_hi or self.err_lo:
