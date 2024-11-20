@@ -165,7 +165,7 @@ def scale_to_frequency(freq_MHz, S_freq, freq_target_MHz, alpha, q=0):
     return S_target
 
 
-def calc_and_create_toa(pulse_number, template, freq_target_MHz=1000):
+def fit_toa(pulse_number, template, freq_target_MHz=1000):
 
     # Get a shorthand variable for the (w)orking (e)phemeris
     we = template.working_ephemeris
@@ -200,15 +200,29 @@ def calc_and_create_toa(pulse_number, template, freq_target_MHz=1000):
     toa_err_s = ph_offset_err * we.p0
 
     # Pack the results into a bona fide ToA
-    toa = data_models.Toa(
+    # Check if there is already a ToA for this pulse number
+    toa = data_models.Toa.objects.filter(
         pulse_number=pulse_number,
-        template=template,
-        toa_mjd=toa_mjd,
-        toa_err_s=toa_err_s,
-        ampl=ampl,
-        ampl_err=ampl_err,
-        ampl_ref_freq=freq_target_MHz,
+        template=templatem
     )
+
+    if toa.exists():
+        toa.toa_mjd = toa_mjd
+        toa.err_s = toa_err_s
+        toa.ampl = ampl
+        toa.ampl_err = ampl_err
+        toa.ampl_ref_freq = freq_target_MHz
+    else:
+        toa = data_models.Toa(
+            pulse_number=pulse_number,
+            template=template,
+            toa_mjd=toa_mjd,
+            toa_err_s=toa_err_s,
+            ampl=ampl,
+            ampl_err=ampl_err,
+            ampl_ref_freq=freq_target_MHz,
+        )
+
     toa.save()
 
     # Return the new Toa
