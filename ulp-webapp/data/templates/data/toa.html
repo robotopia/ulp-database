@@ -5,6 +5,7 @@
 {% block body %}
 
 <a href="{% url 'folding_view' pk=toa.template.working_ephemeris.ulp.pk %}">Pulsestack</a>
+<a href="{% url 'folding_toa_view' pk=toa.template.working_ephemeris.ulp.pk %}">ToA stack</a>
 <br>
 <a href="{{ toa.prev_view }}">Prev</a>
 <a href="{{ toa.next_view }}">Next</a>

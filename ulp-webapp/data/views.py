@@ -527,8 +527,16 @@ def lightcurve_view(request, pk):
     if not lightcurve.can_view(request.user):
         return HttpResponse(status=403)
 
+    # Get the (unique) working ephemeris (if any), so that any associated ToAs
+    # can be worked out
+    working_ephemeris = models.WorkingEphemeris.objects.filter(
+        owner=request.user,
+        ulp=lightcurve.ulp,
+    ).first()
+
     context = {
         'lightcurve': lightcurve,
+        'working_ephemeris': working_ephemeris,
     }
 
     lightcurve_points = lightcurve.points.all()

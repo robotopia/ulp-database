@@ -5,6 +5,7 @@
 {% block body %}
 
 <a href="{% url 'folding_view' pk=lightcurve.ulp.pk %}">Pulsestack</a>
+<a href="{% url 'folding_toa_view' pk=lightcurve.ulp.pk %}">ToA stack</a>
 <a href="{% url 'lightcurve_add' pk=lightcurve.ulp.pk %}">Add new lightcurve</a>
 <br>
 <a href="{{ lightcurve.prev_view }}">Prev</a>
@@ -103,14 +104,6 @@
     </form>
   </tr>
 </table>
-
-<h2>Associated ToAs</h2>
-
-<select name="toas" id="toas" size="{% if lightcurve.ulp.times_of_arrival.count > 20 %}20{% else %}{{ lightcurve.ulp.times_of_arrival }}{% endif %}" multiple>
-  {% for toa in lightcurve.ulp.times_of_arrival.all %}
-  <option value="{{ toa.pk }}" {% if toa in lightcurve.toas.all %}selected {% endif %}>{{ toa.mjd }}</option>
-  {% endfor %}
-</select>
 
 {% if lightcurve.owner == request.user %}
 
