@@ -228,3 +228,4 @@ def fit_toa(pulse_number, template, freq_target_MHz=1000):
 
     # Return the new Toa
     return toa
+

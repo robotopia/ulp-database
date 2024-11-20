@@ -14,6 +14,17 @@
 <div id="toa_plot">
 </div>
 
+<form action="{% url 'refit_toa' pk=toa.pk %}" method="POST">
+  {% csrf_token %}
+  <div>
+    <label for="ref-freq-MHz">Reference frequency for amplitude (MHz)</label>
+    <input type="number" id="ref-freq-MHz" name="ref_freq_MHz" placeholder="1000"/>
+  </div>
+  <div>
+    <input type="submit" value="Refit ToA"/>
+  </div>
+</form>
+
 <script>
 
   var data = [

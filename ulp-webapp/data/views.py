@@ -920,3 +920,21 @@ def toa_view(request, pk):
     }
 
     return render(request, 'data/toa.html', context)
+
+
+def refit_toa(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=401)
+
+    # Get the relevant Toa object
+    toa = get_object_or_404(models.Toa, pk=pk)
+
+    # Get a freq_target_MHz, or use 1000 (MHz) as a default
+    freq_target_MHz = float(request.POST.get('freq_target_MHz')) if request.GET.get('freq_target_MHz') is not None else 1000
+
+    # Call fit_toa() in common.utils to do the actual fitting
+    fit_toa(toa.pulse_number, toa.template, freq_target_MHz=freq_target_MHz)
+
+    return redirect('toa_view', pk=pk)
