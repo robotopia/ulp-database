@@ -201,12 +201,13 @@ def fit_toa(pulse_number, template, freq_target_MHz=1000):
 
     # Pack the results into a bona fide ToA
     # Check if there is already a ToA for this pulse number
-    toa = data_models.Toa.objects.filter(
+    toas = data_models.Toa.objects.filter(
         pulse_number=pulse_number,
-        template=templatem
+        template=template,
     )
 
-    if toa.exists():
+    if toas.exists():
+        toa = toas.first()
         toa.toa_mjd = toa_mjd
         toa.err_s = toa_err_s
         toa.ampl = ampl
