@@ -165,7 +165,7 @@ def scale_to_frequency(freq_MHz, S_freq, freq_target_MHz, alpha, q=0):
     return S_target
 
 
-def fit_toa(pulse_number, template, freq_target_MHz=1000):
+def fit_toa(pulse_number, template, freq_target_MHz=1000, baseline_degree=None):
 
     # Get a shorthand variable for the (w)orking (e)phemeris
     we = template.working_ephemeris
@@ -184,16 +184,42 @@ def fit_toa(pulse_number, template, freq_target_MHz=1000):
     # Convert the times to phases to prepare for fitting the template
     _, phases = we.fold(times)
 
-    def template_func(phase, ph_offset, ampl):
-        return ampl*template.values(phases - ph_offset)
-
+    # Set up the initial values
     p0 = (0.0, np.max(values))
-    bounds = ((-np.inf, 0.0), (np.inf, np.inf))
+
+    if baseline_degree == 0:
+        def template_func(phase, ph_offset, ampl, baseline_level):
+            return ampl*template.values(phases - ph_offset) + baseline_level
+        p0 += (0.0,)
+        bounds = ((-np.inf, 0.0, -np.inf), (np.inf, np.inf, np.inf))
+    elif baseline_degree == 1:
+        def template_func(phase, ph_offset, ampl, baseline_level, baseline_slope):
+            return ampl*template.values(phases - ph_offset) + baseline_level + baseline_slope*phases
+        p0 += (0.0, 0.0,)
+        bounds = ((-np.inf, 0.0, -np.inf, -np.inf), (np.inf, np.inf, np.inf, np.inf))
+    else:
+        def template_func(phase, ph_offset, ampl):
+            return ampl*template.values(phases - ph_offset)
+        bounds = ((-np.inf, 0.0), (np.inf, np.inf))
+
+    print(f'{p0 = }')
+    print(f'{bounds = }')
     popt, pcov = curve_fit(template_func, phases, values, p0=p0, bounds=bounds)
+    print(f"{popt = }")
 
     # Unpack the fitted values
-    ph_offset, ampl = popt
-    ph_offset_err, ampl_err = np.sqrt(np.diag(pcov))
+    if baseline_degree == 0:
+        ph_offset, ampl, baseline_level = popt
+        ph_offset_err, ampl_err, baseline_level_err = np.sqrt(np.diag(pcov))
+        baseline_slope = None
+    elif baseline_degree == 1:
+        ph_offset, ampl, baseline_level, baseline_slope = popt
+        ph_offset_err, ampl_err, baseline_level_err, baseline_slope_err = np.sqrt(np.diag(pcov))
+    else:
+        ph_offset, ampl = popt
+        ph_offset_err, ampl_err = np.sqrt(np.diag(pcov))
+        baseline_level = None
+        baseline_slope = None
 
     # Convert the fitted phase offsets back to ToA units
     toa_mjd = we.unfold(pulse_number, ph_offset)
@@ -213,6 +239,8 @@ def fit_toa(pulse_number, template, freq_target_MHz=1000):
         toa.ampl = ampl
         toa.ampl_err = ampl_err
         toa.ampl_ref_freq = freq_target_MHz
+        toa.baseline_level = baseline_level
+        toa.baseline_slope = baseline_slope
     else:
         toa = data_models.Toa(
             pulse_number=pulse_number,
@@ -222,6 +250,8 @@ def fit_toa(pulse_number, template, freq_target_MHz=1000):
             ampl=ampl,
             ampl_err=ampl_err,
             ampl_ref_freq=freq_target_MHz,
+            baseline_level=baseline_level,
+            baseline_slope=baseline_slope,
         )
 
     toa.save()

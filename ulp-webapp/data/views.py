@@ -916,6 +916,17 @@ def toa_view(request, pk):
     template_phases = np.linspace(np.min(lc_phases), np.max(lc_phases), N)
     template_values = toa.ampl * toa.template.values(template_phases - toa.residual)
 
+    # Deal with the baseline
+    baseline_degree = -1 # Default means "no baseline fitting was used"
+
+    if toa.baseline_level is not None:
+        template_values += toa.baseline_level
+        baseline_degree = 0 # Constant function
+
+    if toa.baseline_slope is not None:
+        template_values += toa.baseline_slope*template_phases
+        baseline_degree = 1 # Linear function
+
     toa_err_ph = toa.toa_err_s / we.p0
 
     context = {
@@ -925,6 +936,7 @@ def toa_view(request, pk):
         'toa_err_ph': toa_err_ph,
         'template_phases': list(template_phases),
         'template_values': list(template_values),
+        'baseline_degree': baseline_degree,
     }
 
     return render(request, 'data/toa.html', context)
@@ -939,10 +951,11 @@ def refit_toa(request, pk):
     # Get the relevant Toa object
     toa = get_object_or_404(models.Toa, pk=pk)
 
-    # Get a freq_target_MHz, or use 1000 (MHz) as a default
+    # Get fitting options
     freq_target_MHz = float(request.POST.get('freq_target_MHz')) if request.GET.get('freq_target_MHz') is not None else 1000
+    baseline_degree = int(request.POST.get('baseline_degree')) # Only values of 0 and 1 currently carry meaning. Everything else means "don't fit"
 
     # Call fit_toa() in common.utils to do the actual fitting
-    fit_toa(toa.pulse_number, toa.template, freq_target_MHz=freq_target_MHz)
+    fit_toa(toa.pulse_number, toa.template, freq_target_MHz=freq_target_MHz, baseline_degree=baseline_degree)
 
     return redirect('toa_view', pk=pk)

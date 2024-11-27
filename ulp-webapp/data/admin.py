@@ -20,6 +20,7 @@ class TimeOfArrivalAdmin(admin.ModelAdmin):
 @admin.register(LightcurvePoint)
 class LightcurvePointAdmin(admin.ModelAdmin):
     list_display = ['pk', 'lightcurve', 'sample_number', 'pol', 'value']
+    list_filter = ['lightcurve__ulp']
 
 @admin.register(Lightcurve)
 class LightcurveAdmin(admin.ModelAdmin):

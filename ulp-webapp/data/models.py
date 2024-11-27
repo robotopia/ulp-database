@@ -979,6 +979,18 @@ class Toa(models.Model):
         help_text="The reference frequency used (when scaling the data) to derive the amplitude.",
     )
 
+    baseline_level = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The baseline level fitted to the lightcurve.",
+    )
+
+    baseline_slope = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The baseline slope fitted to the lightcurve.",
+    )
+
     @property
     def residual(self):
         '''

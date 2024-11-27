@@ -22,6 +22,14 @@
     <input type="number" id="ref-freq-MHz" name="ref_freq_MHz" placeholder="1000"/>
   </div>
   <div>
+    <label for="baseline">Fit baseline</label>
+    <select id="baseline" name="baseline_degree" required>
+      <option value="-1" {% if baseline_degree == -1 %}selected{% endif %}>Do not fit a baseline</option>
+      <option value="0" {% if baseline_degree == 0 %}selected{% endif %}>Fit a constant baseline</option>
+      <option value="1" {% if baseline_degree == 1 %}selected{% endif %}>Fit a linear baseline</option>
+    </select>
+  </div>
+  <div>
     <input type="submit" value="Refit ToA"/>
   </div>
 </form>
