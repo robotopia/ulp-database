@@ -202,10 +202,7 @@ def fit_toa(pulse_number, template, freq_target_MHz=1000, baseline_degree=None):
             return ampl*template.values(phases - ph_offset)
         bounds = ((-np.inf, 0.0), (np.inf, np.inf))
 
-    print(f'{p0 = }')
-    print(f'{bounds = }')
     popt, pcov = curve_fit(template_func, phases, values, p0=p0, bounds=bounds)
-    print(f"{popt = }")
 
     # Unpack the fitted values
     if baseline_degree == 0:

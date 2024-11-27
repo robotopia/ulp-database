@@ -54,6 +54,13 @@
 <div id='lc_plot'>
 </div>
 
+<div>
+  <form method="post" action="{% url 'toa_for_lightcurve' pk=lightcurve.pk %}">
+    {% csrf_token %}
+    <input type="submit" value="Goto/create ToA"/>
+  </form>
+</div>
+
 <h2>Pulses</h2>
 
 <table id="pulse_table">

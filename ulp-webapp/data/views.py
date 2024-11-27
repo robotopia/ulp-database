@@ -959,3 +959,37 @@ def refit_toa(request, pk):
     fit_toa(toa.pulse_number, toa.template, freq_target_MHz=freq_target_MHz, baseline_degree=baseline_degree)
 
     return redirect('toa_view', pk=pk)
+
+
+def toa_for_lightcurve(request, pk):
+
+    # First of all, they have to be logged in
+    if not request.user.is_authenticated:
+        return HttpResponse(status=401)
+
+    # Get the relevant Lightcurve object
+    lc = get_object_or_404(models.Lightcurve, pk=pk)
+
+    # There must be an existing (unique) working ephemeris
+    we = get_object_or_404(models.WorkingEphemeris, owner=request.user, ulp=lc.ulp)
+
+    # There must also be an existing template
+    # At the moment, this will fail if multiple templates exist that fit these criteria,
+    # which could happen because (AFAIK) there isn't any such constraint on the database table
+    # (but perhaps there should be...??)
+    template = get_object_or_404(models.Template, owner=request.user, working_ephemeris=we)
+
+    # Get the central MJD, and thence the pulse number
+    mjd = lc.bary_times()[len(lc.times())//2]
+    pulse_number, _ = we.fold(mjd)
+
+    # If a ToA already exists with this pulse number, just go to that page;
+    # otherwise, create one
+    toa = models.Toa.objects.filter(template=template, pulse_number=pulse_number).first()
+
+    if toa is None:
+        # Make an initial fit with the default settings
+        toa = fit_toa(pulse_number, template)
+
+    # Navigate to the ToA page
+    return redirect('toa_view', pk=toa.pk)

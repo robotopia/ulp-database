@@ -25,6 +25,7 @@ class LightcurvePointAdmin(admin.ModelAdmin):
 @admin.register(Lightcurve)
 class LightcurveAdmin(admin.ModelAdmin):
     list_display = ['pk', 'ulp', 'telescope', 't0', 'freq']
+    list_filter = ['ulp', 'telescope']
     fieldsets = [
         PermissionFieldset,
         (
