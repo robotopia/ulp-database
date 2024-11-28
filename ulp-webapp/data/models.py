@@ -991,6 +991,11 @@ class Toa(models.Model):
         help_text="The baseline slope fitted to the lightcurve.",
     )
 
+    include_in_fit = models.BooleanField(
+        default=True,
+        help_text="Whether to include this ToA in the timing fit.",
+    )
+
     @property
     def residual(self):
         '''

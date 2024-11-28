@@ -795,6 +795,7 @@ def folding_toa_view(request, pk):
                 'pulse_number': toa.pulse_number,
                 'ampl': toa.ampl,
                 'ampl_err': toa.ampl_err,
+                'include_in_fit': 'true' if toa.include_in_fit else 'false',
             } for toa in toas
         ]
     data = pack_data(toas)
@@ -812,8 +813,8 @@ def folding_toa_view(request, pk):
 
         return mjds
 
-    x = np.array([toa.pulse_number for toa in toas])
-    y = np.array([toa.toa_mjd for toa in toas])
+    x = np.array([toa.pulse_number for toa in toas if toa.include_in_fit])
+    y = np.array([toa.toa_mjd for toa in toas if toa.include_in_fit])
     p0 = [working_ephemeris.pepoch, working_ephemeris.p0] # 1st "p0" means "initial parameters for curve_fit"; 2nd "p0" means "period"
     popt, pcov = curve_fit(fold_for_curve_fit, x, y, p0=p0)
     covariance = models.WorkingEphemerisCovariance(

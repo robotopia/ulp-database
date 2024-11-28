@@ -104,16 +104,17 @@
     var xaxis      = document.getElementById('xaxis').value;
     var yaxis      = document.getElementById('yaxis').value;
 
-    var pepoch = document.getElementById('pepoch').value
-    var period = document.getElementById('p0').value
-    var p1     = document.getElementById('p1').value
+    var pepoch = document.getElementById('pepoch').value;
+    var period = document.getElementById('p0').value;
+    var p1     = document.getElementById('p1').value;
     var pb     = document.getElementById('pb').value * 3600.0; // Convert to seconds
-    var dm     = document.getElementById('dm').value
+    var dm     = document.getElementById('dm').value;
 
     toas = fold(Array.from(data, (d) => d.toa_mjd), pepoch, period);
 
     pulses_sequential = Array.from(toas.pulses, (_, i) => i);
     pulses_chronological = toas.pulses;
+    include_in_fit = Array.from(data, (d) => d.include_in_fit == "true");
 
     var x, y, x_err, y_err;
 
@@ -156,12 +157,16 @@
       pulses_chronological: pulses_chronological,
       x: x,
       y: y,
-      error_x: {
-        array: x_err,
-      },
-      error_y: {
-        array: y_err,
-      },
+      fit_x: x.filter((_, i) => include_in_fit[i]),
+      fit_y: y.filter((_, i) => include_in_fit[i]),
+      nofit_x: x.filter((_, i) => !include_in_fit[i]),
+      nofit_y: y.filter((_, i) => !include_in_fit[i]),
+      error_x: {array: x_err},
+      error_y: {array: y_err},
+      fit_x_err: typeof x_err !== "undefined" ? x_err.filter((_, i) => include_in_fit[i]) : undefined,
+      fit_y_err: typeof y_err !== "undefined" ? y_err.filter((_, i) => include_in_fit[i]) : undefined,
+      nofit_x_err: typeof x_err !== "undefined" ? x_err.filter((_, i) => !include_in_fit[i]) : undefined,
+      nofit_y_err: typeof y_err !== "undefined" ? y_err.filter((_, i) => !include_in_fit[i]) : undefined,
       mode: 'markers',
       type: 'scatter',
       hovertemplate: data.map((d, i) => "ToA #" + pulses_chronological[i] + "<br>" +
@@ -191,16 +196,34 @@
   var folded_data;
   function redraw_plot() {
     folded_data = prepare_data(data);
-    folded_data.name = "Data";
+      plots = [];
 
-    plots = [folded_data];
-
-    if (document.getElementById("fit_visible").checked) {
+    if (!document.getElementById("fit_visible").checked) {
+      folded_data.name = "ToAs";
+      plots.push(folded_data);
+    } else {
       let folded_fit = prepare_data(fitted_data);
       folded_fit.name = "Fit";
       folded_fit.mode = "lines";
       folded_fit.opacity = 0.5;
-      plots.push(folded_fit)
+      plots.push(folded_fit);
+
+      // Show the points being/not being fitted in different colors
+      let fit_folded_data = structuredClone(folded_data);
+      fit_folded_data.x = fit_folded_data.fit_x;
+      fit_folded_data.y = fit_folded_data.fit_y;
+      fit_folded_data.error_x = {array: fit_folded_data.fit_x_err};
+      fit_folded_data.error_y = {array: fit_folded_data.fit_y_err};
+      fit_folded_data.name = "Fitted ToAs";
+      plots.push(fit_folded_data);
+
+      let nofit_folded_data = structuredClone(folded_data);
+      nofit_folded_data.x = nofit_folded_data.nofit_x;
+      nofit_folded_data.y = nofit_folded_data.nofit_y;
+      nofit_folded_data.error_x = {array: nofit_folded_data.nofit_x_err};
+      nofit_folded_data.error_y = {array: nofit_folded_data.nofit_y_err};
+      nofit_folded_data.name = "Not-fitted ToAs";
+      plots.push(nofit_folded_data);
     }
 
     update_layout();
