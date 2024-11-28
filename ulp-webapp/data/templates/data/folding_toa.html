@@ -296,10 +296,6 @@
     element.style.backgroundColor = "#880";
     {% endif %}
 
-    // Update the covariance input
-    element = document.getElementById('covariance_list')
-    element.value = "[{{ pcov.0.0 }},{{ pcov.0.1 }},{{ pcov.1.1 }}]";
-
     redraw_plot();
   }
 

@@ -886,6 +886,7 @@ def update_working_ephemeris(request, pk):
         # First, drop the old one, if it exists
         if working_ephemeris.covariance is not None:
             working_ephemeris.covariance.delete()
+
         covariance = models.WorkingEphemerisCovariance.from_str(request.POST['covariance_list'])
         covariance.save()
 
