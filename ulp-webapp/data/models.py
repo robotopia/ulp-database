@@ -470,7 +470,7 @@ class WorkingEphemeris(AbstractPermission):
 
     covariance = models.OneToOneField(
         "WorkingEphemerisCovariance",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         help_text="The covariance matrix for the ephemeris parameters",
