@@ -366,6 +366,10 @@ class Lightcurve(AbstractPermission):
         prev_lightcurve = self.ulp.lightcurves.filter(t0__lt=self.t0).latest('t0')
         return reverse('lightcurve_view', args=[prev_lightcurve.pk]) if prev_lightcurve else ''
 
+    @property
+    def t0_gps(self):
+        return int(np.round(Time(self.t0, scale='utc', format='mjd').gps))
+
     def __str__(self) -> str:
         return f"Lightcurve ({self.ulp}, {self.t0})"
 
@@ -965,6 +969,13 @@ class Toa(models.Model):
     toa_err_s = models.FloatField(
         help_text="The 1σ uncertainty of the time of arrival (in seconds).",
         verbose_name="ToA error (s)",
+    )
+
+    toa_freq_MHz = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The frequency to be used for this ToA.",
+        verbose_name="Frequency (MHz)",
     )
 
     ampl = models.FloatField(
