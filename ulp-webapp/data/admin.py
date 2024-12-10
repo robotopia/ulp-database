@@ -12,7 +12,7 @@ class TimeOfArrivalAdmin(admin.ModelAdmin):
         PermissionFieldset,
         (
             None, {
-                "fields": ["ulp", ("mjd", "mjd_err"), "raw_mjd", "telescope_name", "freq", "bw", "spectral_index", "rotation_measure", "peak_flux_Jy", "upper_limit", "pulse_width", "barycentred", "dedispersed", "notes", "plots", "lightcurve", "pulse"],
+                "fields": ["ulp", ("mjd", "mjd_err"), "raw_mjd", "telescope_name", "freq", "bw", "spectral_index", "rotation_measure", "peak_flux_Jy", "upper_limit", "pulse_width", "barycentred", "dedispersed", "notes", "plots"],
             }
         ),
     ]
@@ -93,5 +93,5 @@ class TemplateComponentAdmin(admin.ModelAdmin):
 
 @admin.register(Toa)
 class ToaAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'toa_mjd', 'toa_err_s', 'template', 'pulse_number', 'ampl']
+    list_display = ['pk', 'toa_mjd', 'toa_err_s', 'template', 'pulse', 'ampl']
     list_filter = ['template__working_ephemeris__ulp']

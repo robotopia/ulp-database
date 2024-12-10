@@ -98,7 +98,7 @@
 <script>
 
   var data = {{ data | safe }};
-  var fitted_data = {{ fit.data | safe }};
+  //var fitted_data = {{ fit.data | safe }};
 
   function prepare_data(data) {
     var xaxis      = document.getElementById('xaxis').value;
@@ -202,12 +202,13 @@
       folded_data.name = "ToAs";
       plots.push(folded_data);
     } else {
-      let folded_fit = prepare_data(fitted_data);
+      //let folded_fit = prepare_data(fitted_data);
       folded_fit.name = "Fit";
       folded_fit.mode = "lines";
       folded_fit.opacity = 0.5;
       plots.push(folded_fit);
 
+      /*
       // Show the points being/not being fitted in different colors
       let fit_folded_data = structuredClone(folded_data);
       fit_folded_data.x = fit_folded_data.fit_x;
@@ -224,6 +225,7 @@
       nofit_folded_data.error_y = {array: nofit_folded_data.nofit_y_err};
       nofit_folded_data.name = "Not-fitted ToAs";
       plots.push(nofit_folded_data);
+      */
     }
 
     update_layout();

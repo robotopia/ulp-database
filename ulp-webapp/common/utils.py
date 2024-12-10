@@ -110,44 +110,6 @@ def barycentre(ulp, times, location):
     return bc_times
 
 
-def dm_correction(lightcurve, working_ephemeris):
-    '''
-    This functions solves the problem of when the lightcurve was dedispersed using
-    some particular DM and some arbitrary reference frequency, whereas the working
-    ephemeris is assuming a different DM. We can't change the channel dispersion
-    delays, but we can find the absolute time offset to approximate how (and when)
-    the lightcurve appears if it had been dedispersed to infinite frequency.
-
-    Returns time offset in units of days, in order that it can be easily to applied
-    to ToAs, which are in MJD.
-    '''
-
-    D = 4.148808e3/86400 # Dispersion constant in the appropriate units
-
-    lc_dm_freq = lightcurve.dm_freq or np.inf # Since we stipulated that an empty field (i.e. null value) "means" infinite frequency
-
-    total_offset = D * (lightcurve.dm - working_ephemeris.dm) / lc_dm_freq**2
-
-    # If the above ^^^ formula is not clear, see the following "spelled out" code:
-    '''
-    ###################
-    # Recover the time offset needed to put the lightcurve back to its "native"
-    # frequency
-    native_offset = D * lightcurve.dm / lc_dm_freq**2
-    
-    # An now the time offset to get it to infinite frequency assuming the
-    # "working" DM
-    inf_offset = D * working_ephemeris.dm / lc_dm_freq**2
-
-    # We define "dm correction" as the amount you have to *add* in order to
-    # get the corrected amount
-    total_offset = native_offset - inf_offset
-    ##################
-    '''
-
-    return total_offset
-
-
 def scale_to_frequency(freq_MHz, S_freq, freq_target_MHz, alpha, q=0):
     '''
     Compare scale_flux() in common.js
@@ -165,13 +127,12 @@ def scale_to_frequency(freq_MHz, S_freq, freq_target_MHz, alpha, q=0):
     return S_target
 
 
-def fit_toa(pulse_number, template, freq_target_MHz=1000, baseline_degree=None):
+def fit_toa(pulse, template, baseline_degree=None):
 
-    # Get a shorthand variable for the (w)orking (e)phemeris
-    we = template.working_ephemeris
-
-    # Get all lightcurves in this pulse number
-    times, values = we.extract_lightcurves_from_pulse_number(pulse_number, freq_target_MHz)
+    # Get lightcurve for this pulse
+    lc = pulse.lightcurve
+    times = lc.bary_times(dm=0.0)
+    values = lc.values()
 
     # Because of the awkwardness of dealing with lightcurves with generally different
     # sampling rates, we simply fit the template to the points, rather than
@@ -181,51 +142,48 @@ def fit_toa(pulse_number, template, freq_target_MHz=1000, baseline_degree=None):
     # an "amplitude" as a free parameter. This fitted amplitude can be stored with the ToA
     # as a fitted parameter
 
-    # Convert the times to phases to prepare for fitting the template
-    _, phases = we.fold(times)
-
     # Set up the initial values
-    p0 = (0.0, np.max(values))
+    max_idx = np.argmax(values)
+    p0 = (times[max_idx], values[max_idx])
 
     if baseline_degree == 0:
-        def template_func(phase, ph_offset, ampl, baseline_level):
-            return ampl*template.values(phases - ph_offset) + baseline_level
+        def template_func(time, toa_mjd, ampl, baseline_level):
+            return ampl*template.values(time - toa_mjd) + baseline_level
         p0 += (0.0,)
         bounds = ((-np.inf, 0.0, -np.inf), (np.inf, np.inf, np.inf))
     elif baseline_degree == 1:
-        def template_func(phase, ph_offset, ampl, baseline_level, baseline_slope):
-            return ampl*template.values(phases - ph_offset) + baseline_level + baseline_slope*phases
+        def template_func(time, toa_mjd, ampl, baseline_level, baseline_slope):
+            return ampl*template.values(time - toa_mjd) + baseline_level + baseline_slope*(time - toa_mjd)
         p0 += (0.0, 0.0,)
         bounds = ((-np.inf, 0.0, -np.inf, -np.inf), (np.inf, np.inf, np.inf, np.inf))
     else:
-        def template_func(phase, ph_offset, ampl):
-            return ampl*template.values(phases - ph_offset)
+        def template_func(time, toa_mjd, ampl):
+            return ampl*template.values(time - toa_mjd)
         bounds = ((-np.inf, 0.0), (np.inf, np.inf))
 
-    popt, pcov = curve_fit(template_func, phases, values, p0=p0, bounds=bounds)
+    popt, pcov = curve_fit(template_func, times, values, p0=p0, bounds=bounds)
 
     # Unpack the fitted values
     if baseline_degree == 0:
-        ph_offset, ampl, baseline_level = popt
-        ph_offset_err, ampl_err, baseline_level_err = np.sqrt(np.diag(pcov))
+        toa_mjd, ampl, baseline_level = popt
+        toa_mjd_err, ampl_err, baseline_level_err = np.sqrt(np.diag(pcov))
         baseline_slope = None
     elif baseline_degree == 1:
-        ph_offset, ampl, baseline_level, baseline_slope = popt
-        ph_offset_err, ampl_err, baseline_level_err, baseline_slope_err = np.sqrt(np.diag(pcov))
+        toa_mjd, ampl, baseline_level, baseline_slope = popt
+        toa_mjd_err, ampl_err, baseline_level_err, baseline_slope_err = np.sqrt(np.diag(pcov))
     else:
-        ph_offset, ampl = popt
-        ph_offset_err, ampl_err = np.sqrt(np.diag(pcov))
+        toa_mjd, ampl = popt
+        toa_mjd_err, ampl_err = np.sqrt(np.diag(pcov))
         baseline_level = None
         baseline_slope = None
 
     # Convert the fitted phase offsets back to ToA units
-    toa_mjd = we.unfold(pulse_number, ph_offset)
-    toa_err_s = ph_offset_err * we.p0
+    toa_err_s = toa_mjd_err * 86400.0
 
     # Pack the results into a bona fide ToA
     # Check if there is already a ToA for this pulse number
     toas = data_models.Toa.objects.filter(
-        pulse_number=pulse_number,
+        pulse=pulse,
         template=template,
     )
 
@@ -235,18 +193,18 @@ def fit_toa(pulse_number, template, freq_target_MHz=1000, baseline_degree=None):
         toa.err_s = toa_err_s
         toa.ampl = ampl
         toa.ampl_err = ampl_err
-        toa.ampl_ref_freq = freq_target_MHz
+        toa.ampl_ref_freq = 1000.0
         toa.baseline_level = baseline_level
         toa.baseline_slope = baseline_slope
     else:
         toa = data_models.Toa(
-            pulse_number=pulse_number,
+            pulse=pulse,
             template=template,
             toa_mjd=toa_mjd,
             toa_err_s=toa_err_s,
             ampl=ampl,
             ampl_err=ampl_err,
-            ampl_ref_freq=freq_target_MHz,
+            ampl_ref_freq=1000.0,
             baseline_level=baseline_level,
             baseline_slope=baseline_slope,
         )

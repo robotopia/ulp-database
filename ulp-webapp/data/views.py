@@ -547,8 +547,8 @@ def lightcurve_view(request, pk):
         pols = list({p.pol for p in lightcurve.points.all()})
         data = [
             {
-                "x": list(lightcurve.times(pol)),
-                "y": list(lightcurve.values(pol)),
+                "x": list(lightcurve.times(pol=pol, dm=0.0)), # Setting dm=0 gets back un-dedispersed times
+                "y": list(lightcurve.values(pol=pol)),
                 "name": pol,
             } for pol in pols
         ]
@@ -792,7 +792,7 @@ def folding_toa_view(request, pk):
                 'link': reverse('toa_view', args=[toa.pk]) if include_pk else '',
                 'toa_mjd': float(toa.toa_mjd),
                 'toa_err_s': toa.toa_err_s,
-                'pulse_number': toa.pulse_number,
+                #'pulse': toa.pulse,
                 'ampl': toa.ampl,
                 'ampl_err': toa.ampl_err,
                 'include_in_fit': 'true' if toa.include_in_fit else 'false',
@@ -800,8 +800,9 @@ def folding_toa_view(request, pk):
         ]
     data = pack_data(toas)
 
+    '''
     # Make a new working ephemeris to hold the best fitting solution
-    def fold_for_curve_fit(pulse_numbers, pepoch, period):
+    def fold_for_curve_fit(pulses, pepoch, period):
         # Use the folding function defined in the WorkingEphemeris model
         # to produce the predicted phases
         we = models.WorkingEphemeris(
@@ -843,6 +844,7 @@ def folding_toa_view(request, pk):
         ) for i in range(len(x))
     ]
     predicted_data = pack_data(predicted_toas, include_pk=False)
+    '''
 
     # Throw it all together into a context
     context = {
@@ -850,10 +852,10 @@ def folding_toa_view(request, pk):
         'ulp': ulp,
         'working_ephemeris': working_ephemeris,
         'data': data,
-        'fit': {
-            'working_ephemeris': fitted_working_ephemeris,
-            'data': predicted_data,
-        },
+        #'fit': {
+        #   'working_ephemeris': fitted_working_ephemeris,
+        #    'data': predicted_data,
+        #},
     }
 
     return render(request, 'data/folding_toa.html', context)
@@ -902,21 +904,18 @@ def toa_view(request, pk):
     if not request.user.is_authenticated:
         return HttpResponse(status=401)
 
-    # Get the relevant Toa object
+    # Get the relevant ToA object
     toa = get_object_or_404(models.Toa, pk=pk)
 
-    # A shorthand variable
-    we = toa.template.working_ephemeris
-
-    # Get lightcurves
-    freq_target_MHz = 1000 # For now, just use a fixed frequency (for scaling)
-    lc_times, lc_values = we.extract_lightcurves_from_pulse_number(toa.pulse_number, freq_target_MHz)
-    _, lc_phases = we.fold(lc_times)
+    # Get lightcurve shorthand
+    lc = toa.pulse.lightcurve
+    times = lc.bary_times(dm=0.0)
+    values = lc.values()
 
     # Sample the template at N points between the first and last data point
     N = 500
-    template_phases = np.linspace(np.min(lc_phases), np.max(lc_phases), N)
-    template_values = toa.ampl * toa.template.values(template_phases - toa.residual)
+    template_times = np.linspace(np.min(times), np.max(times), N)
+    template_values = toa.ampl * toa.template.values(template_times - float(toa.toa_mjd))
 
     # Deal with the baseline
     baseline_degree = -1 # Default means "no baseline fitting was used"
@@ -926,17 +925,17 @@ def toa_view(request, pk):
         baseline_degree = 0 # Constant function
 
     if toa.baseline_slope is not None:
-        template_values += toa.baseline_slope*template_phases
+        template_values += toa.baseline_slope*(template_times - float(toa.toa_mjd))
         baseline_degree = 1 # Linear function
 
-    toa_err_ph = toa.toa_err_s / we.p0
+    toa_err_days = toa.toa_err_s / 86400.0
 
     context = {
         'toa': toa,
-        'lc_phases': list(lc_phases),
-        'lc_values': list(lc_values),
-        'toa_err_ph': toa_err_ph,
-        'template_phases': list(template_phases),
+        'toa_err_days': toa_err_days,
+        'times': list(times),
+        'values': list(values),
+        'template_times': list(template_times),
         'template_values': list(template_values),
         'baseline_degree': baseline_degree,
     }
@@ -954,11 +953,10 @@ def refit_toa(request, pk):
     toa = get_object_or_404(models.Toa, pk=pk)
 
     # Get fitting options
-    freq_target_MHz = float(request.POST.get('freq_target_MHz')) if request.GET.get('freq_target_MHz') is not None else 1000
     baseline_degree = int(request.POST.get('baseline_degree')) # Only values of 0 and 1 currently carry meaning. Everything else means "don't fit"
 
     # Call fit_toa() in common.utils to do the actual fitting
-    fit_toa(toa.pulse_number, toa.template, freq_target_MHz=freq_target_MHz, baseline_degree=baseline_degree)
+    fit_toa(toa.pulse, toa.template, baseline_degree=baseline_degree)
 
     return redirect('toa_view', pk=pk)
 

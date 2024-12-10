@@ -8,10 +8,11 @@ from astropy.coordinates import SkyCoord, Angle, EarthLocation
 from astropy.time import Time
 import numpy as np
 from scipy.stats import vonmises
+from scipy.special import erf
 from decimal import Decimal
 
 from common.models import AbstractPermission
-from common.utils import barycentre, scale_to_frequency, dm_correction
+from common.utils import barycentre, scale_to_frequency
 
 class TimeOfArrival(AbstractPermission):
 
@@ -119,24 +120,6 @@ class TimeOfArrival(AbstractPermission):
         blank=True,
         help_text="Plots relevant to this ToA.",
         related_name="times_of_arrival",
-    )
-
-    lightcurve = models.ForeignKey(
-        "Lightcurve",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text="The lightcurve from which this ToA was derived.",
-        related_name="toas",
-    )
-
-    pulse = models.ForeignKey(
-        "Pulse",
-        on_delete=models.SET_NULL, # TODO: Change to not-nullable and CASCADE when happy with everything else
-        null=True,
-        blank=True,
-        help_text="The pulse from which this ToA was derived.",
-        related_name="toas",
     )
 
     def __str__(self):
@@ -340,15 +323,56 @@ class Lightcurve(AbstractPermission):
         help_text="The telescope that made this observation. Must match a string in AstroPy's EarthLocation.get_site_names().",
     )
 
-    def times(self, pol=None):
+    def dispersion_offset(self, dm):
+        '''
+        This calculates the time offset needed to get from the recorded times to the times
+        that would have been recorded if the supplied DM was used instead:
+
+          timestamps_in_database + return_value_of_this_function = new_timestamps_assuming_new_dm
+
+        To get the offset needed to recover the timestamps as originally recorded at the telescope,
+        call this function with the value of dm = 0.
+
+        The returned value is in units of days, since the times are in MJD.
+        '''
+        if dm is None:
+            return 0.0
+
+        D = 4.148808e3/86400 # Dispersion constant in the appropriate units
+        orig_dm_freq = self.dm_freq or np.inf # Recall an empty field (i.e. null value) "means" infinite frequency
+
+        # Offset to get back to to original timestamps
+        orig_offset = D * self.dm * (1/self.freq**2 - 1/orig_dm_freq**2)
+
+        # Offset to get to new DM
+        new_offset = D * dm / self.freq**2
+
+        # Total offset
+        total_offset = orig_offset - new_offset
+
+        return total_offset
+
+    def times(self, pol=None, dm=None):
         if pol is None:
             sample_numbers = np.array([p.sample_number for p in self.points.all()])
         else:
             sample_numbers = np.array([p.sample_number for p in self.points.all() if p.pol == pol])
-        return self.t0 + (sample_numbers * self.dt / 86400)  # Cheaper than astropy units
 
-    def bary_times(self, pol=None):
-        return barycentre(self.ulp, self.times(pol=pol), EarthLocation.of_site(self.telescope))
+        times = self.t0 + (sample_numbers * self.dt / 86400)  # Cheaper than astropy units
+
+        # Get the times appropriate for the given DM
+        if dm is not None:
+            times += self.dispersion_offset(dm=dm)
+
+        return times
+
+    def bary_times(self, pol=None, dm=None):
+        times = barycentre(
+            self.ulp,
+            self.times(pol=pol, dm=dm),
+            EarthLocation.of_site(self.telescope),
+        )
+        return times
 
     def values(self, pol=None):
         if pol is None:
@@ -526,11 +550,16 @@ class WorkingEphemeris(AbstractPermission):
         lnf = np.log(freq_MHz/1e3)
         return np.exp(self.siA*lnf**2 + self.siB*lnf + self.siC)
 
-    def fold(self, mjds):
+    def fold(self, mjds, freqs_MHz=None):
         # WARNING: Duplicated code!
         # Compare fold() in common.js
         pepoch = self.pepoch
         period = self.p0
+
+        # If freqs_MHz is given, dedisperse to infinite frequency
+        if freqs_MHz is not None:
+            D = 4.148808e3/86400 # Dispersion constant in the appropriate units
+            mjds -= D * self.dm / freqs_MHz**2
 
         pulses_phases = (mjds - pepoch) / (period/86400.0)
         pulses, phases = np.divmod(pulses_phases + 0.5, 1)
@@ -538,9 +567,15 @@ class WorkingEphemeris(AbstractPermission):
 
         return pulses, phases
 
-    def unfold(self, pulses, phases):
+    def unfold(self, pulses, phases, freqs_MHz=None):
         pepoch = self.pepoch
         period = self.p0
+
+        # If freqs_MHz is given, undedisperse from infinite frequency to given frequencies
+        if freqs_MHz is not None:
+            D = 4.148808e3/86400 # Dispersion constant in the appropriate units
+            mjds += D * self.dm / freqs_MHz**2
+
         mjds = pepoch + (period/86400.0)*(pulses + phases)
         return mjds
 
@@ -552,31 +587,10 @@ class WorkingEphemeris(AbstractPermission):
             # ^^^ I can't think of a cheaper way of doing this, since Earth locations
             # can differ from pulse to pulse, and since barycentric conversions can't
             # be done at the database level...
-            bary_mjd_start, _ = pulse.bary_start_end() 
+            bary_mjd_start, _ = pulse.bary_start_end()
             if bary_mjd_start >= pulse_start and bary_mjd_start <= pulse_end:
                 pulses.append(pulse)
         return pulses
-
-    def extract_lightcurves_from_pulse_number(self, pulse_number, freq_target_MHz):
-
-        # Get the pulses we'll be working with
-        pulses = self.pulses_from_pulse_number(pulse_number)
-
-        if len(pulses) == 0:
-            raise Exception(f"No pulses with this pulse number ({pulse_number})")
-
-        # Extract the lightcurves, shift them to infinite frequency, and
-        # scale them all to the same (arbitrary) frequency
-        times = np.concatenate([p.lightcurve.bary_times() + dm_correction(p.lightcurve, self) for p in pulses])
-        values = np.concatenate([scale_to_frequency(
-            p.lightcurve.freq,
-            p.lightcurve.values(),
-            freq_target_MHz,
-            self.spec_alpha,
-            self.spec_q,
-        ) for p in pulses])
-
-        return times, values
 
     def __str__(self) -> str:
         return f"Working ephemeris for {self.ulp}"
@@ -806,11 +820,11 @@ class Pulse(models.Model):
     )
 
     mjd_start = models.FloatField(
-        help_text="The (topocentric) MJD defining the start of the pulse",
+        help_text="The (topocentric, not-dedispersed) MJD defining the start of the pulse",
     )
 
     mjd_end = models.FloatField(
-        help_text="The (topocentric) MJD defining the end of the pulse",
+        help_text="The (topocentric,not-dedispersed) MJD defining the end of the pulse",
     )
 
     tags = models.CharField(
@@ -866,13 +880,14 @@ class Template(AbstractPermission):
         related_name="templates",
     )
 
-    def values(self, phases):
+    def values(self, times):
         '''
-        Returns template values normalised so that the whole template has unity area under curve
+        Returns template values
+        TODO: figure out a sensible normalisation for arbitrary templates
         '''
-        sum_of_components = np.sum([component.values(phases) for component in self.components.all()], axis=0)
-        sum_of_weights = np.sum([component.weight for component in self.components.all()])
-        return sum_of_components/sum_of_weights
+        sum_of_components = np.sum([component.values(times) for component in self.components.all()], axis=0)
+        #sum_of_weights = np.sum([component.weight for component in self.components.all()]) # <-- bad normalisation?
+        return sum_of_components#/sum_of_weights
 
     def values_npoints(self, npoints, ph_ctr=0.0):
         phases = np.linspace(ph_ctr-0.5, ph_ctr+0.5, num=npoints, endpoint=False)
@@ -926,16 +941,16 @@ class TemplateComponent(models.Model):
     )
 
     weight = models.FloatField()
-    mu = models.FloatField(help_text="In units of pulse phase.")
-    sigma = models.FloatField(help_text="In units of pulse phase.")
+    mu = models.FloatField(help_text="In units of days.")
+    sigma = models.FloatField(help_text="In units of days (must be > 0).")
 
-    def values(self, phases):
-        # If using Gaussians, which we're not:
-        #return self.weight*np.exp(0.5*((phases - self.mu)/self.sigma)**2)
+    def values(self, times):
+        # If using Gaussians:
+        return self.weight*np.exp(-0.5*((times - self.mu)/self.sigma)**2)
 
         # von Mises function, with everything multiplied by 2pi to convert
         # it to the support expected by the pdf:
-        return self.weight*vonmises.pdf(2*np.pi*phases, loc=2*np.pi*self.mu, kappa=1/(2*np.pi*self.sigma)**2)
+        #return self.weight*vonmises.pdf(2*np.pi*phases, loc=2*np.pi*self.mu, kappa=1/(2*np.pi*self.sigma)**2)
 
     def clean(self):
         if self.sigma <= 0.0:
@@ -948,8 +963,13 @@ class Toa(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-    pulse_number = models.IntegerField(
-        help_text="The pulse number as derived from the linked working ephemeris.",
+    pulse = models.ForeignKey(
+        "Pulse",
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        help_text="The pulse being fitted to.",
+        related_name="toas",
     )
 
     template = models.ForeignKey(
@@ -962,7 +982,7 @@ class Toa(models.Model):
     toa_mjd = models.DecimalField(
         decimal_places=20,
         max_digits=30,
-        help_text="The barycentered MJD of the ToA.",
+        help_text="The barycentered (and not dedispersed) MJD of the ToA.",
         verbose_name="ToA (MJD)",
     )
 
@@ -993,13 +1013,13 @@ class Toa(models.Model):
     baseline_level = models.FloatField(
         null=True,
         blank=True,
-        help_text="The baseline level fitted to the lightcurve.",
+        help_text="The baseline level fitted to the lightcurve (in units of Jy).",
     )
 
     baseline_slope = models.FloatField(
         null=True,
         blank=True,
-        help_text="The baseline slope fitted to the lightcurve.",
+        help_text="The baseline slope fitted to the lightcurve (in units of Jy/day).",
     )
 
     include_in_fit = models.BooleanField(
@@ -1036,7 +1056,4 @@ class Toa(models.Model):
     class Meta:
         verbose_name = "ToA"
         verbose_name_plural = "ToAs"
-        ordering = ["pulse_number"]
-        constraints = [
-            models.UniqueConstraint(fields=['template', 'pulse_number'], name="unique_toa_per_pulse_and_template"),
-        ]
+        ordering = ["toa_mjd"]

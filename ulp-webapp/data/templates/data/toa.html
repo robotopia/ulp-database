@@ -18,10 +18,6 @@
 <form action="{% url 'refit_toa' pk=toa.pk %}" method="POST">
   {% csrf_token %}
   <div>
-    <label for="ref-freq-MHz">Reference frequency for amplitude (MHz)</label>
-    <input type="number" id="ref-freq-MHz" name="ref_freq_MHz" placeholder="1000"/>
-  </div>
-  <div>
     <label for="baseline">Fit baseline</label>
     <select id="baseline" name="baseline_degree" required>
       <option value="-1" {% if baseline_degree == -1 %}selected{% endif %}>Do not fit a baseline</option>
@@ -39,8 +35,8 @@
   var data = [
     // Lightcurve
     {
-      x: {{ lc_phases | safe }},
-      y: {{ lc_values | safe }},
+      x: {{ times | safe }},
+      y: {{ values | safe }},
       mode: 'lines',
       type: 'scatter',
       name: 'Lightcurve',
@@ -49,9 +45,9 @@
     {
       y: [0.0],
       yref: "paper",
-      x: [{{ toa.residual }}],
+      x: [{{ toa.toa_mjd }}],
       error_x: {
-        array: [{{ toa_err_ph }}],
+        array: [{{ toa_err_days }}],
       },
       mode: 'markers',
       type: 'scatter',
@@ -59,7 +55,7 @@
     },
     // The template
     {
-      x: {{ template_phases | safe }},
+      x: {{ template_times | safe }},
       y: {{ template_values | safe }},
       mode: 'lines',
       type: 'scatter',
@@ -68,7 +64,7 @@
   ];
 
   var layout = get_plotly_default_layout();
-  layout.xaxis = {title: {text: "Pulse phase"}};
+  layout.xaxis = {title: {text: "MJD (barycentred, without dedispersion correction)"}};
   layout.yaxis = {title: {text: "Flux density (Jy)"}};
 
   //plotDiv = document.getElementById('toa_plot');
