@@ -132,6 +132,7 @@ def fit_toa(pulse, template, baseline_degree=None):
     # Get lightcurve for this pulse
     lc = pulse.lightcurve
     times = lc.bary_times(dm=0.0)
+    t0 = times[0]
     values = lc.values()
 
     # Because of the awkwardness of dealing with lightcurves with generally different
@@ -142,9 +143,13 @@ def fit_toa(pulse, template, baseline_degree=None):
     # an "amplitude" as a free parameter. This fitted amplitude can be stored with the ToA
     # as a fitted parameter
 
+    # BTW, curve_fit doesn't like it when MJDs are used, since the times to be fitted are
+    # very low down in precision. Better to do everything in terms of time since the start
+    # and then add it all back afterwards. That's why t0 is preserved above.
+
     # Set up the initial values
     max_idx = np.argmax(values)
-    p0 = (times[max_idx], values[max_idx])
+    p0 = (times[max_idx] - t0, values[max_idx])
 
     if baseline_degree == 0:
         def template_func(time, toa_mjd, ampl, baseline_level):
@@ -161,18 +166,21 @@ def fit_toa(pulse, template, baseline_degree=None):
             return ampl*template.values(time - toa_mjd)
         bounds = ((-np.inf, 0.0), (np.inf, np.inf))
 
-    popt, pcov = curve_fit(template_func, times, values, p0=p0, bounds=bounds)
+    popt, pcov = curve_fit(template_func, times - t0, values, p0=p0, bounds=bounds)
 
     # Unpack the fitted values
     if baseline_degree == 0:
         toa_mjd, ampl, baseline_level = popt
+        toa_mjd += t0
         toa_mjd_err, ampl_err, baseline_level_err = np.sqrt(np.diag(pcov))
         baseline_slope = None
     elif baseline_degree == 1:
         toa_mjd, ampl, baseline_level, baseline_slope = popt
+        toa_mjd += t0
         toa_mjd_err, ampl_err, baseline_level_err, baseline_slope_err = np.sqrt(np.diag(pcov))
     else:
         toa_mjd, ampl = popt
+        toa_mjd += t0
         toa_mjd_err, ampl_err = np.sqrt(np.diag(pcov))
         baseline_level = None
         baseline_slope = None

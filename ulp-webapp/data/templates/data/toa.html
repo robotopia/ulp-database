@@ -64,7 +64,10 @@
   ];
 
   var layout = get_plotly_default_layout();
-  layout.xaxis = {title: {text: "MJD (barycentred, without dedispersion correction)"}};
+  layout.xaxis = {
+    title: {text: "MJD (barycentred, without dedispersion correction)"},
+    tickformat: 'f',
+  };
   layout.yaxis = {title: {text: "Flux density (Jy)"}};
 
   //plotDiv = document.getElementById('toa_plot');
