@@ -18,6 +18,7 @@ urlpatterns = [
     re_path(r'^timing/update_working_ephemeris/(?P<pk>[0-9]+)$', views.update_working_ephemeris, name="update_working_ephemeris"),
     re_path(r'^timing/add_or_update_pulse/(?P<pk>[0-9]+)$', views.add_or_update_pulse, name="add_or_update_pulse"),
     re_path(r'^timing/toa_for_lightcurve/(?P<pk>[0-9]+)$', views.toa_for_lightcurve, name="toa_for_lightcurve"),
+    re_path(r'^timing/download_toas/(?P<pk>[0-9]+)$', views.download_toas, name="download_toas"),
     re_path(r'^api/toa_data/(?P<pk>[0-9]+)', views.toa_data, name="toa_data"),
     re_path(r'^api/update_toa$', views.update_toa, name="update_toa"),
     re_path(r'^api/update_permissions$', views.update_permissions, name="update_permissions"),

@@ -97,6 +97,14 @@
 <div id='residuals'>
 </div>
 
+<form action="{% url 'download_toas' pk=ulp.pk %}">
+  {% csrf_token %}
+  <select id="tim_format" name="tim_format">
+    <option value="1" selected required>FORMAT 1</option>
+  </select>
+  <input type="submit" value="Download ToAs">
+</form>
+
 <script>
 
   var data = {{ data | safe }};
@@ -112,13 +120,13 @@
     var pb     = document.getElementById('pb').value * 3600.0; // Convert to seconds
     var dm     = document.getElementById('dm').value;
 
-      toas = fold(
-        Array.from(data, (d) => d.toa_mjd),
-        pepoch,
-        period,
-        {{ working_ephemeris.dm }},
-        Array.from(data, (d) => d.freq_MHz)
-      );
+    toas = fold(
+      Array.from(data, (d) => d.toa_mjd),
+      pepoch,
+      period,
+      {{ working_ephemeris.dm }},
+      Array.from(data, (d) => d.freq_MHz)
+    );
 
     pulses_sequential = Array.from(toas.pulses, (_, i) => i);
     pulses_chronological = toas.pulses;

@@ -592,6 +592,15 @@ class WorkingEphemeris(AbstractPermission):
                 pulses.append(pulse)
         return pulses
 
+    def residuals_for_toa_qs(self, toa_qs):
+        '''
+        Returns the residual in units of days for the ToAs in the supplied queryset
+        '''
+        mjds = np.array([float(toa.toa_mjd) for toa in toa_qs])
+        freqs_MHz = np.array([toa.pulse.lightcurve.freq for toa in toa_qs])
+        _, phase = self.fold(mjds, freqs_MHz)
+        return phase*self.p0/86400.0
+
     def __str__(self) -> str:
         return f"Working ephemeris for {self.ulp}"
 
@@ -779,8 +788,10 @@ class WorkingEphemerisCovariance(models.Model):
         )
 
     def from_str(string):
-        array = np.fromstring(string, sep=',')
-        return WorkingEphemerisCovariance.from_array(array)
+        if len(string) > 0:
+            array = np.fromstring(string, sep=',')
+            return WorkingEphemerisCovariance.from_array(array)
+        return
 
     def as_matrix(self):
         return np.array(
@@ -1033,7 +1044,7 @@ class Toa(models.Model):
         Returns the residual in units of phase
         '''
         we = self.template.working_ephemeris
-        _, phase = we.fold(float(self.toa_mjd))
+        _, phase = we.fold(float(self.toa_mjd), self.pulse.lightcurve.freq)
         return phase
 
     @property
