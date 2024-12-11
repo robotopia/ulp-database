@@ -795,6 +795,7 @@ def folding_toa_view(request, pk):
                 #'pulse': toa.pulse,
                 'ampl': toa.ampl,
                 'ampl_err': toa.ampl_err,
+                'freq_MHz': toa.pulse.lightcurve.freq,
                 'include_in_fit': 'true' if toa.include_in_fit else 'false',
             } for toa in toas
         ]
@@ -884,6 +885,7 @@ def update_working_ephemeris(request, pk):
             except:
                 pass
 
+        '''
         # Now update the covariance
         # First, drop the old one, if it exists
         if working_ephemeris.covariance is not None:
@@ -893,6 +895,7 @@ def update_working_ephemeris(request, pk):
         covariance.save()
 
         working_ephemeris.covariance = covariance
+        '''
         working_ephemeris.save()
 
     return redirect('folding_toa_view', pk=ulp.pk)

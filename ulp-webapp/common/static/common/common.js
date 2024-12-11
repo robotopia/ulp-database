@@ -36,7 +36,9 @@ function update_permissions(url, csrf_token, app, model, pk, group_or_user, name
  * Inputs:
  * - mjds (array of floats): The times (in MJD) to be converted
  * - pepoch (float): The reference timestamp (MJD) when pulse = phase = 0
- * - period (P0): The folding period (in seconds)
+ * - period (float): The folding period (in seconds)
+ * - dm (float): The dispersion measure (in pc/cm^3)
+ * - freqs_MHz (array of floats): The frequencies correspond to each mjd, in MHz
  *
  * Phase is defined to go from -0.5 to 0.5. The resulting phase and pulse must
  * satisfy:
@@ -44,11 +46,15 @@ function update_permissions(url, csrf_token, app, model, pk, group_or_user, name
  *
  * Compare: fold() in common/utils.py
  ***********************/
-function fold(mjds, pepoch, period) {
+function fold(mjds, pepoch, period, dm, freqs_MHz) {
   //console.log("mjds: ", mjds);
   //console.log("pepoch: ", pepoch);
   //console.log("period: ", period);
-  let pulse_phases = mjds.map((mjd) => (mjd - pepoch)/(period/86400.0));
+  let dedispersed_mjds = Array.from(mjds, (mjd, i) => {
+    const D = 4.148808e3/86400.0; // Dispersion constant in the appropriate units
+    return mjd - D * dm / freqs_MHz[i]**2;
+  });
+  let pulse_phases = dedispersed_mjds.map((mjd) => (mjd - pepoch)/(period/86400.0));
   let pulses = pulse_phases.map((pulse_phase) => Math.floor(pulse_phase + 0.5));
   let phases = [];
   for (let i = 0; i < mjds.length; i++) {
