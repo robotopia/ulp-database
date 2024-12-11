@@ -374,9 +374,9 @@ class Measurement(models.Model):
 
         if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
             if self.angle_display == self.ANGLE_DDMMSS:
-                return Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.deg, pad=True, format='unicode')
+                return Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.deg, pad=True, sep=':')
             if self.angle_display == self.ANGLE_HHMMSS:
-                return Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.hourangle, pad=True, format='unicode')
+                return Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.hourangle, pad=True, sep=':')
 
         retstr = ""
         if self.precision is None:

@@ -49,6 +49,10 @@
   <input type="submit" value="Update"/>
   <button type="button" onclick="reset_working_ephemeris(); redraw_plot();">Reset</button>
 </form>
+<form action="{% url 'download_working_ephemeris' pk=working_ephemeris.pk %}">
+  {% csrf_token %}
+  <input type="submit" value="Download ephemeris">
+</form>
 
 <h2>Timing plot</h2>
 
