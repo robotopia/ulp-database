@@ -127,7 +127,7 @@ def scale_to_frequency(freq_MHz, S_freq, freq_target_MHz, alpha, q=0):
     return S_target
 
 
-def fit_toa(pulse, template, baseline_degree=None):
+def fit_toa(pulse, template, baseline_degree=None, init_mjd=None):
 
     # Get lightcurve for this pulse
     lc = pulse.lightcurve
@@ -149,7 +149,10 @@ def fit_toa(pulse, template, baseline_degree=None):
 
     # Set up the initial values
     max_idx = np.argmax(values)
-    p0 = (times[max_idx] - t0, values[max_idx])
+    if init_mjd is None:
+        p0 = (times[max_idx] - t0, values[max_idx])
+    else:
+        p0 = (init_mjd - t0, values[max_idx])
 
     if baseline_degree == 0:
         def template_func(time, toa_mjd, ampl, baseline_level):
