@@ -75,9 +75,15 @@ function create_residual_plot_elements(parentDivId) {
 
   // Add a dashed vertical line to mark PEPOCH
   var pepoch_path = g.append("path")
-      .style("stroke", "#aaee1180")
-      .style("stroke-width", "2")
-      .style("stroke-dasharray", "7");
+    .style("stroke", "#aaee1180")
+    .style("stroke-width", "2")
+    .style("stroke-dasharray", "7");
+
+  // Add a dashed horizontal line to mark the zero residual line
+  var zero_residual_path = g.append("path")
+    .style("stroke", "#aaee1180")
+    .style("stroke-width", "2")
+    .style("stroke-dasharray", "7");
 
   // Add a similar dashed line to be used for changing the period
   var period_path = g.append("path")
@@ -110,7 +116,8 @@ function create_residual_plot_elements(parentDivId) {
     x2: x2,
     y2: y2,
     pepoch_path: pepoch_path,
-    period_path: period_path
+    period_path: period_path,
+    zero_residual_path: zero_residual_path
   }
 }
 
@@ -185,6 +192,9 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
 
   // Plot the PEPOCH line
   plot.pepoch_path.attr("d", "M " + plot.x2(0) + ",0 l 0," + plot.height);
+
+  // Plot the zero-residual line
+  plot.zero_residual_path.attr("d", "M 0," + plot.y(0) + " l " + plot.width + ",0");
 }
 
 function add_residual_data(plot, toa_url, color, ephemeris) {
