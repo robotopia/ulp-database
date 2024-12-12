@@ -46,13 +46,16 @@ function update_permissions(url, csrf_token, app, model, pk, group_or_user, name
  *
  * Compare: fold() in common/utils.py
  ***********************/
-function fold(mjds, pepoch, period, dm, freqs_MHz) {
-  //console.log("mjds: ", mjds);
-  //console.log("pepoch: ", pepoch);
-  //console.log("period: ", period);
+function fold(mjds, pepoch, period, dm, freq_MHz) {
+  var delay;
   let dedispersed_mjds = Array.from(mjds, (mjd, i) => {
     const D = 4.148808e3/86400.0; // Dispersion constant in the appropriate units
-    return mjd - D * dm / freqs_MHz[i]**2;
+    if (freq_MHz.constructor === Array) {
+      delay = D * dm / freq_MHz[i]**2;
+    } else {
+      delay = D * dm / freq_MHz**2;
+    }
+    return mjd - delay
   });
   let pulse_phases = dedispersed_mjds.map((mjd) => (mjd - pepoch)/(period/86400.0));
   let pulses = pulse_phases.map((pulse_phase) => Math.floor(pulse_phase + 0.5));

@@ -47,9 +47,9 @@
 
 <script>
 
-  function prepare_data(data, pepoch, period) {
+  function prepare_data(data, pepoch, period, dm) {
     return data.map((d, i) => {
-      pulses_phases = fold(d.mjds, pepoch, period);
+      pulses_phases = fold(d.mjds, pepoch, period, dm, d.freq_MHz);
       phases = pulses_phases.phases;
       pulses = pulses_phases.pulses;
       return {
@@ -80,7 +80,7 @@
   var pb     = document.getElementById('pb').value
   var dm     = document.getElementById('dm').value
 
-  var folded_data = prepare_data(data, pepoch, p0);
+  var folded_data = prepare_data(data, pepoch, p0, dm);
   //console.log(folded_data);
 
   var layout = get_plotly_default_layout();
@@ -145,9 +145,10 @@
 
     let pepoch = parseFloat(document.getElementById('pepoch').value);
     let period = parseFloat(document.getElementById('p0').value);
+    let dm = parseFloat(document.getElementById('dm').value);
 
     folded_data.forEach((d) => {
-      pulses_phases = fold(d.mjds, pepoch, period);
+      pulses_phases = fold(d.mjds, pepoch, period, dm, d.freq_MHz);
       d.x = pulses_phases.phases;
     });
     Plotly.react('pulsestack', folded_data, layout);
@@ -157,9 +158,10 @@
   function on_working_ephemeris_change(element) {
     let pepoch = parseFloat(document.getElementById('pepoch').value);
     let period = parseFloat(document.getElementById('p0').value);
+    let dm = parseFloat(document.getElementById('dm').value);
     on_value_change(element);
     folded_data.forEach((d) => {
-      pulses_phases = fold(d.mjds, pepoch, period);
+      pulses_phases = fold(d.mjds, pepoch, period, dm, d.freq_MHz);
       d.x = pulses_phases.phases;
     });
     Plotly.react('pulsestack', folded_data, layout);

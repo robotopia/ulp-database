@@ -679,7 +679,7 @@ def pulsestack_view(request, pk):
         datum = {
             'idx': i,
             't0': lc.t0,
-            'mjds': list(lc.bary_times()),
+            'mjds': list(lc.bary_times(dm=0)),
             'values': list(values),
             'link': reverse('lightcurve_view', args=[lc.pk]),
             'freq_MHz': lc.freq,
