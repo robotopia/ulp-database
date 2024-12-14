@@ -18,12 +18,20 @@
 <form action="{% url 'refit_toa' pk=toa.pk %}" method="POST">
   {% csrf_token %}
   <div>
-    <label for="baseline">Fit baseline</label>
+    <label for="baseline">Fit baseline:</label>
     <select id="baseline" name="baseline_degree" required>
       <option value="-1" {% if baseline_degree == -1 %}selected{% endif %}>Do not fit a baseline</option>
       <option value="0" {% if baseline_degree == 0 %}selected{% endif %}>Fit a constant baseline</option>
       <option value="1" {% if baseline_degree == 1 %}selected{% endif %}>Fit a linear baseline</option>
     </select>
+  </div>
+  <div>
+    <input type="checkbox" id="use_tausc_1GHz" name="use_tausc_1GHz" checked onchange="on_use_tausc_change(this);"/>
+    <label for="use_tausc_1GHz">Use scattered template,</label>
+    <label for="tausc_1GHz">assuming a scattering timescale of</label>
+    <input type="number" step="any" id="tausc_1GHz" name="tausc_1GHz" value="{{ tausc_1GHz }}"/>
+    <span>seconds at 1 GHz.</span>
+    <button type="button" onclick="document.getElementById('tausc_1GHz').value = {{ toa.template.working_ephemeris.tausc_1GHz }};">Reset to current ephemeris value</button>
   </div>
   <div>
     <input type="submit" value="Refit ToA"/>
@@ -82,6 +90,13 @@
 
   //plotDiv = document.getElementById('toa_plot');
   Plotly.react('toa_plot', data, layout);
+
+  /***********************************/
+
+  function on_use_tausc_change(element) {
+    tausc_1GHz = document.getElementById("tausc_1GHz");
+    tausc_1GHz.disabled = !element.checked;
+  }
   
 </script>
 

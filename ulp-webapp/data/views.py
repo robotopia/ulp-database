@@ -6,13 +6,13 @@ from django.core.exceptions import ValidationError
 from . import models
 from common.utils import *
 from django.utils.timezone import now
+from urllib.parse import urlencode
 
 from published import models as published_models
 from published.views import get_accessible_measurements
 
 import numpy as np
 from scipy.optimize import curve_fit
-from scipy.signal import correlate, convolve
 import json
 import astropy.units as u
 from astropy.coordinates import SkyCoord, Angle, EarthLocation, AltAz, get_sun
@@ -924,14 +924,14 @@ def toa_view(request, pk):
 
     # If there is a scattering timescale associated with this ToA, show the scattered
     # template as well
-    tausc = toa.template.working_ephemeris.tausc_1GHz * (lc.freq/1e3)**-4
-    if tausc is not None:
-        t = (times - times[len(times)//2])*86400.0 # The t-axis for defining the kernel, in seconds (same unit as tausc)
-        # Zero time is defined in the middle of the array to avoid shifting during correlation
-        kernel = np.exp(-t/tausc)
-        kernel[t < 0] = 0.0
-        kernel /= np.sum(kernel) # Normalise
-        scattered_template_values = convolve(template_values, kernel, mode='same')
+    try:
+        tausc_1GHz = float(request.GET.get('tausc_1GHz'))
+    except:
+        tausc_1GHz = toa.template.working_ephemeris.tausc_1GHz
+
+    if tausc_1GHz is not None:
+        tausc = tausc_1GHz * (lc.freq/1e3)**-4.4
+        scattered_template_values = toa.ampl * toa.template.values(template_times - float(toa.toa_mjd), tausc=tausc)
     else:
         scattered_template_values = None
 
@@ -960,6 +960,7 @@ def toa_view(request, pk):
         'template_times': list(template_times),
         'template_values': list(template_values),
         'scattered_template_values': list(scattered_template_values) if scattered_template_values is not None else None,
+        'tausc_1GHz': tausc_1GHz or toa.template.working_ephemeris.tausc_1GHz,
         'baseline_degree': baseline_degree,
     }
 
@@ -977,18 +978,30 @@ def refit_toa(request, pk):
 
     # Get fitting options
     baseline_degree = int(request.POST.get('baseline_degree')) # Only values of 0 and 1 currently carry meaning. Everything else means "don't fit"
+    use_tausc_1GHz = request.POST.get('use_tausc_1GHz') == 'on'
+    try:
+        tausc_1GHz = float(request.POST.get('tausc_1GHz'))
+        tausc = tausc_1GHz * (toa.pulse.lightcurve.freq/1e3)**-4.4 if use_tausc_1GHz else None
+    except:
+        tausc = None
 
     # Refit the ToA
     if baseline_degree == -1:
-        toa.refit(baseline_level=None, baseline_slope=None)
+        toa.refit(baseline_level=None, baseline_slope=None, tausc=tausc)
     elif baseline_degree == 0:
-        toa.refit(baseline_slope=None)
+        toa.refit(baseline_level=0.0, baseline_slope=None, tausc=tausc)
     elif baseline_degree == 1:
-        toa.refit()
+        toa.refit(baseline_level=0.0, baseline_slope=0.0, tausc=tausc)
     else:
-        toa.refit()
+        toa.refit(tausc=tausc)
+    print(f"{baseline_degree = }")
+    print(f"{toa.baseline_degree = }")
 
-    return redirect('toa_view', pk=pk)
+    url = reverse('toa_view', args=[pk])
+    query_string = urlencode({'tausc_1GHz': tausc_1GHz}) if use_tausc_1GHz else toa.template.working_ephemeris.tausc_1GHz
+    url_with_query = f"{url}?{query_string}"
+
+    return redirect(url_with_query)
 
 
 def toa_for_pulse(request, pk):

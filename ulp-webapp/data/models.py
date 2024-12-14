@@ -10,6 +10,7 @@ import numpy as np
 from scipy.stats import vonmises
 from scipy.special import erf
 from scipy.optimize import curve_fit
+from scipy.signal import convolve
 from decimal import Decimal
 
 from common.models import AbstractPermission
@@ -899,14 +900,26 @@ class Template(AbstractPermission):
         related_name="templates",
     )
 
-    def values(self, times):
+    def values(self, times, tausc=None):
         '''
         Returns template values
         TODO: figure out a sensible normalisation for arbitrary templates
         '''
         sum_of_components = np.sum([component.values(times) for component in self.components.all()], axis=0)
+
+        # TODO: Normalisation
         #sum_of_weights = np.sum([component.weight for component in self.components.all()]) # <-- bad normalisation?
-        return sum_of_components#/sum_of_weights
+
+        if tausc is not None and tausc > 0.0:
+            dt = (times[1] - times[0])*86400.0
+            N = int(np.ceil(6*tausc/dt))
+            t = np.arange(-N, N+1)*dt
+            # Zero time is defined in the middle of the array to avoid shifting during correlation
+            kernel = np.exp(-t/tausc)
+            kernel[t < 0] = 0.0
+            kernel /= np.sum(kernel) # Normalise
+            sum_of_components = convolve(sum_of_components, kernel, mode='same')
+        return sum_of_components
 
     def values_npoints(self, npoints, ph_ctr=0.0):
         phases = np.linspace(ph_ctr-0.5, ph_ctr+0.5, num=npoints, endpoint=False)
@@ -1080,7 +1093,7 @@ class Toa(models.Model):
         # Otherwise, return None, which means no baseline of any kind is fitted
         return None
 
-    def refit(self, save=True, **kwargs):
+    def refit(self, save=True, tausc=None, **kwargs):
         '''
         Because of the awkwardness of dealing with lightcurves with generally different
         sampling rates, we simply fit the template to the points, rather than
@@ -1104,6 +1117,9 @@ class Toa(models.Model):
         corresponding to the largest value in the lightcurve. If baseline_level or
         baseline_slope are explicitly set to None, then those parameters are not included
         in the fit.
+
+        tausc is a scattering timescale in seconds. If it is provided, the values are fit to
+        the scattered template instead of the "raw" template itself.
 
         This function does not return anything: it is useful for the side-effect of changing
         the object's fields' values to the fitted values. If the save parameter is True
@@ -1132,7 +1148,7 @@ class Toa(models.Model):
 
         # Define the most general function to be fitted...
         def template_func(time, toa_mjd, ampl, baseline_level, baseline_slope):
-            return ampl*self.template.values(time - toa_mjd) + baseline_level + baseline_slope*(time - toa_mjd)
+            return ampl*self.template.values(time - toa_mjd, tausc) + baseline_level + baseline_slope*(time - toa_mjd)
 
         # ... but choose the version of this according to which parameters are actually being fitted
         if self.baseline_level is not None and self.baseline_slope is not None:
