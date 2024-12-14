@@ -496,6 +496,13 @@ class WorkingEphemeris(AbstractPermission):
         help_text="The 'q' in the equation S = S1GHz * f^alpha * exp(q*ln(f)^2), where f is the frequency in GHz and S is in Jy",
     )
 
+    tausc_1GHz = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The scattering timescale at 1GHz, in seconds",
+        verbose_name="τ_{sc,1GHz} (s)",
+    )
+
     covariance = models.OneToOneField(
         "WorkingEphemerisCovariance",
         on_delete=models.SET_NULL,
