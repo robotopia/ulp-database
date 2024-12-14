@@ -9,6 +9,7 @@ from astropy.time import Time
 import numpy as np
 from scipy.stats import vonmises
 from scipy.special import erf
+from scipy.optimize import curve_fit
 from decimal import Decimal
 
 from common.models import AbstractPermission
@@ -1131,25 +1132,25 @@ class Toa(models.Model):
 
         # Define the most general function to be fitted...
         def template_func(time, toa_mjd, ampl, baseline_level, baseline_slope):
-            return ampl*template.values(time - toa_mjd) + baseline_level + baseline_slope*(time - toa_mjd)
+            return ampl*self.template.values(time - toa_mjd) + baseline_level + baseline_slope*(time - toa_mjd)
 
         # ... but choose the version of this according to which parameters are actually being fitted
         if self.baseline_level is not None and self.baseline_slope is not None:
-            p0 = (self.toa_mjd - t0, self.ampl, self.baseline_level, self.baseline_slope)
+            p0 = (float(self.toa_mjd) - t0, self.ampl, self.baseline_level, self.baseline_slope)
             bounds = ((-np.inf, 0.0, -np.inf, -np.inf), (np.inf, np.inf, np.inf, np.inf))
             fit_func = template_func
         elif self.baseline_level is not None: # and baseline_slope *is* None
-            p0 = (self.toa_mjd - t0, self.ampl, self.baseline_level)
+            p0 = (float(self.toa_mjd) - t0, self.ampl, self.baseline_level)
             bounds = ((-np.inf, 0.0, -np.inf), (np.inf, np.inf, np.inf))
             def fit_func(time, toa_mjd, ampl, baseline_level):
                 return template_func(time, toa_mjd, ampl, baseline_level, 0.0)
         elif self.baseline_slope is not None: # and baseline_level *is* None
-            p0 = (self.toa_mjd - t0, self.ampl, self.baseline_slope)
+            p0 = (float(self.toa_mjd) - t0, self.ampl, self.baseline_slope)
             bounds = ((-np.inf, 0.0, -np.inf), (np.inf, np.inf, np.inf))
             def fit_func(time, toa_mjd, ampl, baseline_slope):
                 return template_func(time, toa_mjd, ampl, 0.0, baseline_slope)
         else: # both baseline_level and baseline_slope are None
-            p0 = (self.toa_mjd - t0, self.ampl)
+            p0 = (float(self.toa_mjd) - t0, self.ampl)
             bounds = ((-np.inf, 0.0), (np.inf, np.inf))
             def fit_func(time, toa_mjd, ampl):
                 return template_func(time, toa_mjd, ampl, 0.0, 0.0)

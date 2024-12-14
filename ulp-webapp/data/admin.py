@@ -58,7 +58,7 @@ class WorkingEphemerisAdmin(admin.ModelAdmin):
         (None, {"fields": ["ulp"]}),
         (
             "Ephemeris values", {
-                "fields": ["pepoch", "p0", "p1", "pb", "dm"],
+                "fields": ["pepoch", "p0", "p1", "pb", "dm", "tausc_1GHz"],
             }
         ),
         (

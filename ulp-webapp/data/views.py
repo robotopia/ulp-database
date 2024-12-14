@@ -960,12 +960,12 @@ def refit_toa(request, pk):
     baseline_degree = int(request.POST.get('baseline_degree')) # Only values of 0 and 1 currently carry meaning. Everything else means "don't fit"
 
     # Refit the ToA
-    if baseline_degree is None:
+    if baseline_degree == -1:
         toa.refit(baseline_level=None, baseline_slope=None)
     elif baseline_degree == 0:
         toa.refit(baseline_slope=None)
     elif baseline_degree == 1:
-        toa.refit(baseline_level=None)
+        toa.refit()
     else:
         toa.refit()
 
