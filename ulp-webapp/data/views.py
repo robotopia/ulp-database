@@ -12,6 +12,7 @@ from published.views import get_accessible_measurements
 
 import numpy as np
 from scipy.optimize import curve_fit
+from scipy.signal import correlate, convolve
 import json
 import astropy.units as u
 from astropy.coordinates import SkyCoord, Angle, EarthLocation, AltAz, get_sun
@@ -921,15 +922,32 @@ def toa_view(request, pk):
     template_times = np.linspace(np.min(times), np.max(times), N)
     template_values = toa.ampl * toa.template.values(template_times - float(toa.toa_mjd))
 
+    # If there is a scattering timescale associated with this ToA, show the scattered
+    # template as well
+    tausc = toa.template.working_ephemeris.tausc_1GHz * (lc.freq/1e3)**-4
+    if tausc is not None:
+        t = (times - times[len(times)//2])*86400.0 # The t-axis for defining the kernel, in seconds (same unit as tausc)
+        # Zero time is defined in the middle of the array to avoid shifting during correlation
+        kernel = np.exp(-t/tausc)
+        kernel[t < 0] = 0.0
+        kernel /= np.sum(kernel) # Normalise
+        scattered_template_values = convolve(template_values, kernel, mode='same')
+    else:
+        scattered_template_values = None
+
     # Deal with the baseline
     baseline_degree = -1 # Default means "no baseline fitting was used"
 
     if toa.baseline_level is not None:
         template_values += toa.baseline_level
+        if scattered_template_values is not None:
+            scattered_template_values += toa.baseline_level
         baseline_degree = 0 # Constant function
 
     if toa.baseline_slope is not None:
         template_values += toa.baseline_slope*(template_times - float(toa.toa_mjd))
+        if scattered_template_values is not None:
+            scattered_template_values += toa.baseline_slope*(template_times - float(toa.toa_mjd))
         baseline_degree = 1 # Linear function
 
     toa_err_days = toa.toa_err_s / 86400.0
@@ -941,6 +959,7 @@ def toa_view(request, pk):
         'values': list(values),
         'template_times': list(template_times),
         'template_values': list(template_values),
+        'scattered_template_values': list(scattered_template_values) if scattered_template_values is not None else None,
         'baseline_degree': baseline_degree,
     }
 

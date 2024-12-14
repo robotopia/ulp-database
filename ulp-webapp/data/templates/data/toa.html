@@ -61,6 +61,16 @@
       type: 'scatter',
       name: 'Template',
     },
+    {% if scattered_template_values %}
+    // The scattered template
+    {
+      x: {{ template_times | safe }},
+      y: {{ scattered_template_values | safe }},
+      mode: 'lines',
+      type: 'scatter',
+      name: 'Scattered template',
+    },
+    {% endif %}
   ];
 
   var layout = get_plotly_default_layout();
