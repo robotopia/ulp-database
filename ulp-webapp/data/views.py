@@ -959,23 +959,30 @@ def refit_toa(request, pk):
     # Get fitting options
     baseline_degree = int(request.POST.get('baseline_degree')) # Only values of 0 and 1 currently carry meaning. Everything else means "don't fit"
 
-    # Call fit_toa() in common.utils to do the actual fitting
-    fit_toa(toa.pulse, toa.template, baseline_degree=baseline_degree)
+    # Refit the ToA
+    if baseline_degree is None:
+        toa.refit(baseline_level=None, baseline_slope=None)
+    elif baseline_degree == 0:
+        toa.refit(baseline_slope=None)
+    elif baseline_degree == 1:
+        toa.refit(baseline_level=None)
+    else:
+        toa.refit()
 
     return redirect('toa_view', pk=pk)
 
 
-def toa_for_lightcurve(request, pk):
+def toa_for_pulse(request, pk):
 
     # First of all, they have to be logged in
     if not request.user.is_authenticated:
         return HttpResponse(status=401)
 
     # Get the relevant Lightcurve object
-    lc = get_object_or_404(models.Lightcurve, pk=pk)
+    pulse = get_object_or_404(models.Pulse, pk=pk)
 
     # There must be an existing (unique) working ephemeris
-    we = get_object_or_404(models.WorkingEphemeris, owner=request.user, ulp=lc.ulp)
+    we = get_object_or_404(models.WorkingEphemeris, owner=request.user, ulp=pulse.lightcurve.ulp)
 
     # There must also be an existing template
     # At the moment, this will fail if multiple templates exist that fit these criteria,
@@ -983,17 +990,18 @@ def toa_for_lightcurve(request, pk):
     # (but perhaps there should be...??)
     template = get_object_or_404(models.Template, owner=request.user, working_ephemeris=we)
 
-    # Get the central MJD, and thence the pulse number
-    mjd = lc.bary_times()[len(lc.times())//2]
-    pulse_number, _ = we.fold(mjd)
-
     # If a ToA already exists with this pulse number, just go to that page;
     # otherwise, create one
-    toa = models.Toa.objects.filter(template=template, pulse_number=pulse_number).first()
+    toa = models.Toa.objects.filter(pulse=pulse, template=template).first()
 
     if toa is None:
         # Make an initial fit with the default settings
-        toa = fit_toa(pulse_number, template)
+        toa = models.Toa(
+            pulse=pulse,
+            template=template,
+        )
+        toa.refit(toa_mjd='peak', ampl='peak')
+        # ^^^ This saves the new Toa object by default
 
     # Navigate to the ToA page
     return redirect('toa_view', pk=toa.pk)

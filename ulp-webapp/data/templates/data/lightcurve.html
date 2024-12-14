@@ -54,12 +54,6 @@
 <div id='lc_plot'>
 </div>
 
-<div>
-  <form method="post" action="{% url 'toa_for_lightcurve' pk=lightcurve.pk %}">
-    {% csrf_token %}
-    <input type="submit" value="Goto/create ToA"/>
-  </form>
-</div>
 
 <h2>Pulses</h2>
 
@@ -89,9 +83,13 @@
       <td>
         <input id="update_pulse_{{ pulse.pk }}" type="submit" name="action" value="Save"/>
         <input id="delete_pulse_{{ pulse.pk }}" type="submit" name="action" value="Delete"/>
+        <input type="submit" value="Goto/create ToA" form="toa_form_{{ pulse.pk }}"/>
       </td>
     </form>
   </tr>
+  <form id="toa_form_{{ pulse.pk }}" method="post" action="{% url 'toa_for_pulse' pk=pulse.pk %}">
+    {% csrf_token %}
+  </form>
   {% endfor %}
   <tr>
     <form method="post" action="{% url 'add_or_update_pulse' pk=lightcurve.pk %}">
@@ -164,7 +162,7 @@
     {% endfor %}
   ];
   layout.legend = {title: {text: "Polarisation"}};
-  layout.xaxis = {title: {text: "MJD (topocentric)"}, tickformat: "%f"};
+  layout.xaxis = {title: {text: "MJD (topocentric)"}, tickformat: ".3f"};
   layout.yaxis = {title: {text: "Flux density (Jy)"}};
 
   Plotly.newPlot('lc_plot', data, layout);

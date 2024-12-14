@@ -1061,6 +1061,121 @@ class Toa(models.Model):
     def out_of_date(self):
         return self.updated < self.template.updated
 
+    @property
+    def baseline_degree(self):
+        if self.baseline_slope is not None:
+            return 1
+
+        if self.baseline_level is not None:
+            return 0
+
+        # Otherwise, return None, which means no baseline of any kind is fitted
+        return None
+
+    def refit(self, save=True, **kwargs):
+        '''
+        Because of the awkwardness of dealing with lightcurves with generally different
+        sampling rates, we simply fit the template to the points, rather than
+        trying to use a method based on cross-correlation.
+
+        Keep in mind that the template defines a *shape*, so any fitting function should have
+        an "amplitude" as a free parameter. This fitted amplitude can be stored with the ToA
+        as a fitted parameter.
+
+        curve_fit doesn't like it when MJDs are used, since the times to be fitted are
+        very low down in precision. Better to do everything in terms of time since the start
+        and then add it all back afterwards. That's why t0 is preserved (below).
+
+        The default behaviour is to use te existing ToA parameters as the initial guess to
+        the fit (i.e. the 'p0' values provided to curve_fit). However, these can be overridden
+        by supplying keyword arguments (kwargs) matching the property names, with the values
+        to be overridden, e.g., toa.refit(toa_mjd=60000).
+
+        The keywords all take numerical values. In addition, the keywords 'toa_mjd' and 'ampl'
+        may also be set to the special value of 'peak', in which case it is set to the MJD
+        corresponding to the largest value in the lightcurve. If baseline_level or
+        baseline_slope are explicitly set to None, then those parameters are not included
+        in the fit.
+
+        This function does not return anything: it is useful for the side-effect of changing
+        the object's fields' values to the fitted values. If the save parameter is True
+        (default), the object will be committed to the database.
+        '''
+
+        # Get lightcurve for this pulse
+        lc = self.pulse.lightcurve
+        times = lc.bary_times(dm=0.0)
+        t0 = times[0]
+        values = lc.values()
+
+        # Set up the initial values
+        max_idx = np.argmax(values) # For possible use if either 'toa_mjd' or 'ampl' is initialised to 'peak'
+        if 'toa_mjd' in kwargs:
+            self.toa_mjd = times[max_idx] if kwargs['toa_mjd'] == 'peak' else kwargs['toa_mjd']
+
+        if 'ampl' in kwargs:
+            self.ampl = values[max_idx] if kwargs['ampl'] == 'peak' else kwargs['ampl']
+
+        if 'baseline_level' in kwargs:
+            self.baseline_level = kwargs['baseline_level']
+
+        if 'baseline_slope' in kwargs:
+            self.baseline_slope = kwargs['baseline_slope']
+
+        # Define the most general function to be fitted...
+        def template_func(time, toa_mjd, ampl, baseline_level, baseline_slope):
+            return ampl*template.values(time - toa_mjd) + baseline_level + baseline_slope*(time - toa_mjd)
+
+        # ... but choose the version of this according to which parameters are actually being fitted
+        if self.baseline_level is not None and self.baseline_slope is not None:
+            p0 = (self.toa_mjd - t0, self.ampl, self.baseline_level, self.baseline_slope)
+            bounds = ((-np.inf, 0.0, -np.inf, -np.inf), (np.inf, np.inf, np.inf, np.inf))
+            fit_func = template_func
+        elif self.baseline_level is not None: # and baseline_slope *is* None
+            p0 = (self.toa_mjd - t0, self.ampl, self.baseline_level)
+            bounds = ((-np.inf, 0.0, -np.inf), (np.inf, np.inf, np.inf))
+            def fit_func(time, toa_mjd, ampl, baseline_level):
+                return template_func(time, toa_mjd, ampl, baseline_level, 0.0)
+        elif self.baseline_slope is not None: # and baseline_level *is* None
+            p0 = (self.toa_mjd - t0, self.ampl, self.baseline_slope)
+            bounds = ((-np.inf, 0.0, -np.inf), (np.inf, np.inf, np.inf))
+            def fit_func(time, toa_mjd, ampl, baseline_slope):
+                return template_func(time, toa_mjd, ampl, 0.0, baseline_slope)
+        else: # both baseline_level and baseline_slope are None
+            p0 = (self.toa_mjd - t0, self.ampl)
+            bounds = ((-np.inf, 0.0), (np.inf, np.inf))
+            def fit_func(time, toa_mjd, ampl):
+                return template_func(time, toa_mjd, ampl, 0.0, 0.0)
+
+        # Do the fit itself
+        popt, pcov = curve_fit(fit_func, times - t0, values, p0=p0, bounds=bounds)
+
+        # Unpack the fitted values. At the moment, we are throwing away the covariances of
+        # the two baseline parameters.
+        if self.baseline_level is not None and self.baseline_slope is not None:
+            self.toa_mjd, self.ampl, self.baseline_level, self.baseline_slope = popt
+        elif self.baseline_level is not None: # and baseline_slope *is* None
+            self.toa_mjd, self.ampl, self.baseline_level = popt
+            self.baseline_slope = None
+        elif self.baseline_slope is not None: # and baseline_level *is* None
+            self.toa_mjd, self.ampl, self.baseline_slope = popt
+            self.baseline_level = None
+        else: # both baseline_level and baseline_slope are None
+            self.toa_mjd, self.ampl = popt
+            self.baseline_level = None
+            self.baseline_slope = None
+
+        # Restore the previously subtracted t0 value from the fitted MJD
+        self.toa_mjd += t0
+
+        # Unpack the covariances. At the moment, we are throwing away the covariances of
+        # the two baseline parameters.
+        toa_mjd_err, self.ampl_err = np.sqrt(np.diag(pcov)[:2])
+        self.toa_err_s = toa_mjd_err * 86400.0
+
+        if save:
+            self.save()
+
     def __str__(self):
         return f"ToA from {self.template} ({self.toa_mjd})"
 
