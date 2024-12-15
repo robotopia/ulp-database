@@ -930,8 +930,14 @@ def toa_view(request, pk):
         tausc_1GHz = toa.template.working_ephemeris.tausc_1GHz
 
     if tausc_1GHz is not None:
-        tausc = tausc_1GHz * (lc.freq/1e3)**-4.4
-        scattered_template_values = toa.ampl * toa.template.values(template_times - float(toa.toa_mjd), tausc=tausc)
+        sc_idx = -4.4
+        tausc = tausc_1GHz * (lc.freq/1e3)**sc_idx
+        scattered_template_values = toa.ampl * toa.template.values(
+                template_times - float(toa.toa_mjd),
+                tausc=tausc,
+                freq=lc.freq,
+                bw=lc.bw,
+                sc_idx=sc_idx)
     else:
         scattered_template_values = None
 
@@ -945,9 +951,10 @@ def toa_view(request, pk):
         baseline_degree = 0 # Constant function
 
     if toa.baseline_slope is not None:
-        template_values += toa.baseline_slope*(template_times - float(toa.toa_mjd))
+        slope_adjustment = toa.baseline_slope*(template_times - float(toa.toa_mjd))
+        template_values += slope_adjustment
         if scattered_template_values is not None:
-            scattered_template_values += toa.baseline_slope*(template_times - float(toa.toa_mjd))
+            scattered_template_values += slope_adjustment
         baseline_degree = 1 # Linear function
 
     toa_err_days = toa.toa_err_s / 86400.0
@@ -994,8 +1001,6 @@ def refit_toa(request, pk):
         toa.refit(baseline_level=0.0, baseline_slope=0.0, tausc=tausc)
     else:
         toa.refit(tausc=tausc)
-    print(f"{baseline_degree = }")
-    print(f"{toa.baseline_degree = }")
 
     url = reverse('toa_view', args=[pk])
     query_string = urlencode({'tausc_1GHz': tausc_1GHz}) if use_tausc_1GHz else toa.template.working_ephemeris.tausc_1GHz

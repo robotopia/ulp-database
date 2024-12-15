@@ -7,8 +7,8 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord, Angle, EarthLocation
 from astropy.time import Time
 import numpy as np
-from scipy.stats import vonmises
-from scipy.special import erf
+from scipy.stats import vonmises, exponnorm
+from scipy.special import erf, erfc, erfcx
 from scipy.optimize import curve_fit
 from scipy.signal import convolve
 from decimal import Decimal
@@ -900,26 +900,41 @@ class Template(AbstractPermission):
         related_name="templates",
     )
 
-    def values(self, times, tausc=None):
+    def values(self, times, tausc=None, freq=None, bw=None, sc_idx=-4.4, nchan=100):
         '''
         Returns template values
         TODO: figure out a sensible normalisation for arbitrary templates
         '''
         sum_of_components = np.sum([component.values(times) for component in self.components.all()], axis=0)
 
+        # Make it a 2D array so that it can be convolved
+
         # TODO: Normalisation
         #sum_of_weights = np.sum([component.weight for component in self.components.all()]) # <-- bad normalisation?
 
         if tausc is not None and tausc > 0.0:
+            # If freq and bw are not None, then create nchan kernels
+            if freq is not None and bw is not None:
+                df = bw/nchan
+                flo = freq - bw/2
+                freqs = np.arange(nchan)*df + flo + df/2
+                tauscs = tausc * (freq/freqs)**sc_idx
+            else:
+                tauscs = np.array([tausc])
+            τ, Times = np.meshgrid(tauscs, times*86400.0)
+
+            # Scattered pulses, when the pulses are gaussians, are equal to exponentially modified Gaussians:
+            #   https://en.wikipedia.org/wiki/Exponentially_modified_Gaussian_distribution
+            dynspec = np.zeros(τ.shape)
             dt = (times[1] - times[0])*86400.0
-            N = int(np.ceil(6*tausc/dt))
-            t = np.arange(-N, N+1)*dt
-            # Zero time is defined in the middle of the array to avoid shifting during correlation
-            kernel = np.exp(-t/tausc)
-            kernel[t < 0] = 0.0
-            kernel /= np.sum(kernel) # Normalise
-            sum_of_components = convolve(sum_of_components, kernel, mode='same')
-        return sum_of_components
+            for component in self.components.all():
+                A, μ, σ = component.weight, component.mu*86400.0, component.sigma*86400.0
+                dynspec += A*exponnorm.pdf(Times, τ, loc=μ, scale=σ) * np.sqrt(2*np.pi)*σ
+            lightcurve = np.mean(dynspec, axis=1)
+        else:
+            lightcurve = np.squeeze(sum_of_components)
+
+        return lightcurve
 
     def values_npoints(self, npoints, ph_ctr=0.0):
         phases = np.linspace(ph_ctr-0.5, ph_ctr+0.5, num=npoints, endpoint=False)
@@ -1093,7 +1108,7 @@ class Toa(models.Model):
         # Otherwise, return None, which means no baseline of any kind is fitted
         return None
 
-    def refit(self, save=True, tausc=None, **kwargs):
+    def refit(self, save=True, tausc=None, sc_idx=-4.4, **kwargs):
         '''
         Because of the awkwardness of dealing with lightcurves with generally different
         sampling rates, we simply fit the template to the points, rather than
@@ -1148,7 +1163,11 @@ class Toa(models.Model):
 
         # Define the most general function to be fitted...
         def template_func(time, toa_mjd, ampl, baseline_level, baseline_slope):
-            return ampl*self.template.values(time - toa_mjd, tausc) + baseline_level + baseline_slope*(time - toa_mjd)
+            return ampl*self.template.values(time - toa_mjd,
+                    tausc=tausc,
+                    freq=lc.freq,
+                    bw=lc.bw,
+                    sc_idx=sc_idx,) + baseline_level + baseline_slope*(time - toa_mjd)
 
         # ... but choose the version of this according to which parameters are actually being fitted
         if self.baseline_level is not None and self.baseline_slope is not None:
