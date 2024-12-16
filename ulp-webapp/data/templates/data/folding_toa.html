@@ -125,10 +125,7 @@
     var dm     = document.getElementById('dm').value;
 
     toas = fold(
-      Array.from(data, (d) => d.toa_mjd),
-      pepoch,
-      period,
-      {{ working_ephemeris.dm }},
+      Array.from(data, (d) => d.toa_mjd), pepoch, period, dm,
       Array.from(data, (d) => d.freq_MHz)
     );
 
@@ -142,8 +139,7 @@
       x = toas.phases;
       x_err = data.map((d) => d.toa_err_s/period);
     } else if (xaxis == 'orbital_phase') {
-      x = fold(Array.from(data, (d) => d.toa_mjd), pepoch, pb,
-        {{ working_ephemeris.dm }},
+      x = fold(Array.from(data, (d) => d.toa_mjd), pepoch, pb, dm,
         Array.from(data, (d) => d.freq_MHz)
       ).phases;
       x_err = data.map((d) => d.toa_err_s/pb);
@@ -165,8 +161,7 @@
       y = toas.phases;
       y_err = data.map((d) => d.toa_err_s/period);
     } else if (yaxis == 'orbital_phase') {
-      y = fold(Array.from(data, (d) => d.toa_mjd), pepoch, pb,
-        {{ working_ephemeris.dm }},
+      y = fold(Array.from(data, (d) => d.toa_mjd), pepoch, pb, dm,
         Array.from(data, (d) => d.freq_MHz)
         ).phases;
       y_err = data.map((d) => d.toa_err_s/pb);
