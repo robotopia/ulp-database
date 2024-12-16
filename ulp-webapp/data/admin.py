@@ -89,6 +89,7 @@ class TemplateAdmin(admin.ModelAdmin):
 @admin.register(TemplateComponent)
 class TemplateComponentAdmin(admin.ModelAdmin):
     list_display = ['pk', 'template', 'weight', 'mu', 'sigma']
+    list_filter = ['template__working_ephemeris__ulp']
 
 
 @admin.register(Toa)
