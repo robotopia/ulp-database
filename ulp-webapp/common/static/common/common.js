@@ -38,6 +38,7 @@ function update_permissions(url, csrf_token, app, model, pk, group_or_user, name
  * - pepoch (float): The reference timestamp (MJD) when pulse = phase = 0
  * - period (float): The folding period (in seconds)
  * - dm (float): The dispersion measure (in pc/cm^3)
+ * - tausc_1GHz (float): The scattering timescale at 1 GHz (in seconds)
  * - freqs_MHz (array of floats): The frequencies correspond to each mjd, in MHz
  *
  * Phase is defined to go from -0.5 to 0.5. The resulting phase and pulse must
@@ -46,16 +47,20 @@ function update_permissions(url, csrf_token, app, model, pk, group_or_user, name
  *
  * Compare: fold() in common/utils.py
  ***********************/
-function fold(mjds, pepoch, period, dm, freq_MHz) {
+function fold(mjds, pepoch, period, dm, tausc_1GHz, freq_MHz) {
   var delay;
+  tausc_1GHz /= 86400.0; // Convert to days
   let dedispersed_mjds = Array.from(mjds, (mjd, i) => {
     const D = 4.148808e3/86400.0; // Dispersion constant in the appropriate units
+    const sc_idx = -4.0;
     if (freq_MHz.constructor === Array) {
-      delay = D * dm / freq_MHz[i]**2;
+      dm_delay = D * dm / freq_MHz[i]**2;
+      sc_delay = tausc_1GHz * (freq_MHz[i] / 1e3)**sc_idx;
     } else {
-      delay = D * dm / freq_MHz**2;
+      dm_delay = D * dm / freq_MHz**2;
+      sc_delay = tausc_1GHz * (freq_MHz / 1e3)**sc_idx;
     }
-    return mjd - delay
+    return mjd - dm_delay - sc_delay;
   });
   let pulse_phases = dedispersed_mjds.map((mjd) => (mjd - pepoch)/(period/86400.0));
   let pulses = pulse_phases.map((pulse_phase) => Math.floor(pulse_phase + 0.5));

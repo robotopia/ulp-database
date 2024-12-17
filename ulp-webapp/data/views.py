@@ -882,7 +882,7 @@ def update_working_ephemeris(request, pk):
 
         # Do some validation here...
 
-        for field in ['pepoch', 'p0', 'p1', 'pb', 'dm', 'spec_alpha', 'spec_q']:
+        for field in ['pepoch', 'p0', 'p1', 'pb', 'dm', 'tausc_1GHz', 'spec_alpha', 'spec_q']:
             try:
                 setattr(working_ephemeris, field, float(request.POST[field]))
             except:
@@ -912,6 +912,12 @@ def toa_view(request, pk):
     # Get the relevant ToA object
     toa = get_object_or_404(models.Toa, pk=pk)
 
+    sc_idx = request.GET.get("sc_idx")
+    try:
+        sc_idx = float(sc_idx)
+    except:
+        sc_idx = -4.0
+
     # Get lightcurve shorthand
     lc = toa.pulse.lightcurve
     times = lc.bary_times(dm=0.0)
@@ -930,7 +936,6 @@ def toa_view(request, pk):
         tausc_1GHz = toa.template.working_ephemeris.tausc_1GHz
 
     if tausc_1GHz is not None:
-        sc_idx = -4.4
         tausc = tausc_1GHz * (lc.freq/1e3)**sc_idx
         scattered_template_values = toa.ampl * toa.template.values(
                 template_times - float(toa.toa_mjd),
@@ -983,12 +988,18 @@ def refit_toa(request, pk):
     # Get the relevant Toa object
     toa = get_object_or_404(models.Toa, pk=pk)
 
+    sc_idx = request.GET.get("sc_idx")
+    try:
+        sc_idx = float(sc_idx)
+    except:
+        sc_idx = -4.0
+
     # Get fitting options
     baseline_degree = int(request.POST.get('baseline_degree')) # Only values of 0 and 1 currently carry meaning. Everything else means "don't fit"
     use_tausc_1GHz = request.POST.get('use_tausc_1GHz') == 'on'
     try:
         tausc_1GHz = float(request.POST.get('tausc_1GHz'))
-        tausc = tausc_1GHz * (toa.pulse.lightcurve.freq/1e3)**-4.4 if use_tausc_1GHz else None
+        tausc = tausc_1GHz * (toa.pulse.lightcurve.freq/1e3)**sc_idx if use_tausc_1GHz else None
     except:
         tausc = None
 

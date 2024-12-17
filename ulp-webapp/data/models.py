@@ -900,7 +900,7 @@ class Template(AbstractPermission):
         related_name="templates",
     )
 
-    def values(self, times, tausc=None, freq=None, bw=None, sc_idx=-4.4, nchan=100):
+    def values(self, times, tausc=None, freq=None, bw=None, sc_idx=-4.0, nchan=100):
         '''
         Returns template values
         TODO: figure out a sensible normalisation for arbitrary templates
@@ -1108,7 +1108,7 @@ class Toa(models.Model):
         # Otherwise, return None, which means no baseline of any kind is fitted
         return None
 
-    def refit(self, save=True, tausc=None, sc_idx=-4.4, **kwargs):
+    def refit(self, save=True, tausc=None, sc_idx=-4.0, **kwargs):
         '''
         Because of the awkwardness of dealing with lightcurves with generally different
         sampling rates, we simply fit the template to the points, rather than

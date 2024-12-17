@@ -36,6 +36,11 @@
     <span class="error" id="dm_err">± {{ working_ephemeris.dm_err|default_if_none:'' }}</span>
   </div>
   <div class="compact-form-item">
+    <label for="tausc_1GHz">Scattering timescale at 1 GHz (s)</label>
+    <input id="tausc_1GHz" name="tausc_1GHz" type="number" step="any" value="{{ working_ephemeris.tausc_1GHz|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.tausc_1GHz|default_if_none:'' }});"/>
+    <span class="error" id="tausc_1GHz_err">± {{ working_ephemeris.tausc_1GHz_err|default_if_none:'' }}</span>
+  </div>
+  <div class="compact-form-item">
     <label for="spec_alpha">Spectrum: &alpha;</label>
     <input id="spec_alpha" name="spec_alpha" type="number" step="any" value="{{ working_ephemeris.spec_alpha|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); update_ephemeris_value(this, {{ working_ephemeris.spec_alpha|default_if_none:'' }});"/>
     <span class="error" id="spec_alpha_err">± {{ working_ephemeris.spec_alpha_err|default_if_none:'' }}</span>
@@ -118,14 +123,15 @@
     var xaxis      = document.getElementById('xaxis').value;
     var yaxis      = document.getElementById('yaxis').value;
 
-    var pepoch = document.getElementById('pepoch').value;
-    var period = document.getElementById('p0').value;
-    var p1     = document.getElementById('p1').value;
-    var pb     = document.getElementById('pb').value * 3600.0; // Convert to seconds
-    var dm     = document.getElementById('dm').value;
+    var pepoch     = document.getElementById('pepoch').value;
+    var period     = document.getElementById('p0').value;
+    var p1         = document.getElementById('p1').value;
+    var pb         = document.getElementById('pb').value * 3600.0; // Convert to seconds
+    var dm         = document.getElementById('dm').value;
+    var excess_tausc_1GHz = document.getElementById('tausc_1GHz').value - {{ working_ephemeris.tausc_1GHz }};
 
     toas = fold(
-      Array.from(data, (d) => d.toa_mjd), pepoch, period, dm,
+      Array.from(data, (d) => d.toa_mjd), pepoch, period, dm, excess_tausc_1GHz,
       Array.from(data, (d) => d.freq_MHz)
     );
 
@@ -139,7 +145,7 @@
       x = toas.phases;
       x_err = data.map((d) => d.toa_err_s/period);
     } else if (xaxis == 'orbital_phase') {
-      x = fold(Array.from(data, (d) => d.toa_mjd), pepoch, pb, dm,
+      x = fold(Array.from(data, (d) => d.toa_mjd), pepoch, pb, dm, excess_tausc_1GHz,
         Array.from(data, (d) => d.freq_MHz)
       ).phases;
       x_err = data.map((d) => d.toa_err_s/pb);
@@ -161,7 +167,7 @@
       y = toas.phases;
       y_err = data.map((d) => d.toa_err_s/period);
     } else if (yaxis == 'orbital_phase') {
-      y = fold(Array.from(data, (d) => d.toa_mjd), pepoch, pb, dm,
+      y = fold(Array.from(data, (d) => d.toa_mjd), pepoch, pb, dm, excess_tausc_1GHz,
         Array.from(data, (d) => d.freq_MHz)
         ).phases;
       y_err = data.map((d) => d.toa_err_s/pb);
@@ -298,6 +304,7 @@
     document.getElementById('p1').value = "{{ working_ephemeris.p1|default_if_none:'' }}";
     document.getElementById('pb').value = "{{ working_ephemeris.pb|default_if_none:'' }}";
     document.getElementById('dm').value = "{{ working_ephemeris.dm|default_if_none:'' }}";
+    document.getElementById('tausc_1GHz').value = "{{ working_ephemeris.tausc_1GHz|default_if_none:'' }}";
     document.getElementById('spec_alpha').value = "{{ working_ephemeris.spec_alpha|default_if_none:'' }}";
     document.getElementById('spec_q').value = "{{ working_ephemeris.spec_q|default_if_none:'' }}";
 
@@ -306,6 +313,7 @@
     document.getElementById('p1').style.backgroundColor = "field";
     document.getElementById('pb').style.backgroundColor = "field";
     document.getElementById('dm').style.backgroundColor = "field";
+    document.getElementById('tausc_1GHz').style.backgroundColor = "field";
     document.getElementById('spec_alpha').style.backgroundColor = "field";
     document.getElementById('spec_q').style.backgroundColor = "field";
   }
