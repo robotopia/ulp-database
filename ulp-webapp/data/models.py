@@ -900,6 +900,13 @@ class Template(AbstractPermission):
         related_name="templates",
     )
 
+    name = models.CharField(
+        max_length=127,
+        null=True,
+        blank=True,
+        help_text="An optional name to help the user distinguish multiple templates for the same source.",
+    )
+
     def values(self, times, tausc=None, freq=None, bw=None, sc_idx=-4.0, nchan=100):
         '''
         Returns template values
@@ -955,7 +962,10 @@ class Template(AbstractPermission):
         return self.updated < self.working_ephemeris.updated
 
     def __str__(self) -> str:
-        return f"Template for {self.working_ephemeris.ulp}"
+        res = f"Template ({self.pk}) for {self.working_ephemeris.ulp}"
+        if self.name is not None:
+            res += f" ({self.name})"
+        return res
 
     class Meta:
         ordering = ['working_ephemeris', 'updated']
@@ -1085,12 +1095,12 @@ class Toa(models.Model):
 
     @property
     def next_view(self):
-        next_toa = self.template.toas.filter(toa_mjd__gt=self.toa_mjd).earliest('toa_mjd')
+        next_toa = Toa.objects.filter(toa_mjd__gt=self.toa_mjd, template__working_ephemeris=self.template.working_ephemeris).earliest('toa_mjd')
         return reverse('toa_view', args=[next_toa.pk]) if next_toa else ''
 
     @property
     def prev_view(self):
-        prev_toa = self.template.toas.filter(toa_mjd__lt=self.toa_mjd).latest('toa_mjd')
+        prev_toa = Toa.objects.filter(toa_mjd__lt=self.toa_mjd, template__working_ephemeris=self.template.working_ephemeris).latest('toa_mjd')
         return reverse('toa_view', args=[prev_toa.pk]) if prev_toa else ''
 
     @property

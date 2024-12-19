@@ -75,13 +75,13 @@ class PulseAdmin(admin.ModelAdmin):
 
 @admin.register(Template)
 class TemplateAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'working_ephemeris', 'owner', 'updated']
+    list_display = ['pk', 'working_ephemeris', 'owner', 'name', 'updated']
     list_filter = ['working_ephemeris__ulp']
     fieldsets = [
         PermissionFieldset,
         (
             None, {
-                "fields": ["working_ephemeris"],
+                "fields": ["name", "working_ephemeris"],
             }
         ),
     ]
