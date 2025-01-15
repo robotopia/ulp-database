@@ -923,9 +923,10 @@ def toa_view(request, pk):
     times = lc.bary_times(dm=0.0)
     values = lc.values()
 
-    # Sample the template at N points between the first and last data point
+    min_t, max_t = toa.get_toa_range()
+
     N = 500
-    template_times = np.linspace(np.min(times), np.max(times), N)
+    template_times = np.linspace(min_t, max_t, N)
     template_values = toa.ampl * toa.template.values(template_times - float(toa.toa_mjd))
 
     # If there is a scattering timescale associated with this ToA, show the scattered
@@ -1048,6 +1049,7 @@ def toa_for_pulse(request, pk):
             pulse=pulse,
             template=template,
         )
+
         toa.refit(toa_mjd='peak', ampl='peak')
         # ^^^ This saves the new Toa object by default
 

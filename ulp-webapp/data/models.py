@@ -1084,6 +1084,28 @@ class Toa(models.Model):
         help_text="Whether to include this ToA in the timing fit.",
     )
 
+    def get_toa_range(self):
+        # Sample the template at N points between the first and last data point
+        # "First" point is either the first point in the lightcurve,
+        #   or the point closest to -0.5 phase, whichever is latest.
+        # "Last" point is either the last point in the lightcurve,
+        #   or the point closest to +0.5 phase, whichever is earliest.
+        lc = self.pulse.lightcurve
+        times = lc.bary_times(dm=0.0)
+
+        half_period = self.template.working_ephemeris.p0/2
+        toa_mjd = self.toa_mjd or 0.5*np.sum(self.pulse.bary_start_end())
+        pulse_start = float(toa_mjd) - half_period/86400
+        pulse_end = float(toa_mjd) + half_period/86400
+
+        lc_start = np.min(times)
+        lc_end = np.max(times)
+
+        min_t = pulse_start if lc_start < pulse_start else lc_start
+        max_t = pulse_end if lc_end > pulse_end else lc_end
+
+        return min_t, max_t
+
     @property
     def residual(self):
         '''
@@ -1154,11 +1176,18 @@ class Toa(models.Model):
         # Get lightcurve for this pulse
         lc = self.pulse.lightcurve
         times = lc.bary_times(dm=0.0)
-        t0 = times[0]
         values = lc.values()
 
+        min_t, max_t = self.get_toa_range()
+
+        on_pulse = np.logical_and(times >= min_t, times <= max_t)
+
+        times = times[on_pulse]
+        values = values[on_pulse]
+        t0 = times[0]
+
         # Set up the initial values
-        max_idx = np.argmax(values) # For possible use if either 'toa_mjd' or 'ampl' is initialised to 'peak'
+        max_idx = np.nanargmax(values) # For possible use if either 'toa_mjd' or 'ampl' is initialised to 'peak'
         if 'toa_mjd' in kwargs:
             self.toa_mjd = times[max_idx] if kwargs['toa_mjd'] == 'peak' else kwargs['toa_mjd']
 
@@ -1225,6 +1254,9 @@ class Toa(models.Model):
         # the two baseline parameters.
         toa_mjd_err, self.ampl_err = np.sqrt(np.diag(pcov)[:2])
         self.toa_err_s = toa_mjd_err * 86400.0
+
+        if self.ampl_ref_freq is None:
+            self.ampl_ref_freq = 1000.0 # This field is (or should be deprecated, but is required in the meantime
 
         if save:
             self.save()
