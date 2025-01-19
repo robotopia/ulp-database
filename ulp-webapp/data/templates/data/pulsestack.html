@@ -151,9 +151,10 @@
     let pepoch = parseFloat(document.getElementById('pepoch').value);
     let period = parseFloat(document.getElementById('p0').value);
     let dm = parseFloat(document.getElementById('dm').value);
+    let tausc_1GHz = parseFloat(document.getElementById('tausc_1GHz').value);
 
     folded_data.forEach((d) => {
-      pulses_phases = fold(d.mjds, pepoch, period, dm, d.freq_MHz);
+      pulses_phases = fold(d.mjds, pepoch, period, dm, tausc_1GHz, d.freq_MHz);
       d.x = pulses_phases.phases;
     });
     Plotly.react('pulsestack', folded_data, layout);
@@ -164,9 +165,10 @@
     let pepoch = parseFloat(document.getElementById('pepoch').value);
     let period = parseFloat(document.getElementById('p0').value);
     let dm = parseFloat(document.getElementById('dm').value);
+    let tausc_1GHz = parseFloat(document.getElementById('tausc_1GHz').value);
     on_value_change(element);
     folded_data.forEach((d) => {
-      pulses_phases = fold(d.mjds, pepoch, period, dm, d.freq_MHz);
+      pulses_phases = fold(d.mjds, pepoch, period, dm, tausc_1GHz, d.freq_MHz);
       d.x = pulses_phases.phases;
     });
     Plotly.react('pulsestack', folded_data, layout);
