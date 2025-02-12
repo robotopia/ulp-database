@@ -925,7 +925,7 @@ class Template(AbstractPermission):
                 df = bw/nchan
                 flo = freq - bw/2
                 freqs = np.arange(nchan)*df + flo + df/2
-                tauscs = tausc * (freq/freqs)**sc_idx
+                tauscs = tausc * (freq/freqs).decompose()**sc_idx
             else:
                 tauscs = np.array([tausc])
             τ, Times = np.meshgrid(tauscs, times*86400.0)
