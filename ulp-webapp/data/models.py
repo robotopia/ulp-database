@@ -936,7 +936,7 @@ class Template(AbstractPermission):
             dt = (times[1] - times[0])*86400.0
             for component in self.components.all():
                 A, μ, σ = component.weight, component.mu*86400.0, component.sigma*86400.0
-                dynspec += A*exponnorm.pdf(Times, τ, loc=μ, scale=σ) * np.sqrt(2*np.pi)*σ
+                dynspec += A*exponnorm.pdf(Times, τ/σ, loc=μ, scale=σ) * np.sqrt(2*np.pi)*σ
             lightcurve = np.mean(dynspec, axis=1)
         else:
             lightcurve = np.squeeze(sum_of_components)
