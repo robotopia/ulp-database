@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Value, BooleanField
 from django.urls import reverse
@@ -120,15 +121,12 @@ def barycentre_toas(toas, coord):
             toa.save()
 
 
+@login_required
 def toa_data(request, pk):
     # Retrieve the selected ULP
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
 
     # Make sure the user has the permissions to view this ULP
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Second, they have to belong to a group that has been granted access to
     # this ULP's data
@@ -151,11 +149,8 @@ def toa_data(request, pk):
     return JsonResponse(toas_json, safe=False)
 
 
+@login_required
 def timing_choose_ulp_view(request):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get ULPs to which they have access
     ulps = published_models.Ulp.objects.filter(
@@ -170,11 +165,8 @@ def timing_choose_ulp_view(request):
     return render(request, 'data/timing_choose_ulp.html', context)
 
 
+@login_required
 def timing_residual_view(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Retrieve the selected ULP
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -353,11 +345,8 @@ def timing_residual_view(request, pk):
     return render(request, 'data/timing_residuals.html', context)
 
 
+@login_required
 def toa_detail_view(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Retrieve the selected ULP
     toa = get_object_or_404(models.TimeOfArrival, pk=pk)
@@ -369,12 +358,8 @@ def toa_detail_view(request, pk):
 
     return render(request, 'data/toa_detail.html', context)
 
-
+@login_required
 def toas_view(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Retrieve the selected ToAs from the specified ULP
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -481,11 +466,8 @@ def add_or_update_pulse(request, pk):
 
     return redirect('lightcurve_view', pk=pk)
 
+@login_required
 def update_toa(request):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Turn the data into a dictionary
     data = json.loads(request.body.decode('utf-8'))
@@ -516,11 +498,8 @@ def update_toa(request):
     return HttpResponse(status=200)
 
 
+@login_required
 def lightcurve_view(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get the relevant Lightcurve object
     lightcurve = get_object_or_404(models.Lightcurve, pk=pk)
@@ -559,11 +538,8 @@ def lightcurve_view(request, pk):
     return render(request, 'data/lightcurve.html', context)
 
 
+@login_required
 def lightcurve_add(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get the relevant Ulp object
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -644,11 +620,8 @@ def lightcurve_add(request, pk):
         return redirect('lightcurve_view', pk=lightcurve.pk)
 
 
+@login_required
 def pulsestack_view(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get the relevant Ulp object
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -698,11 +671,8 @@ def pulsestack_view(request, pk):
     return render(request, 'data/pulsestack.html', context)
 
 
+@login_required
 def folding_view(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get the relevant Ulp object
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -771,11 +741,8 @@ def folding_view(request, pk):
     return render(request, 'data/folding.html', context)
 
 
+@login_required
 def folding_toa_view(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get the relevant Ulp object
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -865,11 +832,8 @@ def folding_toa_view(request, pk):
     return render(request, 'data/folding_toa.html', context)
 
 
+@login_required
 def update_working_ephemeris(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get the relevant Ulp object
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -903,11 +867,8 @@ def update_working_ephemeris(request, pk):
     return redirect('folding_toa_view', pk=ulp.pk)
 
 
+@login_required
 def toa_view(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get the relevant ToA object
     toa = get_object_or_404(models.Toa, pk=pk)
@@ -980,11 +941,8 @@ def toa_view(request, pk):
     return render(request, 'data/toa.html', context)
 
 
+@login_required
 def refit_toa(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get the relevant Toa object
     toa = get_object_or_404(models.Toa, pk=pk)
@@ -1021,11 +979,8 @@ def refit_toa(request, pk):
     return redirect(url_with_query)
 
 
+@login_required
 def toa_for_pulse(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get the relevant Lightcurve object
     pulse = get_object_or_404(models.Pulse, pk=pk)
@@ -1057,11 +1012,8 @@ def toa_for_pulse(request, pk):
     return redirect('toa_view', pk=toa.pk)
 
 
+@login_required
 def download_toas(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get the relevant Ulp object
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -1096,11 +1048,8 @@ def download_toas(request, pk):
     return response
 
 
+@login_required
 def download_working_ephemeris(request, pk):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
 
     # Get the relevant WorkingEphemeris object (which the user must own)
     working_ephemeris = get_object_or_404(models.WorkingEphemeris, pk=pk, owner=request.user)
