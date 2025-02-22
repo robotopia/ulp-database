@@ -108,7 +108,7 @@ def generate_toas(time_start, time_end, ephemeris):
     return mjds
 
 
-def barycentre_toas(toas, coord):
+def barycentre_toas(toas, coord, save=True):
     '''
     toa is a queryset containing toa objects
 
@@ -123,7 +123,8 @@ def barycentre_toas(toas, coord):
         if toa.raw_mjd is not None and not toa.barycentred:
             toa.mjd = toa.raw_mjd + Decimal(corrections[i].to('day').value)
             toa.barycentred = True
-            toa.save()
+            if save == True:
+                toa.save()
 
 
 @login_required
@@ -484,6 +485,40 @@ def convert_units(request):
         return HttpResponse(str(err), status=400)
 
     return JsonResponse(new_values, safe=False, status=200)
+
+@login_required
+def add_toa(request, pk):
+
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    try:
+        freq = float(request.POST.get('freq'))
+        raw_mjd = float(request.POST.get('raw_mjd'))
+        mjd_err = float(request.POST.get('mjd_err'))
+        telescope_name = request.POST.get('telescope_name')
+        freq_units = request.POST.get('freq_units')
+        mjd_err_units = request.POST.get('mjd_err_units')
+
+        freq *= u.Unit(freq_units)
+        mjd_err *= u.Unit(mjd_err_units)
+    except Exception as err:
+        return HttpResponse(str(err), status=400)
+
+    toa = models.TimeOfArrival(
+        owner=request.user,
+        ulp=ulp,
+        freq=freq.to(toa_freq_units).value,
+        raw_mjd=raw_mjd,
+        mjd_err=mjd_err.to(toa_mjd_err_units).value,
+        telescope_name=telescope_name,
+        mjd=raw_mjd,
+        barycentred=False,
+        dedispersed=False,
+    )
+
+    toa.save()
+
+    return redirect('toas_view', pk=pk)
 
 @login_required
 def update_toa(request):

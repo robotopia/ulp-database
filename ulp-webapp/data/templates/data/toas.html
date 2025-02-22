@@ -19,7 +19,9 @@
 </nav>
 
 <div class="toa-list">
-  <span><b>ID</b></span>
+
+  <!--<span><b>ID</b></span>-->
+  <input type="checkbox" id="select_all" onchange="toggle_select_all();"/>
   <span><b>Owner</b></span>
   <span><b>Frequency</b></span>
   <span><b>(Topocentric) MJD</b></span>
@@ -29,7 +31,7 @@
   <span></span>
   <span></span>
   <!--<span><b>{{ freq_units }}</b></span>-->
-  <select id="freq_units" name="freq_units" onchange="convert_freq_units();">
+  <select id="freq_units" name="freq_units" form="add_toa" onchange="convert_freq_units();">
     <option value="Hz" {% if freq_units == "Hz" %}selected{% endif %}>Hz</option>
     <option value="kHz" {% if freq_units == "kHz" %}selected{% endif %}>kHz</option>
     <option value="MHz" {% if freq_units == "MHz" %}selected{% endif %}>MHz</option>
@@ -37,7 +39,7 @@
   </select>
   <span></span>
   <!--<span><b>{{ mjd_err_units }}</b></span>-->
-  <select id="mjd_err_units" name="mjd_err_units" onchange="convert_time_units();">
+  <select id="mjd_err_units" name="mjd_err_units" form="add_toa" onchange="convert_time_units();">
     <option value="us" {% if mjd_err_units == "us" %}selected{% endif %}>μs</option>
     <option value="ms" {% if mjd_err_units == "ms" %}selected{% endif %}>ms</option>
     <option value="s" {% if mjd_err_units == "s" %}selected{% endif %}>s</option>
@@ -48,7 +50,12 @@
   <span></span>
 
   {% for toa in toas %}
-  <span><a href="{% url 'toa_detail_view' pk=toa.pk %}">{{ toa.pk }}</a></span>
+  {% if toa.editable is False %}
+  <span></span>
+  {% else %}
+  <input type="checkbox" id="cb_{{ toa.id }}" class="toa-cbs"/>
+  {% endif %}
+  <!--<span><a href="{% url 'toa_detail_view' pk=toa.pk %}">{{ toa.pk }}</a></span>-->
   <span>{{ toa.owner }}</span>
   <input type="number" class="freq-unit" id="freq_{{ toa.id }}" name="freq" value="{{ toa.freq|default_if_none:"" }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'freq', this, 'freq');" required/>
   <input type="number" id="raw_mjd_{{ toa.id }}" name="raw_mjd" value="{{ toa.raw_mjd|default_if_none:"" }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'raw_mjd', this, '');"/>
@@ -64,11 +71,36 @@
   <input type='checkbox' id="dedispersed" name="dedispersed" {% if toa.editable is False %}disabled{% endif %} {% if toa.dedispersed %}checked{% endif %} onchange="update_toa({{ toa.pk }}, 'dedispersed', this);"/>
   -->
   {% endfor %}
+
+  <input type="submit" value="+" form="add_toa"/>
+  <span></span>
+  <input type="number" class="freq-unit" id="new_freq" name="freq" form="add_toa" required/>
+  <input type="number" id="new_raw_mjd" name="raw_mjd" form="add_toa" required/>
+  <input type="number" class="time-unit" id="new_mjd_err" name="mjd_err" form="add_toa" required/>
+  <select id="new_telescope_name" name="telescope_name" form="add_toa" required>
+    <option value="">--Select telescope--</option>
+    {% for telescope in telescopes %}
+    <option value="{{ telescope }}">{{ telescope }}</option>
+    {% endfor %}
+  </select>
 </div>
+
+<form id="add_toa" method="post" action="{% url 'add_toa' pk=ulp.pk %}">
+  {% csrf_token %}
+</form>
 
 <script>
   var current_time_unit = "{{ mjd_err_units }}";
   var current_freq_unit = "{{ freq_units }}";
+
+  const select_all = document.getElementById('select_all');
+  const toa_cbs = document.getElementsByClassName('toa-cbs');
+
+  function toggle_select_all() {
+    for (toa_cb of toa_cbs) {
+      toa_cb.checked = select_all.checked;
+    }
+  }
 
   function update_toa(pk, field, cell, unit) {
 

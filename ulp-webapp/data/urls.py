@@ -8,6 +8,7 @@ urlpatterns = [
     re_path(r'^timing/(?P<pk>[0-9]+)$', views.timing_residual_view, name="timing_residuals"),
     re_path(r'^timing/toa_detail/(?P<pk>[0-9]+)$', views.toa_detail_view, name="toa_detail_view"),
     re_path(r'^timing/toas/(?P<pk>[0-9]+)$', views.toas_view, name="toas_view"),
+    re_path(r'^timing/add_toa/(?P<pk>[0-9]+)$', views.add_toa, name="add_toa"),
     re_path(r'^timing/toa/(?P<pk>[0-9]+)$', views.toa_view, name="toa_view"),  # Different sort of ToA to the above ones!!
     re_path(r'^timing/refit_toa/(?P<pk>[0-9]+)$', views.refit_toa, name="refit_toa"),
     re_path(r'^timing/lightcurve/(?P<pk>[0-9]+)$', views.lightcurve_view, name="lightcurve_view"),
