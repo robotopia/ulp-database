@@ -108,25 +108,6 @@ def generate_toas(time_start, time_end, ephemeris):
     return mjds
 
 
-def barycentre_toas(toas, coord, save=True):
-    '''
-    toa is a queryset containing toa objects
-
-    This will check if the toa has been barycentred, and, if not,
-    it will barycentre it.
-    '''
-
-    mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
-    corrections = bc_corr(coord, mjds)
-    for i in range(len(toas)):
-        toa = toas[i]
-        if toa.raw_mjd is not None and not toa.barycentred:
-            toa.mjd = toa.raw_mjd + Decimal(corrections[i].to('day').value)
-            toa.barycentred = True
-            if save == True:
-                toa.save()
-
-
 @login_required
 def toa_data(request, pk):
     # Retrieve the selected ULP
@@ -184,12 +165,13 @@ def timing_residual_view(request, pk):
     # Second, they have to belong to a group that has been granted access to
     # this ULP's data
     if not ulp.data_access_groups.filter(user=request.user).exists() and not request.user in ulp.whitelist_users.all():
-        return HttpResponse(status=404)
+        return redirect('timing_choose_ulp')
 
     # Otherwise, grant them access, and get the TOAs!
     toas = models.TimeOfArrival.objects.filter(ulp=ulp)
-    if not toas.exists():
-        return HttpResponse(status=404)
+
+    # Now limit only to those that this user has view access to
+    toas = permitted_to_view_filter(toas, request.user)
 
     ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
         Q(measurement__ulp=ulp) &
@@ -207,17 +189,22 @@ def timing_residual_view(request, pk):
     ### force a bunch of topocentric TOAs to be made barycentric. This makes changes
     ### to the database itself.
     coord = ephemeris_to_skycoord(ephemeris)
-    barycentre_toas(toas, coord)
+    mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
+    corrections = bc_corr(coord, mjds)
+    for i in range(len(toas)):
+        toa = toas[i]
+        if toa.raw_mjd is not None: # and not toa.barycentred:
+            toa.mjd = toa.raw_mjd + Decimal(corrections[i].to('day').value)
 
     # Do something similar for toas that are not yet dediserpsed, but for which a frequency is given
     if 'DM' in ephemeris.keys():
         dm = ephemeris['DM'] * u.pc / u.cm**3
         for toa in toas:
-            if toa.freq is not None and toa.dedispersed == False:
+            if toa.freq is not None: # and toa.dedispersed == False:
                 delay = calc_dmdelay(dm, toa.freq*u.MHz, np.inf*u.MHz)
                 toa.mjd -= Decimal(delay.to('d').value)
-                toa.dedispersed = True
-                toa.save()
+                #toa.dedispersed = True
+                #toa.save()
 
     output_toa_format = 'mjd'
     min_el = 0.0
