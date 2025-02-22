@@ -374,17 +374,8 @@ def toas_view(request, pk):
     toas = permitted_to_view_filter(toas, request.user)
 
     # Make sure the requested display units are dimensionally correct; if not, use default
-    try:
-        freq_units = request.GET.get("freq_units")
-        foo = (1*u.Unit(freq_units)).to(toa_freq_units)
-    except:
-        freq_units = "MHz"
-
-    try:
-        mjd_err_units = request.GET.get("mjd_err_units") or "min"
-        foo = (1*u.Unit(mjd_err_units)).to(toa_mjd_err_units)
-    except:
-        mjd_err_units = "min"
+    freq_units = "MHz"
+    mjd_err_units = "us"
 
     # Annotate ToAs according to whether the user can edit it or not
     # See, e.g., https://stackoverflow.com/questions/41354910/how-to-annotate-the-result-of-a-model-method-to-a-django-queryset

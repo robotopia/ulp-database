@@ -6,22 +6,54 @@
 
 <h1>{{ ulp }}</h1>
 
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <div class="collapse navbar-collapse">
+      <div class="navbar-nav">
+        <a class="nav-link" href="{% url 'timing_residuals' pk=ulp.pk %}">Predict ToAs</a>
+        <!--<a class="nav-link nav-link-active" href="{% url 'toas_view' pk=ulp.pk %}">Edit ToAs</a>-->
+        <span class="nav-link nav-link-active" style="cursor: default;">Edit ToAs</span>
+      </div>
+    </div>
+  </div>
+</nav>
+
 <div class="toa-list">
   <span><b>ID</b></span>
-  <span><b>Frequency ({{ freq_units }})</b></span>
-  <span><b>Bandwidth ({{ freq_units }})</b></span>
-  <span><b>MJD</b></span>
-  <span><b>Raw MJD</b></span>
-  <span><b>MJD error ({{ mjd_err_units }})</b></span>
-  <span><b>Telescope name</b></span>
+  <span><b>Owner</b></span>
+  <span><b>Frequency</b></span>
+  <span><b>(Topocentric) MJD</b></span>
+  <span><b>MJD error</b></span>
+  <span><b>(Astropy) Telescope name</b></span>
+
+  <span></span>
+  <span></span>
+  <!--<span><b>{{ freq_units }}</b></span>-->
+  <select id="freq_units" name="freq_units">
+    <option value="Hz" {% if freq_units == "Hz" %}selected{% endif %}>Hz</option>
+    <option value="kHz" {% if freq_units == "kHz" %}selected{% endif %}>kHz</option>
+    <option value="MHz" {% if freq_units == "MHz" %}selected{% endif %}>MHz</option>
+    <option value="GHz" {% if freq_units == "GHz" %}selected{% endif %}>GHz</option>
+  </select>
+  <span></span>
+  <!--<span><b>{{ mjd_err_units }}</b></span>-->
+  <select id="mjd_err_units" name="mjd_err_units">
+    <option value="us" {% if mjd_err_units == "us" %}selected{% endif %}>μs</option>
+    <option value="ms" {% if mjd_err_units == "ms" %}selected{% endif %}>ms</option>
+    <option value="s" {% if mjd_err_units == "s" %}selected{% endif %}>s</option>
+    <option value="min" {% if mjd_err_units == "min" %}selected{% endif %}>min</option>
+    <option value="hr" {% if mjd_err_units == "hr" %}selected{% endif %}>hr</option>
+    <option value="d" {% if mjd_err_units == "d" %}selected{% endif %}>d</option>
+  </select>
+  <span></span>
+
   {% for toa in toas %}
   <span><a href="{% url 'toa_detail_view' pk=toa.pk %}">{{ toa.pk }}</a></span>
-  <input type="number" id="freq" name="freq" value="{{ toa.freq }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'freq', this, '{{ freq_units }}');" required/>
-  <input type="number" id="bw" name="bw" value="{{ toa.bw }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'bw', this, '{{ freq_units }}');" required/>
-  <input type="number" id="mjd" name="mjd" value="{{ toa.mjd }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'mjd', this, '');"/>
-  <input type="number" id="raw_mjd" name="raw_mjd" value="{{ toa.raw_mjd }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'raw_mjd', this, '');"/>
-  <input type="number" id="mjd_err" name="mjd_err" value="{{ toa.mjd_err }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'mjd_err', this, '{{ mjd_err_units }}');"/>
-  <select id="telescope_name" name="telescope_name" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'telescope_name', this, '');">
+  <span>{{ toa.owner }}</span>
+  <input type="number" id="freq_{{ toa.id }}" name="freq" value="{{ toa.freq|default_if_none:"" }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'freq', this, '{{ freq_units }}');" required/>
+  <input type="number" id="raw_mjd_{{ toa.id }}" name="raw_mjd" value="{{ toa.raw_mjd|default_if_none:"" }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'raw_mjd', this, '');"/>
+  <input type="number" id="mjd_err_{{ toa.id }}" name="mjd_err" value="{{ toa.mjd_err|default_if_none:"" }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'mjd_err', this, '{{ mjd_err_units }}');"/>
+  <select id="telescope_name_{{ toa.id }}" name="telescope_name" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'telescope_name', this, '');">
     <option value="">--Select telescope--</option>
     {% for telescope in telescopes %}
     <option value="{{ telescope }}" {% if telescope == toa.telescope_name %}selected{% endif %}>{{ telescope }}</option>
