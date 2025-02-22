@@ -9,6 +9,10 @@ from common.utils import *
 from django.utils.timezone import now
 from urllib.parse import urlencode
 
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+
 from published import models as published_models
 from published.views import get_accessible_measurements
 
@@ -20,6 +24,7 @@ from astropy.coordinates import SkyCoord, Angle, EarthLocation, AltAz, get_sun
 from astropy.constants import c
 from astropy.time import Time
 from decimal import Decimal
+import io
 
 from spiceypy.spiceypy import spkezr, furnsh, j2000, spd, unload
 import pandas as pd
@@ -566,8 +571,6 @@ def lightcurve_add(request, pk):
         except:
             dm_freq = None
 
-        toas = [get_object_or_404(models.TimeOfArrival, pk=toa_pk) for toa_pk in request.POST.getlist('toas')]
-
         # Add the lightcurve
         lightcurve = models.Lightcurve(
             owner=request.user,
@@ -581,11 +584,6 @@ def lightcurve_add(request, pk):
             telescope=request.POST['telescope'],
         )
         lightcurve.save()
-
-        # Associate the TOAs
-        for toa in toas:
-            toa.lightcurve = lightcurve
-            toa.save()
 
         # Add the lightcurve points
         pols = request.POST['pol_cols'].split()
@@ -992,13 +990,14 @@ def toa_for_pulse(request, pk):
     # At the moment, this will fail if multiple templates exist that fit these criteria,
     # which could happen because (AFAIK) there isn't any such constraint on the database table
     # (but perhaps there should be...??)
-    template = get_object_or_404(models.Template, owner=request.user, working_ephemeris=we)
+    template = models.Template.objects.filter(owner=request.user, working_ephemeris=we).first()
 
     # If a ToA already exists with this pulse number, just go to that page;
     # otherwise, create one
     toa = models.Toa.objects.filter(pulse=pulse, template=template).first()
 
     if toa is None:
+        print("here3.0")
         # Make an initial fit with the default settings
         toa = models.Toa(
             pulse=pulse,
@@ -1082,4 +1081,69 @@ def download_working_ephemeris(request, pk):
 
     # Return the response!
     return response
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def upload_lightcurve(request):
+    if 'file' in request.FILES:
+        uploaded_file = request.FILES['file']
+
+        try:
+            file_content = uploaded_file.read()
+            stream = io.BytesIO(file_content)
+            data = np.load(stream, allow_pickle=True).item() # This should now be a dictionary
+
+            ###########
+            try:
+                ulp_pk = request.GET.get('ulp')
+                if not ulp_pk or not ulp_pk.isdigit():
+                    raise ValueError(f"Invalid ulp id {ulp_pk}")
+                ulp = published_models.Ulp.objects.get(pk=int(ulp_pk))
+            except published_models.Ulp.DoesNotExist:
+                raise Exception(f"ULP {ulp_pk} does not exist.")
+            except ValueError as e:
+                raise Exception(f"Invalid ulp id: {ulp_pk}. Error: {str(e)}")
+            except Exception as e:
+                raise Exception(f"An unexpected error occurred: {str(e)}")
+            
+            # Add the lightcurve
+            lightcurve = models.Lightcurve(
+                owner=request.user,
+                ulp=ulp,
+                freq=data['CTR_FREQ'],
+                bw=data['BW'],
+                t0=data['TIME'][0],
+                dt=(data['TIME'][-1] - data['TIME'][0])/(len(data['TIME']) - 1) * 86400.0,
+                dm=data['DM'],
+                dm_freq=data['DMREFFREQ'],
+                telescope=data['TELESCOPE'],
+            )
+
+            # If the DM frequency is infinite, store 'None' in the database, which
+            # has that exact special meaning
+            if lightcurve.dm_freq == np.inf:
+                lightcurve.dm_freq = None
+
+            lightcurve.save()
+
+            # Add the lightcurve points
+            for i in range(data['LIGHTCURVE'].shape[0]):
+                lightcurve_point = models.LightcurvePoint(
+                    lightcurve=lightcurve,
+                    sample_number=i,
+                    pol=data['POL'],
+                    value=data['LIGHTCURVE'][i],
+                )
+
+                lightcurve_point.save()
+
+            ###########
+
+            return JsonResponse({'message': 'Lightcurve uploaded successfully', 'pk': lightcurve.pk, 'url': reverse('lightcurve_view', args=[lightcurve.pk])}, status=201)
+        except Exception as e:
+            return JsonResponse({'error': 'Failed to process the pickle file', 'details': str(e)}, status=400)
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 

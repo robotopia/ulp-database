@@ -73,6 +73,7 @@
         line: {
           color: freq_color(d.freq_MHz, {{ freq_range.min }}, {{ freq_range.max }}),
         },
+        freq_MHz: d.freq_MHz,
       };
     });
   }
@@ -89,8 +90,8 @@
   //console.log(folded_data);
 
   var layout = get_plotly_default_layout();
-  layout.height = 50*data.length;
-  layout.width = 1000;
+  layout.height = 100*folded_data.length;
+  //layout.width = 1000;
   layout.showlegend = false;
   layout.coloraxis = {
     cmin: {{ freq_range.min }},
@@ -122,7 +123,7 @@
       folded_data.forEach((d, p) => {
         d.y = d.values.map((v) => v*scale + p);
       });
-      layout.height = 100*data.length;
+      layout.height = 100*folded_data.length;
     } else if (document.getElementById('sparse').checked) {
       folded_data.forEach((d, p) => {
         d.y = d.values.map((v, i) => v*scale + d.pulses[i]);
@@ -151,9 +152,10 @@
     let pepoch = parseFloat(document.getElementById('pepoch').value);
     let period = parseFloat(document.getElementById('p0').value);
     let dm = parseFloat(document.getElementById('dm').value);
+    let tausc_1GHz = parseFloat(document.getElementById('tausc_1GHz').value);
 
     folded_data.forEach((d) => {
-      pulses_phases = fold(d.mjds, pepoch, period, dm, d.freq_MHz);
+      pulses_phases = fold(d.mjds, pepoch, period, dm, tausc_1GHz, d.freq_MHz);
       d.x = pulses_phases.phases;
     });
     Plotly.react('pulsestack', folded_data, layout);
@@ -164,9 +166,10 @@
     let pepoch = parseFloat(document.getElementById('pepoch').value);
     let period = parseFloat(document.getElementById('p0').value);
     let dm = parseFloat(document.getElementById('dm').value);
+    let tausc_1GHz = parseFloat(document.getElementById('tausc_1GHz').value);
     on_value_change(element);
     folded_data.forEach((d) => {
-      pulses_phases = fold(d.mjds, pepoch, period, dm, d.freq_MHz);
+      pulses_phases = fold(d.mjds, pepoch, period, dm, tausc_1GHz, d.freq_MHz);
       d.x = pulses_phases.phases;
     });
     Plotly.react('pulsestack', folded_data, layout);

@@ -31,6 +31,10 @@
     <input id="dm" name="dm" type="number" step="any" value="{{ working_ephemeris.dm|default_if_none:'' }}" onchange="redraw_plot();"/>
   </div>
   <div class="compact-form-item">
+    <label for="tausc_1GHz">Scattering timescale at 1 GHz (s)</label>
+    <input id="tausc_1GHz" name="tausc_1GHz" type="number" step="any" value="{{ working_ephemeris.tausc_1GHz|default_if_none:'' }}" onchange="redraw_plot();"/>
+  </div>
+  <div class="compact-form-item">
     <label for="spec_alpha">Spectrum: &alpha;</label>
     <input id="spec_alpha" name="spec_alpha" type="number" step="any" value="{{ working_ephemeris.spec_alpha|default_if_none:'' }}" onchange="toggle_scale_flux_disabled(); dredraw_plot();"/>
   </div>
@@ -105,9 +109,10 @@
     var p1     = document.getElementById('p1').value
     var pb     = document.getElementById('pb').value * 3600.0; // Convert to seconds
     var dm     = document.getElementById('dm').value
+    var tausc_1GHz = document.getElementById('tausc_1GHz').value
 
     lightcurve_ctrs = fold(Array.from(data, (d) => d.mjd_ctr), pepoch, period,
-      {{ working_ephemeris.dm }},
+      {{ working_ephemeris.dm }}, tausc_1GHz,
       Array.from(data, (d) => d.freq_MHz)
     );
 
@@ -129,7 +134,7 @@
       x_err = data.map((d) => d.mjd_radius*86400/period);
     } else if (xaxis == 'orbital_phase') {
       x = fold(Array.from(data, (d) => d.mjd_ctr), pepoch, pb,
-        {{ working_ephemeris.dm }},
+        {{ working_ephemeris.dm }}, tausc_1GHz,
         Array.from(data, (d) => d.freq_MHz)
       ).phases;
       x_err = data.map((d) => d.mjd_radius*86400/pb);
@@ -159,7 +164,7 @@
       y_err = data.map((d) => d.mjd_radius*86400/period);
     } else if (yaxis == 'orbital_phase') {
       y = fold(Array.from(data, (d) => d.mjd_ctr), pepoch, pb,
-        {{ working_ephemeris.dm }},
+        {{ working_ephemeris.dm }}, tausc_1GHz,
         Array.from(data, (d) => d.freq_MHz)
       ).phases;
       y_err = data.map((d) => d.mjd_radius*86400/pb);
