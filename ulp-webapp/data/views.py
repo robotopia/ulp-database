@@ -486,6 +486,24 @@ def convert_units(request):
 
     return JsonResponse(new_values, safe=False, status=200)
 
+
+@login_required
+def act_on_toas(request, pk):
+
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    # Parse out the ToA primary keys from the selected checkbox names
+    toa_pks = [int(key[3:]) for key in request.POST.keys() if key.startswith('cb_')]
+
+    # Get only the ToAs the user has permission to change
+    toas = permitted_to_edit_filter(models.TimeOfArrival.objects.filter(pk__in=toa_pks), request.user)
+
+    if request.POST.get('action_on_selected') == 'delete':
+        toas.delete()
+
+    return redirect('toas_view', pk=pk)
+
+
 @login_required
 def add_toa(request, pk):
 

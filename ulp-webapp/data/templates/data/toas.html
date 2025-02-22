@@ -18,6 +18,17 @@
   </div>
 </nav>
 
+<div style="padding: 10px;">
+  <form id="act_on_toas" method="post" action="{% url 'act_on_toas' pk=ulp.pk %}">
+    {% csrf_token %}
+    <select name="action_on_selected">
+      <option value=""></option>
+      <option value="delete">Delete selected ToAs</option>
+    </select>
+    <input type="submit" value="Go"/>
+  </form>
+</div>
+
 <div class="toa-list">
 
   <!--<span><b>ID</b></span>-->
@@ -53,7 +64,7 @@
   {% if toa.editable is False %}
   <span></span>
   {% else %}
-  <input type="checkbox" id="cb_{{ toa.id }}" class="toa-cbs"/>
+  <input type="checkbox" id="cb_{{ toa.id }}" name="cb_{{ toa.id }}" class="toa-cbs" form="act_on_toas"/>
   {% endif %}
   <!--<span><a href="{% url 'toa_detail_view' pk=toa.pk %}">{{ toa.pk }}</a></span>-->
   <span>{{ toa.owner }}</span>
