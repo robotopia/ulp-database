@@ -185,9 +185,7 @@ def timing_residual_view(request, pk):
     # Construct a dictionary out of the ephemeris
     ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
 
-    ### WARNING: This is commented out deliberately. Only uncomment if you need to "manually"
-    ### force a bunch of topocentric TOAs to be made barycentric. This makes changes
-    ### to the database itself.
+    # Barycentre
     coord = ephemeris_to_skycoord(ephemeris)
     mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
     corrections = bc_corr(coord, mjds)

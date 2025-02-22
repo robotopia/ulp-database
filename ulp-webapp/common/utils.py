@@ -109,7 +109,6 @@ def barycentre(ulp, times, location):
     bc_times = (location_times.tdb + bc_correction).value # Apply correction, and convert back to MJD values
     return bc_times
 
-
 def scale_to_frequency(freq_MHz, S_freq, freq_target_MHz, alpha, q=0):
     '''
     Compare scale_flux() in common.js
