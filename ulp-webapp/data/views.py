@@ -462,6 +462,29 @@ def add_or_update_pulse(request, pk):
 
     return redirect('lightcurve_view', pk=pk)
 
+
+def convert_units(request):
+
+    # Turn the data into a dictionary
+    data = json.loads(request.body.decode('utf-8'))
+
+    # Get the values to be converted, and the units conversions to be effected
+    try:
+        values = data['values']
+        from_unit = data['from_unit']
+        to_unit = data['to_unit']
+
+        # Do the conversion
+        # astropy.units and/or numpy can't handle None's being in the array, so convert to NaNs first
+        values = [value if value != None else np.nan for value in values]
+        quantities = (values * u.Unit(from_unit)).to(to_unit)
+        new_values = [value if np.isfinite(value) else None for value in quantities.value]
+
+    except Exception as err:
+        return HttpResponse(str(err), status=400)
+
+    return JsonResponse(new_values, safe=False, status=200)
+
 @login_required
 def update_toa(request):
 
