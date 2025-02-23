@@ -25,7 +25,7 @@
   <label for="working_ephemeris_select">Owner:</label>
   <select id="working_ephemeris_select" name="working_ephemeris_pk">
     {% for we in working_ephemerides %}
-    <option value="{{ we.pk }}">{{ we.owner }}</option>
+    <option value="{{ we.pk }}" {% if selected_working_ephemeris.pk == we.pk %}selected{% endif %}>{{ we.owner }}</option>
     {% endfor %}
   </select>
 </div>
@@ -34,28 +34,64 @@
   {% csrf_token %}
 
   <div class="compact-form-item">
+    <label><b>Parameter</b></label>
+    <span><b>Value</b></span>
+    <span><b>Set to published value</b></span>
+  </div>
+
+  <div class="compact-form-item">
     <label for="raj">RAJ</label>
     <input id="raj" name="raj" value="{{ ephemeris.RAJ }}" step="any" required/>
+    <select>
+      <option value=""></option>
+      {% for ra in published_ephemeris_values.ras %}
+      <option value="{{ ra.formatted_quantity }}">{{ ra.formatted_quantity }} from {{ ra.article }}</option>
+      {% endfor %}
+    </select>
   </div>
 
   <div class="compact-form-item">
     <label for="decj">DECJ</label>
     <input id="decj" name="decj" value="{{ ephemeris.DECJ }}" step="any" required/>
+    <select>
+      <option value=""></option>
+      {% for dec in published_ephemeris_values.decs %}
+      <option value="{{ dec.formatted_quantity }}">{{ dec.formatted_quantity }} from {{ dec.article }}</option>
+      {% endfor %}
+    </select>
   </div>
 
   <div class="compact-form-item">
     <label for="pepoch">PEPOCH</label>
     <input type="number" id="pepoch" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="replot()" required/>
+    <select>
+      <option value=""></option>
+      {% for pepoch in published_ephemeris_values.pepochs %}
+      <option value="{{ pepoch.formatted_quantity }}">{{ pepoch.formatted_quantity }} from {{ pepoch.article }}</option>
+      {% endfor %}
+    </select>
   </div>
 
   <div class="compact-form-item">
     <label for="folding-period">P0</label>
     <input type="number" id="folding-period" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="replot()" required/>
+    <select>
+      <option value=""></option>
+      {% for period in published_ephemeris_values.periods %}
+      <option value="{{ period.formatted_quantity }}">{{ period.formatted_quantity }} from {{ period.article }}</option>
+      {% endfor %}
+    </select>
   </div>
 
   <div class="compact-form-item">
     <label for="dm">DM</label>
     <input type="number" id="dm" name="dm" value="{{ ephemeris.DM }}" step="any" required/>
+    <select>
+      <option value=""></option>
+      {% for dm in published_ephemeris_values.dms %}
+      <option value="{{ dm.formatted_quantity }}">{{ dm.formatted_quantity }} from {{ dm.article }}</option>
+      {% endfor %}
+    </select>
   </div>
 
   <h2>Predictions</h2>

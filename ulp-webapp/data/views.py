@@ -174,7 +174,7 @@ def timing_residual_view(request, pk):
     toas = permitted_to_view_filter(toas, request.user)
 
     # Get the working ephemerides that are available to this user
-    working_ephemerides = permitted_to_view_filter(models.WorkingEphemeris.objects.filter(ulp=ulp), request.user)
+    working_ephemerides = permitted_to_view_filter(models.WorkingEphemeris.objects.filter(ulp=ulp), request.user).order_by('owner')
 
     # If there aren't any, make a default one for the user!
     if not working_ephemerides.exists():
@@ -183,6 +183,21 @@ def timing_residual_view(request, pk):
         working_ephemerides = permitted_to_view_filter(models.WorkingEphemeris.objects.filter(ulp=ulp), request.user)
 
     context['working_ephemerides'] = working_ephemerides
+
+    # Choose a working ephemeris to be 'selected'
+    try:
+        context['selected_working_ephemeris'] = working_ephemerides.get(pk=request.POST.get('working_ephemeris_pk'))
+    except:
+        context['selected_working_ephemeris'] = working_ephemerides.get(owner=request.user)
+
+    # Pool together lists of published values to offer as options to the user
+    context['published_ephemeris_values'] = {
+        'ras': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Right ascension", article__isnull=False),
+        'decs': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Declination", article__isnull=False),
+        'pepochs': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="PEPOCH", article__isnull=False),
+        'periods': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Period", article__isnull=False),
+        'dm': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Dispersion measure", article__isnull=False),
+    }
 
     ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
         Q(measurement__ulp=ulp) &
