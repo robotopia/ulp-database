@@ -127,7 +127,7 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
   // xlim and ylim should be of the form:
   //     [-5, 5]
   // ephemeris should be an object of the form:
-  //     {folding_period: 1000.0, pepoch: 60000.0}
+  //     {folding_period: 1000.0, pepoch: 60000.0, dm: 100.0}
   // plot should be an object returned by create_residual_plot_elements()
 
   // Attach margins amd lims to plot object
@@ -197,13 +197,22 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
   plot.zero_residual_path.attr("d", "M 0," + plot.y(0) + " l " + plot.width + ",0");
 }
 
-function add_residual_data(plot, toa_url, color, ephemeris) {
+function add_residual_data(plot, toa_url, color, ephemeris, barycentre) {
   // plot should be an object returned by create_residual_plot_elements()
   // toas should be an array of objects of the form:
-  //     [{'mjd': 60001.0, 'mjd_err': 1e-4}, ... ]
+  //     [{mjd: 60001.0, mjd_err: 1e-4, bc_correction: 0.001, freq_MHz: 200.0}, ... ]
   // color can be any string representing a valid color
+  // ephemeris should be an object of the form:
+  //     {folding_period: 1000.0, pepoch: 60000.0, dm: 100.0}
 
   d3.json(toa_url, function(toas) {
+
+    // Apply barycentric correction, if requested
+    if (barycentre === true) {
+      for (toa of toas) {
+        toa.mjd += toa.bc_correction;
+      }
+    }
 
     const datapoints = plot.g.append("g")
 
@@ -231,19 +240,29 @@ function add_residual_data(plot, toa_url, color, ephemeris) {
   });
 }
 
+function calc_dmdelay(dm, freq_MHz) {
+  // Returns answer in units of days
+  dmdelay = (4.148808e3 / 86400.0) * dm / (freq_MHz*freq_MHz);
+  return dmdelay;
+}
+
 function position_residual_data(plot, ephemeris) {
   // plot should be an object returned by create_residual_plot_elements()
   // ephemeris should be an object of the form:
-  //     {folding_period: 1000.0, pepoch: 60000.0}
+  //     {folding_period: 1000.0, pepoch: 60000.0, dm: 100.0}
 
   plot.toa_points
-    .attr("cx", function (toa) { return plot.x2(calc_pulse_phase(toa.mjd, ephemeris).pulse); })
-    .attr("cy", function (toa) { return plot.y(calc_pulse_phase(toa.mjd, ephemeris).phase); })
+    .attr("cx", function (toa) {
+      return plot.x2(calc_pulse_phase(toa.mjd - calc_dmdelay(ephemeris.dm, toa.freq_MHz), ephemeris).pulse);
+    })
+    .attr("cy", function (toa) {
+      return plot.y(calc_pulse_phase(toa.mjd - calc_dmdelay(ephemeris.dm, toa.freq_MHz), ephemeris).phase);
+    })
 
   plot.toa_err_points
     .attr("d", function (toa) {
-      const pulse_phase_lo = calc_pulse_phase(toa.mjd - toa.mjd_err, ephemeris);
-      const pulse_phase_hi = calc_pulse_phase(toa.mjd + toa.mjd_err, ephemeris);
+      const pulse_phase_lo = calc_pulse_phase(toa.mjd - calc_dmdelay(ephemeris.dm, toa.freq_MHz) - toa.mjd_err, ephemeris);
+      const pulse_phase_hi = calc_pulse_phase(toa.mjd - calc_dmdelay(ephemeris.dm, toa.freq_MHz) + toa.mjd_err, ephemeris);
 
       const pulse_lo = pulse_phase_lo.pulse;
       const pulse_hi = pulse_phase_hi.pulse;

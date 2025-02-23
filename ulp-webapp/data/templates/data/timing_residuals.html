@@ -40,7 +40,7 @@
   </div>
 
   <div class="compact-form-item">
-    <label for="raj">RAJ*</label>
+    <label for="raj">RAJ</label>
     <input id="raj" name="raj" value="{{ ephemeris.RAJ }}" step="any" required/>
     <select>
       <option value=""></option>
@@ -51,7 +51,7 @@
   </div>
 
   <div class="compact-form-item">
-    <label for="decj">DECJ*</label>
+    <label for="decj">DECJ</label>
     <input id="decj" name="decj" value="{{ ephemeris.DECJ }}" step="any" required/>
     <select>
       <option value=""></option>
@@ -85,7 +85,7 @@
 
   <div class="compact-form-item">
     <label for="dm">DM</label>
-    <input type="number" id="dm" name="dm" value="{{ ephemeris.DM }}" step="any" required/>
+    <input type="number" id="dm" name="dm" value="{{ ephemeris.DM }}" step="any" onchange="replot()" required/>
     <select>
       <option value=""></option>
       {% for dm in published_ephemeris_values.dms %}
@@ -93,8 +93,6 @@
       {% endfor %}
     </select>
   </div>
-
-  <p>*Changes to RAJ and DECJ will not update the residual plot until they are saved.</p>
 
   <h2>Predictions</h2>
 
@@ -173,6 +171,7 @@
   // Get the folding period and the PEPOCH
   const folding_period_element = document.getElementById("folding-period")
   const pepoch_element = document.getElementById("pepoch")
+  const dm_element = document.getElementById("dm")
 
   // set the dimensions and margins of the graph
   var parentDiv = document.getElementById("residual-plot");
@@ -184,9 +183,11 @@
   var margin = {top: 50, right: 80, bottom: 50, left: 80};
   var folding_period = folding_period_element.value;
   var pepoch = pepoch_element.value;
-  ephemeris = {
+  var dm = dm_element.value;
+  var ephemeris = {
     folding_period: folding_period_element.value,
-    pepoch: pepoch_element.value
+    pepoch: pepoch_element.value,
+    dm: dm_element.value,
   };
 
   var xlim = [{{ plot_specs.xmin }}, {{ plot_specs.xmax }}];
@@ -195,6 +196,11 @@
   set_residual_plot_dimensions(plot, xlim, ylim, margin, ephemeris);
 
   function replot() {
+    ephemeris = {
+      folding_period: folding_period_element.value,
+      pepoch: pepoch_element.value,
+      dm: dm_element.value,
+    };
     position_residual_data(plot, ephemeris);
   }
 
@@ -206,7 +212,8 @@
 
     var ephemeris = {
       folding_period: folding_period_element.value,
-      pepoch: pepoch_element.value
+      pepoch: pepoch_element.value,
+      dm: dm_element.value,
     };
 
     plot_zoom(plot, scrollpos, ephemeris);
@@ -223,7 +230,8 @@
 
       var ephemeris = {
         folding_period: folding_period_element.value,
-        pepoch: pepoch_element.value
+        pepoch: pepoch_element.value,
+        dm: dm_element.value,
       };
       edit_period_mousemove(plot, ephemeris, movepos);
 
@@ -237,7 +245,8 @@
   });
 
   // Plot once to get started
-  add_residual_data(plot, "{% url 'toa_data' pk=ulp.pk %}", "#d090f8", ephemeris);
+  barycentre = true;
+  add_residual_data(plot, "{% url 'toa_data' ulp_pk=ulp.pk we_pk=selected_working_ephemeris.pk %}", "#d090f8", ephemeris, barycentre);
 
 </script>
 

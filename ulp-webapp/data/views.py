@@ -74,7 +74,7 @@ def bc_corr(coord, times, ephemeris_file='de430.bsp'):
     ]
     delays = np.array([np.dot(r_earth, r_src_normalised) for r_earth in r_earths]) * u.km / c # (spkezr returns km)
 
-    return delays.to('s')
+    return delays
 
 
 def calc_pulse_phase(time, ephemeris):
@@ -109,28 +109,28 @@ def generate_toas(time_start, time_end, ephemeris):
 
 
 @login_required
-def toa_data(request, pk):
-    # Retrieve the selected ULP
-    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+def toa_data(request, ulp_pk, we_pk):
 
-    # Make sure the user has the permissions to view this ULP
+    # Retrieve the selected ULP and working ephemeris
+    ulp = get_object_or_404(published_models.Ulp, pk=ulp_pk)
+    we = get_object_or_404(models.WorkingEphemeris, pk=we_pk)
 
-    # Second, they have to belong to a group that has been granted access to
-    # this ULP's data
-    if not ulp.data_access_groups.filter(user=request.user).exists() and not request.user in ulp.whitelist_users.all():
-        return HttpResponse(status=404)
+    # Get the ToAs that this user is allowed to view
 
-    # Otherwise, grant them access, and get the TOAs!
-    toas = models.TimeOfArrival.objects.filter(ulp=ulp)
-    if not toas.exists():
-        return HttpResponse(status=404)
+    toas = permitted_to_view_filter(models.TimeOfArrival.objects.filter(ulp=ulp, raw_mjd__isnull=False, freq__isnull=False), request.user)
+
+    # Barycentre
+    mjds = Time([float(toa.raw_mjd) for toa in toas], format='mjd')
+    bc_corrections = bc_corr(we.coord, mjds).to('day').value
 
     toas_json = [
         {
-            'mjd': float(toa.mjd),
-            'mjd_err': float(toa.mjd_err),
-            'detail_link': reverse('toa_detail_view', args=[toa.pk]),
-        } for toa in toas
+            'mjd': float(toas[i].raw_mjd),
+            'mjd_err': float(toas[i].mjd_err),
+            'freq_MHz': float(toas[i].freq),
+            'bc_correction': bc_corrections[i],
+            'detail_link': reverse('toa_detail_view', args=[toas[i].pk]),
+        } for i in range(len(toas))
     ]
 
     return JsonResponse(toas_json, safe=False)
@@ -200,26 +200,16 @@ def timing_residual_view(request, pk):
         'dms': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Dispersion measure", article__isnull=False),
     }
 
-    ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
-        Q(measurement__ulp=ulp) &
-        (Q(measurement__access_groups__user=request.user) |
-         Q(measurement__ulp__whitelist_users=request.user)),
-    )
-
-    if not ephemeris_measurements.exists():
-        return HttpResponse(status=404)
-
     # Construct a dictionary out of the ephemeris
-    ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
-
-    # Barycentre
+    ephemeris = {
+        'PEPOCH': selected_working_ephemeris.pepoch,
+        'P0': selected_working_ephemeris.p0,
+        'DM': selected_working_ephemeris.dm,
+    }
     coord = selected_working_ephemeris.coord
-    mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
-    corrections = bc_corr(coord, mjds)
-    for i in range(len(toas)):
-        toa = toas[i]
-        if toa.raw_mjd is not None: # and not toa.barycentred:
-            toa.mjd = toa.raw_mjd + Decimal(corrections[i].to('day').value)
+    if coord is not None:
+        ephemeris['RAJ'] = coord.ra.deg
+        ephemeris['DECJ'] = coord.dec.deg
 
     # Do something similar for toas that are not yet dediserpsed, but for which a frequency is given
     if 'DM' in ephemeris.keys():
