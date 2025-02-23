@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.db.models import Q, Value, BooleanField
 from django.urls import reverse
 from django.core.exceptions import ValidationError
@@ -186,9 +186,10 @@ def timing_residual_view(request, pk):
 
     # Choose a working ephemeris to be 'selected'
     try:
-        context['selected_working_ephemeris'] = working_ephemerides.get(pk=request.POST.get('working_ephemeris_pk'))
+        selected_working_ephemeris = working_ephemerides.get(pk=request.POST.get('working_ephemeris_pk'))
     except:
-        context['selected_working_ephemeris'] = working_ephemerides.get(owner=request.user)
+        selected_working_ephemeris = working_ephemerides.get(owner=request.user)
+    context['selected_working_ephemeris'] = selected_working_ephemeris
 
     # Pool together lists of published values to offer as options to the user
     context['published_ephemeris_values'] = {
@@ -196,7 +197,7 @@ def timing_residual_view(request, pk):
         'decs': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Declination", article__isnull=False),
         'pepochs': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="PEPOCH", article__isnull=False),
         'periods': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Period", article__isnull=False),
-        'dm': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Dispersion measure", article__isnull=False),
+        'dms': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Dispersion measure", article__isnull=False),
     }
 
     ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
@@ -212,7 +213,7 @@ def timing_residual_view(request, pk):
     ephemeris = {e.ephemeris_parameter.tempo_name: e.value for e in ephemeris_measurements}
 
     # Barycentre
-    coord = ephemeris_to_skycoord(ephemeris)
+    coord = selected_working_ephemeris.coord
     mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
     corrections = bc_corr(coord, mjds)
     for i in range(len(toas)):
@@ -912,17 +913,14 @@ def folding_toa_view(request, pk):
 def update_working_ephemeris(request, pk):
 
     # Get the relevant Ulp object
-    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+    working_ephemeris = get_object_or_404(models.WorkingEphemeris, pk=pk)
 
-    # Get working ephemeris
-    working_ephemeris = ulp.working_ephemerides.filter(owner=request.user).first()
-
-    # If this is a POST request, save the provided values
-    if request.method == "POST":
+    # If this is a POST request, save the provided values, also making sure the user is allowed to edit it
+    if request.method == "POST" and working_ephemeris.can_edit(request.user):
 
         # Do some validation here...
 
-        for field in ['pepoch', 'p0', 'p1', 'pb', 'dm', 'tausc_1GHz', 'spec_alpha', 'spec_q']:
+        for field in ['ra', 'dec', 'pepoch', 'p0', 'p1', 'pb', 'dm', 'tausc_1GHz', 'spec_alpha', 'spec_q']:
             try:
                 setattr(working_ephemeris, field, float(request.POST[field]))
             except:
@@ -940,7 +938,9 @@ def update_working_ephemeris(request, pk):
 
         working_ephemeris.save()
 
-    return redirect('folding_toa_view', pk=ulp.pk)
+    next = request.POST.get('next', reverse('timing_choose_ulp'))
+
+    return HttpResponseRedirect(next)
 
 
 @login_required

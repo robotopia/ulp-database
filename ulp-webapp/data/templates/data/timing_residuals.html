@@ -40,7 +40,7 @@
   </div>
 
   <div class="compact-form-item">
-    <label for="raj">RAJ</label>
+    <label for="raj">RAJ*</label>
     <input id="raj" name="raj" value="{{ ephemeris.RAJ }}" step="any" required/>
     <select>
       <option value=""></option>
@@ -51,7 +51,7 @@
   </div>
 
   <div class="compact-form-item">
-    <label for="decj">DECJ</label>
+    <label for="decj">DECJ*</label>
     <input id="decj" name="decj" value="{{ ephemeris.DECJ }}" step="any" required/>
     <select>
       <option value=""></option>
@@ -93,6 +93,8 @@
       {% endfor %}
     </select>
   </div>
+
+  <p>*Changes to RAJ and DECJ will not update the residual plot until they are saved.</p>
 
   <h2>Predictions</h2>
 

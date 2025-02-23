@@ -536,6 +536,18 @@ class WorkingEphemeris(AbstractPermission):
     )
 
     @property
+    def coord(self):
+        if self.ra is None or self.dec is None:
+            return None
+
+        try:
+            coord = SkyCoord(f"{self.ra} {self.dec}", unit=(u.hourangle, u.degree), frame='icrs')
+        except:
+            return None
+
+        return coord
+
+    @property
     def pepoch_err(self):
         if self.covariance:
             if self.covariance.pepoch_pepoch:

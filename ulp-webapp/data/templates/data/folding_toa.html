@@ -8,8 +8,9 @@
 
 <h2>Working ephemeris</h2>
 
-<form method="post" action="{% url 'update_working_ephemeris' pk=ulp.pk %}">
+<form method="post" action="{% url 'update_working_ephemeris' pk=working_ephemeris.pk %}">
   {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.path }}">
   <div class="compact-form-item">
     <label for="pepoch">PEPOCH (MJD)</label>
     <input id="pepoch" name="pepoch" type="number" step="any" value="{{ working_ephemeris.pepoch|default_if_none:'' }}" onchange="update_ephemeris_value(this, {{ working_ephemeris.pepoch|default_if_none:'' }});"/>
