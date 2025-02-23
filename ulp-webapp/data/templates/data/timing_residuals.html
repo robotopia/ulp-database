@@ -40,7 +40,7 @@
   </div>
 
   <div class="compact-form-item">
-    <label for="raj">RAJ</label>
+    <label for="raj">RAJ*</label>
     <input id="raj" name="raj" value="{{ ephemeris.RAJ }}" step="any" required/>
     <select>
       <option value=""></option>
@@ -51,7 +51,7 @@
   </div>
 
   <div class="compact-form-item">
-    <label for="decj">DECJ</label>
+    <label for="decj">DECJ*</label>
     <input id="decj" name="decj" value="{{ ephemeris.DECJ }}" step="any" required/>
     <select>
       <option value=""></option>
@@ -67,7 +67,7 @@
     <select>
       <option value=""></option>
       {% for pepoch in published_ephemeris_values.pepochs %}
-      <option value="{{ pepoch.formatted_quantity }}">{{ pepoch.formatted_quantity }} from {{ pepoch.article }}</option>
+      <option value="{{ pepoch.quantity }}">{{ pepoch.formatted_quantity }} from {{ pepoch.article }}</option>
       {% endfor %}
     </select>
   </div>
@@ -78,7 +78,7 @@
     <select>
       <option value=""></option>
       {% for period in published_ephemeris_values.periods %}
-      <option value="{{ period.formatted_quantity }}">{{ period.formatted_quantity }} from {{ period.article }}</option>
+      <option value="{{ period.quantity }}">{{ period.formatted_quantity }} from {{ period.article }}</option>
       {% endfor %}
     </select>
   </div>
@@ -89,10 +89,12 @@
     <select>
       <option value=""></option>
       {% for dm in published_ephemeris_values.dms %}
-      <option value="{{ dm.formatted_quantity }}">{{ dm.formatted_quantity }} from {{ dm.article }}</option>
+      <option value="{{ dm.quantity }}">{{ dm.formatted_quantity }} from {{ dm.article }}</option>
       {% endfor %}
     </select>
   </div>
+
+  <p>*Changes to RA and Dec won't update the residual plot (i.e. by recalculating the barycentric correction) until the changes are saved.</p>
 
   <h2>Predictions</h2>
 
