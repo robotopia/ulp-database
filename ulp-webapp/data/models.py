@@ -461,6 +461,7 @@ class WorkingEphemeris(AbstractPermission):
         null=True,
         blank=True,
         help_text="The right ascension (HH:MM:SS.S)",
+        verbose_name="RA",
     )
 
     dec = models.CharField(
@@ -474,49 +475,56 @@ class WorkingEphemeris(AbstractPermission):
         null=True,
         blank=True,
         help_text="The reference epoch for period measurement (MJD)",
+        verbose_name="PEPOCH",
     )
 
     p0 = models.FloatField(
         null=True,
         blank=True,
         help_text="The period at time \"pepoch\" (s)",
+        verbose_name="Period",
     )
 
     p1 = models.FloatField(
         null=True,
         blank=True,
         help_text="The period derivative at time \"pepoch\" (s/s)",
+        verbose_name="Period derivative",
     )
 
     pb = models.FloatField(
         null=True,
         blank=True,
         help_text="The orbital period (h)",
+        verbose_name="Orbital period",
     )
 
     dm = models.FloatField(
         null=True,
         blank=True,
         help_text="The dispersion measure (pc/cm^3)",
+        verbose_name="DM",
     )
 
     spec_alpha = models.FloatField(
         null=True,
         blank=True,
         help_text="The spectral index. The 'alpha' in the equation S = S1GHz * f^alpha * exp(q*ln(f)^2), where f is the frequency in GHz and S is in Jy.",
+        verbose_name="Spectral index",
     )
 
     spec_q = models.FloatField(
         null=True,
         blank=True,
         help_text="The 'q' in the equation S = S1GHz * f^alpha * exp(q*ln(f)^2), where f is the frequency in GHz and S is in Jy",
+        verbose_name="Spectral curvature",
     )
 
     tausc_1GHz = models.FloatField(
         null=True,
         blank=True,
         help_text="The scattering timescale at 1GHz, in seconds",
-        verbose_name="τ_{sc,1GHz} (s)",
+        verbose_name="tau_sc",
     )
 
     covariance = models.OneToOneField(
