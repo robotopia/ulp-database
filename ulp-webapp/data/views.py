@@ -83,9 +83,12 @@ def calc_pulse_phase(time, ephemeris):
     ephemeris['PEPOCH'] should be in days
     ephemeris['P0'] should be in seconds
     '''
-    pepoch = Time(ephemeris['PEPOCH'], format='mjd')
-    P0 = ephemeris['P0']*u.s
-    return ((time - pepoch)/P0).decompose()
+    try:
+        pepoch = Time(ephemeris['PEPOCH'], format='mjd')
+        P0 = ephemeris['P0']*u.s
+        return ((time - pepoch)/P0).decompose()
+    except:
+        return 0.0
 
 
 def calc_mjd(pulse_phase, ephemeris):
@@ -175,7 +178,7 @@ def timing_residual_view(request, pk):
     working_ephemerides = permitted_to_view_filter(models.WorkingEphemeris.objects.filter(ulp=ulp), request.user).order_by('owner')
 
     # If there aren't any, make a default one for the user!
-    if not working_ephemerides.exists():
+    if not working_ephemerides.filter(owner=request.user).exists():
         we = models.WorkingEphemeris(owner=request.user, ulp=ulp)
         we.save()
         working_ephemerides = permitted_to_view_filter(models.WorkingEphemeris.objects.filter(ulp=ulp), request.user)
@@ -200,17 +203,16 @@ def timing_residual_view(request, pk):
 
     # Construct a dictionary out of the ephemeris
     ephemeris = {
+        'RAJ': selected_working_ephemeris.ra,
+        'DECJ': selected_working_ephemeris.dec,
         'PEPOCH': selected_working_ephemeris.pepoch,
         'P0': selected_working_ephemeris.p0,
         'DM': selected_working_ephemeris.dm,
     }
     coord = selected_working_ephemeris.coord
-    if coord is not None:
-        ephemeris['RAJ'] = coord.ra.deg
-        ephemeris['DECJ'] = coord.dec.deg
 
     # Do something similar for toas that are not yet dediserpsed, but for which a frequency is given
-    if 'DM' in ephemeris.keys():
+    if 'DM' in ephemeris.keys() and ephemeris['DM'] is not None:
         dm = ephemeris['DM'] * u.pc / u.cm**3
         for toa in toas:
             if toa.freq is not None: # and toa.dedispersed == False:
@@ -231,8 +233,8 @@ def timing_residual_view(request, pk):
         PEPOCH = float(request.POST.get('pepoch', '0.0'))
         P0 = float(request.POST.get('folding-period', '0.0'))
         DM = float(request.POST.get('dm', '0.0'))
-        RAJ = Angle(request.POST.get('raj', '00:00:00') + ' h').deg
-        DECJ = Angle(request.POST.get('decj', '00:00:00') + ' d').deg
+        RAJ = request.POST.get('raj', '00:00:00')
+        DECJ = request.POST.get('decj', '00:00:00')
 
         mjd_start_format = request.POST.get('mjd-start-format')
         mjd_end_format = request.POST.get('mjd-end-format')
@@ -350,10 +352,6 @@ def timing_residual_view(request, pk):
     context['max_sun_el'] = max_sun_el
     context['mjd_start_format'] = mjd_start_format
     context['mjd_end_format'] = mjd_start_format
-
-    # For display purposes, convert RAJ and DECJ to hexagesimal format
-    ephemeris['RAJ'] = Angle(ephemeris['RAJ'], unit=u.deg).to_string(unit=u.hour, sep=':')
-    ephemeris['DECJ'] = Angle(ephemeris['DECJ'], unit=u.deg).to_string(sep=':')
 
     return render(request, 'data/timing_residuals.html', context)
 

@@ -460,6 +460,7 @@ class WorkingEphemeris(AbstractPermission):
         max_length=31,
         null=True,
         blank=True,
+        default="00:00:00",
         help_text="The right ascension (HH:MM:SS.S)",
         verbose_name="RA",
     )
@@ -468,12 +469,14 @@ class WorkingEphemeris(AbstractPermission):
         max_length=31,
         null=True,
         blank=True,
+        default="00:00:00",
         help_text="The declination (±DD:MM:SS.S)",
     )
 
     pepoch = models.FloatField(
         null=True,
         blank=True,
+        default=60000.0,
         help_text="The reference epoch for period measurement (MJD)",
         verbose_name="PEPOCH",
     )
@@ -481,6 +484,7 @@ class WorkingEphemeris(AbstractPermission):
     p0 = models.FloatField(
         null=True,
         blank=True,
+        default=3600.0,
         help_text="The period at time \"pepoch\" (s)",
         verbose_name="Period",
     )
@@ -502,6 +506,7 @@ class WorkingEphemeris(AbstractPermission):
     dm = models.FloatField(
         null=True,
         blank=True,
+        default=0.0,
         help_text="The dispersion measure (pc/cm^3)",
         verbose_name="DM",
     )
