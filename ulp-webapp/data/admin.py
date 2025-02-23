@@ -6,7 +6,7 @@ from common.admin import PermissionFieldset
 
 @admin.register(TimeOfArrival)
 class TimeOfArrivalAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'ulp', 'mjd', 'telescope_name', 'raw_mjd', 'freq', 'barycentred', 'dedispersed']
+    list_display = ['pk', 'owner', 'ulp', 'telescope_name', 'raw_mjd', 'freq', 'barycentred', 'dedispersed']
     list_filter = ['ulp']
     fieldsets = [
         PermissionFieldset,
@@ -58,7 +58,7 @@ class WorkingEphemerisAdmin(admin.ModelAdmin):
         (None, {"fields": ["ulp"]}),
         (
             "Ephemeris values", {
-                "fields": ["pepoch", "p0", "p1", "pb", "dm", "tausc_1GHz"],
+                "fields": [("ra", "dec",), "pepoch", "p0", "p1", "pb", "dm", "tausc_1GHz"],
             }
         ),
         (

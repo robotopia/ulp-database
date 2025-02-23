@@ -456,6 +456,20 @@ class WorkingEphemeris(AbstractPermission):
         related_name="working_ephemerides",
     )
 
+    ra = models.CharField(
+        max_length=31,
+        null=True,
+        blank=True,
+        help_text="The right ascension (HH:MM:SS.S)",
+    )
+
+    dec = models.CharField(
+        max_length=31,
+        null=True,
+        blank=True,
+        help_text="The declination (±DD:MM:SS.S)",
+    )
+
     pepoch = models.FloatField(
         null=True,
         blank=True,
