@@ -109,15 +109,13 @@ def generate_toas(time_start, time_end, ephemeris):
 
 
 @login_required
-def toa_data(request, ulp_pk, we_pk):
+def toa_data(request, we_pk):
 
     # Retrieve the selected ULP and working ephemeris
-    ulp = get_object_or_404(published_models.Ulp, pk=ulp_pk)
     we = get_object_or_404(models.WorkingEphemeris, pk=we_pk)
 
     # Get the ToAs that this user is allowed to view
-
-    toas = permitted_to_view_filter(models.TimeOfArrival.objects.filter(ulp=ulp, raw_mjd__isnull=False, freq__isnull=False), request.user)
+    toas = permitted_to_view_filter(models.TimeOfArrival.objects.filter(ulp=we.ulp, raw_mjd__isnull=False, freq__isnull=False), request.user)
 
     # Barycentre
     mjds = Time([float(toa.raw_mjd) for toa in toas], format='mjd')
@@ -902,7 +900,7 @@ def folding_toa_view(request, pk):
 @login_required
 def update_working_ephemeris(request, pk):
 
-    # Get the relevant Ulp object
+    # Get the relevant WorkingEphemeris object
     working_ephemeris = get_object_or_404(models.WorkingEphemeris, pk=pk)
 
     # If this is a POST request, save the provided values, also making sure the user is allowed to edit it
@@ -931,6 +929,42 @@ def update_working_ephemeris(request, pk):
     next = request.POST.get('next', reverse('timing_choose_ulp'))
 
     return HttpResponseRedirect(next)
+
+
+@login_required
+def update_selected_working_ephemeris(request):
+
+    # Turn the data into a dictionary
+    data = json.loads(request.body.decode('utf-8'))
+
+    # Get the relevant WorkingEphemeris object
+    working_ephemeris = models.WorkingEphemeris.objects.get(pk=data['pk'])
+    if working_ephemeris is None:
+        return JsonResponse({'message': f"No working ephemeris found with pk = {data['pk']}"}, status=400)
+
+    # If this is a POST request, save the provided values, also making sure the user is allowed to edit it
+    if request.method == "PUT" and working_ephemeris.can_edit(request.user):
+
+        new_ephemeris_values = {} # This is for returning to the client so that webpage values can be updated
+
+        for field in ['ra', 'dec', 'pepoch', 'p0', 'dm']:
+            try:
+                value = float(data[field])
+            except:
+                value = data[field]
+
+            try:
+                setattr(working_ephemeris, field, value)
+                new_ephemeris_values[field] = value
+            except:
+                pass
+
+        working_ephemeris.save()
+
+        new_ephemeris_values['pk'] = data['pk']
+        return JsonResponse(new_ephemeris_values, status=200)
+
+    return JsonResponse({'message': f"User does not have edit privileges for this ephemeris"}, status=400)
 
 
 @login_required

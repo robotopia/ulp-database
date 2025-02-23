@@ -29,80 +29,85 @@
 
 <div>
   <label for="working_ephemeris_select">Owner:</label>
-  <select id="working_ephemeris_select" name="working_ephemeris_pk">
+  <select id="working_ephemeris_select" name="working_ephemeris_pk" onchange="select_working_ephemeris();">
     {% for we in working_ephemerides %}
     <option value="{{ we.pk }}" {% if selected_working_ephemeris.pk == we.pk %}selected{% endif %}>{{ we.owner }}</option>
     {% endfor %}
   </select>
 </div>
 
-<form method="post" action="#prediction-table">
+<div class="compact-form-item">
+  <label><b>Parameter</b></label>
+  <span><b>Value</b></span>
+  <span><b>Set to published value</b></span>
+</div>
+
+<div class="compact-form-item">
+  <label for="raj">RAJ*</label>
+  <input id="raj" form="prediction_form" name="raj" value="{{ ephemeris.RAJ }}" step="any" required onchange="update_ephemeris_field(this, 'RAJ');"/>
+  <select onchange="set_to_published_value(this, 'RAJ')">
+    <option value=""></option>
+    {% for ra in published_ephemeris_values.ras %}
+    <option value="{{ ra.formatted_quantity }}">{{ ra.formatted_quantity }} from {{ ra.article }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="compact-form-item">
+  <label for="decj">DECJ*</label>
+  <input id="decj" form="prediction_form" name="decj" value="{{ ephemeris.DECJ }}" step="any" required onchange="update_ephemeris_field(this, 'DECJ');"/>
+  <select onchange="set_to_published_value(this, 'DECJ')">
+    <option value=""></option>
+    {% for dec in published_ephemeris_values.decs %}
+    <option value="{{ dec.formatted_quantity }}">{{ dec.formatted_quantity }} from {{ dec.article }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="compact-form-item">
+  <label for="pepoch">PEPOCH</label>
+  <input type="number" id="pepoch" form="prediction_form" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="update_ephemeris_field(this, 'PEPOCH');" required/>
+  <select onchange="set_to_published_value(this, 'PEPOCH')">
+    <option value=""></option>
+    {% for pepoch in published_ephemeris_values.pepochs %}
+    <option value="{{ pepoch.quantity }}">{{ pepoch.formatted_quantity }} from {{ pepoch.article }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="compact-form-item">
+  <label for="folding-period">P0</label>
+  <input type="number" id="folding-period" form="prediction_form" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="update_ephemeris_field(this, 'P0');" required/>
+  <select onchange="set_to_published_value(this, 'P0')">
+    <option value=""></option>
+    {% for period in published_ephemeris_values.periods %}
+    <option value="{{ period.quantity }}">{{ period.formatted_quantity }} from {{ period.article }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<div class="compact-form-item">
+  <label for="dm">DM</label>
+  <input type="number" id="dm" form="prediction_form" name="dm" value="{{ ephemeris.DM }}" step="any" onchange="update_ephemeris_field(this, 'DM');" required/>
+  <select onchange="set_to_published_value(this, 'DM')">
+    <option value=""></option>
+    {% for dm in published_ephemeris_values.dms %}
+    <option value="{{ dm.quantity }}">{{ dm.formatted_quantity }} from {{ dm.article }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<p>*KNOWN ISSUE: Changes to RA and Dec won't update the residual plot (i.e. by recalculating the barycentric correction) until the changes are saved and the page refreshed.</p>
+
+<div>
+  <button type="button" onclick="reset_ephemeris_fields();">Reset</button>
+  <button type="button" onclick="update_selected_working_ephemeris();">Save</button>
+</div>
+
+<h2>Predictions</h2>
+
+<form id="prediction_form" method="post" action="#prediction-table">
   {% csrf_token %}
-
-  <div class="compact-form-item">
-    <label><b>Parameter</b></label>
-    <span><b>Value</b></span>
-    <span><b>Set to published value</b></span>
-  </div>
-
-  <div class="compact-form-item">
-    <label for="raj">RAJ*</label>
-    <input id="raj" name="raj" value="{{ ephemeris.RAJ }}" step="any" required/>
-    <select>
-      <option value=""></option>
-      {% for ra in published_ephemeris_values.ras %}
-      <option value="{{ ra.formatted_quantity }}">{{ ra.formatted_quantity }} from {{ ra.article }}</option>
-      {% endfor %}
-    </select>
-  </div>
-
-  <div class="compact-form-item">
-    <label for="decj">DECJ*</label>
-    <input id="decj" name="decj" value="{{ ephemeris.DECJ }}" step="any" required/>
-    <select>
-      <option value=""></option>
-      {% for dec in published_ephemeris_values.decs %}
-      <option value="{{ dec.formatted_quantity }}">{{ dec.formatted_quantity }} from {{ dec.article }}</option>
-      {% endfor %}
-    </select>
-  </div>
-
-  <div class="compact-form-item">
-    <label for="pepoch">PEPOCH</label>
-    <input type="number" id="pepoch" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="replot();" required/>
-    <select>
-      <option value=""></option>
-      {% for pepoch in published_ephemeris_values.pepochs %}
-      <option value="{{ pepoch.quantity }}">{{ pepoch.formatted_quantity }} from {{ pepoch.article }}</option>
-      {% endfor %}
-    </select>
-  </div>
-
-  <div class="compact-form-item">
-    <label for="folding-period">P0</label>
-    <input type="number" id="folding-period" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="replot();" required/>
-    <select>
-      <option value=""></option>
-      {% for period in published_ephemeris_values.periods %}
-      <option value="{{ period.quantity }}">{{ period.formatted_quantity }} from {{ period.article }}</option>
-      {% endfor %}
-    </select>
-  </div>
-
-  <div class="compact-form-item">
-    <label for="dm">DM</label>
-    <input type="number" id="dm" name="dm" value="{{ ephemeris.DM }}" step="any" onchange="replot();" required/>
-    <select>
-      <option value=""></option>
-      {% for dm in published_ephemeris_values.dms %}
-      <option value="{{ dm.quantity }}">{{ dm.formatted_quantity }} from {{ dm.article }}</option>
-      {% endfor %}
-    </select>
-  </div>
-
-  <p>*Changes to RA and Dec won't update the residual plot (i.e. by recalculating the barycentric correction) until the changes are saved.</p>
-
-  <h2>Predictions</h2>
 
   <label for="mjd-start" class="form-label">Start date:</label>
   <input type="datetime-local" class="form-control" id="mjd-start" name="mjd-start" value="{{ mjd_start }}" step="any" required/>
@@ -162,6 +167,18 @@
 <script>
 
   var copy_links = document.getElementsByClassName('copy-col');
+  var selected_working_ephemeris = {{ ephemeris|safe }};
+  var working_ephemerides = {
+    {% for we in working_ephemerides %}
+    "{{ we.pk }}": {
+      RAJ: "{{ we.ra }}",
+      DECJ: "{{ we.dec }}",
+      PEPOCH: {{ we.pepoch }},
+      P0: {{ we.p0 }},
+      DM: {{ we.dm }},
+    },
+    {% endfor %}
+  };
 
   Array.prototype.forEach.call(copy_links, function (copy_link) {
     copy_link.addEventListener('click', function (e) {
@@ -177,10 +194,12 @@
   });
 
   // Get the folding period and the PEPOCH
-  const folding_period_element = document.getElementById("folding-period")
-  const pepoch_element = document.getElementById("pepoch")
-  const dm_element = document.getElementById("dm")
-  const barycentre_element = document.getElementById("barycentre")
+  const raj_element = document.getElementById("raj");
+  const decj_element = document.getElementById("decj");
+  const folding_period_element = document.getElementById("folding-period");
+  const pepoch_element = document.getElementById("pepoch");
+  const dm_element = document.getElementById("dm");
+  const barycentre_element = document.getElementById("barycentre");
 
   // set the dimensions and margins of the graph
   var parentDiv = document.getElementById("residual-plot");
@@ -254,7 +273,103 @@
   });
 
   // Plot once to get started
-  add_residual_data(plot, "{% url 'toa_data' ulp_pk=ulp.pk we_pk=selected_working_ephemeris.pk %}", "#d090f8", ephemeris, barycentre_element.checked);
+  add_residual_data(plot, "{% url 'toa_data' we_pk=selected_working_ephemeris.pk %}", "#d090f8", ephemeris, barycentre_element.checked);
+
+  // When an ephemeris value changes, compare it to the selected working ephemeris value
+  // and color the cell differently if the values are different
+  function update_ephemeris_field(element, field_name) {
+    var value = selected_working_ephemeris[field_name];
+    if (value == element.value) {
+      element.style.backgroundColor = "field";
+    } else {
+      element.style.backgroundColor = "#880";
+    }
+
+    replot();
+  }
+
+  function reset_ephemeris_fields() {
+    raj_element.value = selected_working_ephemeris.RAJ;
+    decj_element.value = selected_working_ephemeris.DECJ;
+    pepoch_element.value = selected_working_ephemeris.PEPOCH;
+    folding_period_element.value = selected_working_ephemeris.P0;
+    dm_element.value = selected_working_ephemeris.DM;
+
+    raj_element.style.backgroundColor = "field";
+    decj_element.style.backgroundColor = "field";
+    pepoch_element.style.backgroundColor = "field";
+    folding_period_element.style.backgroundColor = "field";
+    dm_element.style.backgroundColor = "field";
+
+    replot();
+  }
+
+  function set_to_published_value(element, field_name) {
+    element.previousElementSibling.value = element.value;
+    element.value = "";
+    update_ephemeris_field(element.previousElementSibling, field_name);
+  }
+
+  // For updating the ephemeris values and saving them to the database
+  function update_selected_working_ephemeris() {
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', "{% url 'update_selected_working_ephemeris' %}");
+    xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+    xhr.setRequestHeader("Content-type", "application/json");
+
+    const data = {
+      pk: document.getElementById('working_ephemeris_select').value,
+      ra: raj_element.value,
+      dec: decj_element.value,
+      pepoch: pepoch_element.value,
+      p0: folding_period_element.value,
+      dm: dm_element.value,
+    }
+
+    xhr.onload = () => {
+      if (xhr.status != 200) {
+        alert(JSON.parse(xhr.responseText).message);
+        return;
+      }
+
+      updated_data = JSON.parse(xhr.responseText);
+
+      // Update the current selected working ephemeris
+      selected_working_ephemeris.RAJ = updated_data.ra;
+      selected_working_ephemeris.DECJ = updated_data.dec;
+      selected_working_ephemeris.PEPOCH = updated_data.pepoch;
+      selected_working_ephemeris.P0 = updated_data.p0;
+      selected_working_ephemeris.DM = updated_data.dm;
+
+      // Also update the corresponding ephemeris in the list of all ephemerides
+      // loaded on the page
+      working_ephemerides[updated_data.pk].RAJ = updated_data.ra;
+      working_ephemerides[updated_data.pk].DECJ = updated_data.dec;
+      working_ephemerides[updated_data.pk].PEPOCH = updated_data.pepoch;
+      working_ephemerides[updated_data.pk].P0 = updated_data.p0;
+      working_ephemerides[updated_data.pk].DM = updated_data.dm;
+
+      reset_ephemeris_fields();
+    }
+
+    xhr.send(JSON.stringify(data));
+  }
+
+  function select_working_ephemeris() {
+    // Get the selected ephemeris pk from the dropdown
+    var pk = document.getElementById('working_ephemeris_select').value;
+
+    // Loop through the ephemeris fields and apply them to the "selected_working_ephemeris" variable,
+    // which controls what happens on the page.
+    for (const [key, value] of Object.entries(working_ephemerides[pk])) {
+      selected_working_ephemeris[key] = value;
+    }
+
+    // With selected_working_ephemeris now set, we can "reset" the values
+    // and update the plot, etc.
+    reset_ephemeris_fields();
+  }
 
 </script>
 
