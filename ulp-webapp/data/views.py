@@ -502,10 +502,11 @@ def act_on_toas(request, pk):
     # Parse out the ToA primary keys from the selected checkbox names
     toa_pks = [int(key[3:]) for key in request.POST.keys() if key.startswith('cb_')]
 
-    # Get only the ToAs the user has permission to change
-    toas = permitted_to_edit_filter(models.TimeOfArrival.objects.filter(pk__in=toa_pks), request.user)
-
     if request.POST.get('action_on_selected') == 'delete':
+
+        # Get only the ToAs the user has permission to dete
+        toas = permitted_to_delete_filter(models.TimeOfArrival.objects.filter(pk__in=toa_pks), request.user)
+
         toas.delete()
 
     return redirect('toas_view', pk=pk)
