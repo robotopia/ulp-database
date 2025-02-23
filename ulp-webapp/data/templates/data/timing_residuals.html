@@ -19,6 +19,12 @@
 
 <div id="residual-plot" style="height: 500px;"></div>
 
+<fieldset id="plot_settings">
+  <legend>Plot settings</legend>
+  <input id="barycentre" type="checkbox" checked onchange="replot();"/>
+  <label for="barycentre">Barycentre ToAs?</label>
+</fieldset>
+
 <h2>Ephemeris</h2>
 
 <div>
@@ -63,7 +69,7 @@
 
   <div class="compact-form-item">
     <label for="pepoch">PEPOCH</label>
-    <input type="number" id="pepoch" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="replot()" required/>
+    <input type="number" id="pepoch" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="replot();" required/>
     <select>
       <option value=""></option>
       {% for pepoch in published_ephemeris_values.pepochs %}
@@ -74,7 +80,7 @@
 
   <div class="compact-form-item">
     <label for="folding-period">P0</label>
-    <input type="number" id="folding-period" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="replot()" required/>
+    <input type="number" id="folding-period" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="replot();" required/>
     <select>
       <option value=""></option>
       {% for period in published_ephemeris_values.periods %}
@@ -85,7 +91,7 @@
 
   <div class="compact-form-item">
     <label for="dm">DM</label>
-    <input type="number" id="dm" name="dm" value="{{ ephemeris.DM }}" step="any" onchange="replot()" required/>
+    <input type="number" id="dm" name="dm" value="{{ ephemeris.DM }}" step="any" onchange="replot();" required/>
     <select>
       <option value=""></option>
       {% for dm in published_ephemeris_values.dms %}
@@ -174,6 +180,7 @@
   const folding_period_element = document.getElementById("folding-period")
   const pepoch_element = document.getElementById("pepoch")
   const dm_element = document.getElementById("dm")
+  const barycentre_element = document.getElementById("barycentre")
 
   // set the dimensions and margins of the graph
   var parentDiv = document.getElementById("residual-plot");
@@ -203,7 +210,7 @@
       pepoch: pepoch_element.value,
       dm: dm_element.value,
     };
-    position_residual_data(plot, ephemeris);
+    position_residual_data(plot, ephemeris, barycentre_element.checked);
   }
 
   // Zoom on mouse wheel
@@ -218,7 +225,7 @@
       dm: dm_element.value,
     };
 
-    plot_zoom(plot, scrollpos, ephemeris);
+    plot_zoom(plot, scrollpos, ephemeris, barycentre_element.checked);
   });
 
   // Change period on mouse drag
@@ -235,7 +242,7 @@
         pepoch: pepoch_element.value,
         dm: dm_element.value,
       };
-      edit_period_mousemove(plot, ephemeris, movepos);
+      edit_period_mousemove(plot, ephemeris, movepos, barycentre_element.checked);
 
       // Change the value in the input field
       folding_period_element.value = ephemeris.folding_period;
@@ -247,8 +254,7 @@
   });
 
   // Plot once to get started
-  barycentre = true;
-  add_residual_data(plot, "{% url 'toa_data' ulp_pk=ulp.pk we_pk=selected_working_ephemeris.pk %}", "#d090f8", ephemeris, barycentre);
+  add_residual_data(plot, "{% url 'toa_data' ulp_pk=ulp.pk we_pk=selected_working_ephemeris.pk %}", "#d090f8", ephemeris, barycentre_element.checked);
 
 </script>
 

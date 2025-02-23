@@ -207,13 +207,6 @@ function add_residual_data(plot, toa_url, color, ephemeris, barycentre) {
 
   d3.json(toa_url, function(toas) {
 
-    // Apply barycentric correction, if requested
-    if (barycentre === true) {
-      for (toa of toas) {
-        toa.mjd += toa.bc_correction;
-      }
-    }
-
     const datapoints = plot.g.append("g")
 
     plot.toa_err_points = datapoints
@@ -236,7 +229,7 @@ function add_residual_data(plot, toa_url, color, ephemeris, barycentre) {
       .attr("r", 3)
       .style("fill", color);
 
-    position_residual_data(plot, ephemeris);
+    position_residual_data(plot, ephemeris, barycentre);
   });
 }
 
@@ -246,23 +239,34 @@ function calc_dmdelay(dm, freq_MHz) {
   return dmdelay;
 }
 
-function position_residual_data(plot, ephemeris) {
+function apply_corrections(toa, ephemeris, barycentre) {
+  // Calculate MJD of ToA with dedispersion and barycentring corrections
+  // (the latter only if requested; 'barycentre' is boolean)
+  var adjusted_mjd = toa.mjd - calc_dmdelay(ephemeris.dm, toa.freq_MHz);
+  if (barycentre === true) {
+    adjusted_mjd += toa.bc_correction;
+  }
+  return adjusted_mjd;
+}
+
+function position_residual_data(plot, ephemeris, barycentre) {
   // plot should be an object returned by create_residual_plot_elements()
   // ephemeris should be an object of the form:
   //     {folding_period: 1000.0, pepoch: 60000.0, dm: 100.0}
 
   plot.toa_points
     .attr("cx", function (toa) {
-      return plot.x2(calc_pulse_phase(toa.mjd - calc_dmdelay(ephemeris.dm, toa.freq_MHz), ephemeris).pulse);
+
+      return plot.x2(calc_pulse_phase(apply_corrections(toa, ephemeris, barycentre), ephemeris).pulse);
     })
     .attr("cy", function (toa) {
-      return plot.y(calc_pulse_phase(toa.mjd - calc_dmdelay(ephemeris.dm, toa.freq_MHz), ephemeris).phase);
+      return plot.y(calc_pulse_phase(apply_corrections(toa, ephemeris, barycentre), ephemeris).phase);
     })
 
   plot.toa_err_points
     .attr("d", function (toa) {
-      const pulse_phase_lo = calc_pulse_phase(toa.mjd - calc_dmdelay(ephemeris.dm, toa.freq_MHz) - toa.mjd_err, ephemeris);
-      const pulse_phase_hi = calc_pulse_phase(toa.mjd - calc_dmdelay(ephemeris.dm, toa.freq_MHz) + toa.mjd_err, ephemeris);
+      const pulse_phase_lo = calc_pulse_phase(apply_corrections(toa, ephemeris, barycentre) - toa.mjd_err, ephemeris);
+      const pulse_phase_hi = calc_pulse_phase(apply_corrections(toa, ephemeris, barycentre) + toa.mjd_err, ephemeris);
 
       const pulse_lo = pulse_phase_lo.pulse;
       const pulse_hi = pulse_phase_hi.pulse;
@@ -320,7 +324,7 @@ function plot_period_line(plot, pos) {
 * Zooming with scroll *
 **********************/
 
-function plot_zoom(plot, pos, ephemeris) {
+function plot_zoom(plot, pos, ephemeris, barycentre) {
   xpos = plot.x.invert(pos[0] - plot.margins.left);
   ypos = plot.y.invert(pos[1] - plot.margins.top);
   [xmin, xmax] = plot.xlim;
@@ -339,7 +343,7 @@ function plot_zoom(plot, pos, ephemeris) {
   }
 
   set_residual_plot_dimensions(plot, [xmin, xmax], [ymin, ymax], plot.margins, ephemeris);
-  position_residual_data(plot, ephemeris);
+  position_residual_data(plot, ephemeris, barycentre);
 }
 
 /******************************************************\
@@ -355,7 +359,7 @@ function edit_period_mousedown() {
   period_ref_factor = null;
 }
 
-function edit_period_mousemove(plot, ephemeris, pos) {
+function edit_period_mousemove(plot, ephemeris, pos, barycentre) {
 
   var pepoch = pepoch_element.value;
   var folding_period = folding_period_element.value;
@@ -369,7 +373,7 @@ function edit_period_mousemove(plot, ephemeris, pos) {
     ephemeris.folding_period *= (1 - (factor - period_ref_factor));
 
     // Update plot
-    position_residual_data(plot, ephemeris);
+    position_residual_data(plot, ephemeris, barycentre);
   }
 
   period_ref_factor = factor;
