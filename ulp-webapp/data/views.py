@@ -222,6 +222,8 @@ def timing_residual_view(request, pk):
     output_toa_format = 'mjd'
     min_el = 0.0
     max_sun_el = 90.0
+    mjd_start_format = 'iso'
+    mjd_end_format = 'iso'
 
     if request.method == "POST":
 
@@ -232,12 +234,14 @@ def timing_residual_view(request, pk):
         RAJ = Angle(request.POST.get('raj', '00:00:00') + ' h').deg
         DECJ = Angle(request.POST.get('decj', '00:00:00') + ' d').deg
 
-        mjd_start = Time(request.POST.get('mjd-start'), format='isot')
-        mjd_end = Time(request.POST.get('mjd-end'), format='isot')
-        mjd_range = Time([request.POST.get('mjd-start'), request.POST.get('mjd-end')], format='isot')
+        mjd_start_format = request.POST.get('mjd-start-format')
+        mjd_end_format = request.POST.get('mjd-end-format')
+        mjd_start = Time(request.POST.get('mjd-start'), format=mjd_start_format)
+        mjd_end = Time(request.POST.get('mjd-end'), format=mjd_end_format)
+        mjd_range = Time([mjd_start, mjd_end])
 
-        context['mjd_start'] = mjd_start.isot
-        context['mjd_end'] = mjd_end.isot
+        context['mjd_start'] = mjd_start.to_value(mjd_start_format)
+        context['mjd_end'] = mjd_end.to_value(mjd_start_format)
 
         telescope = request.POST.get('telescope')
         try:
@@ -297,6 +301,8 @@ def timing_residual_view(request, pk):
         context['mjd_dispersion_frequency'] = mjd_dispersion_frequency
 
     context['ephemeris'] = ephemeris
+    context['time_formats'] = list(Time.FORMATS.keys())
+    context['time_formats'].sort()
 
     # Get available published periods
     periods = published_models.Measurement.objects.filter(
@@ -343,6 +349,8 @@ def timing_residual_view(request, pk):
     context['telescopes'] = site_names
     context['min_el'] = min_el
     context['max_sun_el'] = max_sun_el
+    context['mjd_start_format'] = mjd_start_format
+    context['mjd_end_format'] = mjd_start_format
 
     # For display purposes, convert RAJ and DECJ to hexagesimal format
     ephemeris['RAJ'] = Angle(ephemeris['RAJ'], unit=u.deg).to_string(unit=u.hour, sep=':')

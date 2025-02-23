@@ -109,34 +109,64 @@
 <form id="prediction_form" method="post" action="#prediction-table">
   {% csrf_token %}
 
-  <label for="mjd-start" class="form-label">Start date:</label>
-  <input type="datetime-local" class="form-control" id="mjd-start" name="mjd-start" value="{{ mjd_start }}" step="any" required/>
+  <div class="compact-form-item">
+    <label></label>
+    <span><b>Value</b></span>
+    <span><b>Format</b></span>
+  </div>
 
-  <label for="mjd-end" class="form-label">End date:</label>
-  <input type="datetime-local" class="form-control" id="mjd-end" name="mjd-end" value="{{ mjd_end }}" step="any" required/>
+  <div class="compact-form-item">
+    <label for="mjd-start">Start date:</label>
+    <input id="mjd-start" name="mjd-start" value="{{ mjd_start }}" required/>
+    <select name="mjd-start-format" required>
+      {% for time_format in time_formats %}
+      <option value="{{ time_format }}" {% if time_format == mjd_start_format %}selected{% endif %}>{{ time_format }}</option>
+      {% endfor %}
+    </select>
+  </div>
 
-  <label for="telescope" class="form-label">Telescope:</label>
-  <select id='telescope' name='telescope' class="form-control" required>
-    {% for telescope in telescopes %}
-    <option value='{{ telescope }}' {% if telescope == selected_telescope %}selected{% endif %}>{{ telescope }}</option>
-    {% endfor %}
-  </select>
+  <div class="compact-form-item">
+    <label for="mjd-end">End date:</label>
+    <input id="mjd-end" name="mjd-end" value="{{ mjd_end }}" step="any" required/>
+    <select name="mjd-end-format" required>
+      {% for time_format in time_formats %}
+      <option value="{{ time_format }}" {% if time_format == mjd_end_format %}selected{% endif %}>{{ time_format }}</option>
+      {% endfor %}
+    </select>
+  </div>
 
-  <label for="mjd-dispersion-frequency" class="form-label">Observing frequency (MHz):</label>
-  <input type="number" class="form-control" id="mjd-dispersion-frequency" name="mjd-dispersion-frequency" value="{{ mjd_dispersion_frequency }}" step="any" required/>
+  <div class="compact-form-item">
+    <label for="telescope">Telescope:</label>
+    <select id='telescope' name='telescope' required>
+      {% for telescope in telescopes %}
+      <option value='{{ telescope }}' {% if telescope == selected_telescope %}selected{% endif %}>{{ telescope }}</option>
+      {% endfor %}
+    </select>
+  </div>
 
-  <label for="minimum-elevation" class="form-label">Minimum elevation (°):</label>
-  <input type="number" class="form-control" id="minimum-elevation" name="minimum-elevation" value="{{ min_el }}" step="any" required/>
+  <div class="compact-form-item">
+    <label for="mjd-dispersion-frequency">Observing frequency (MHz):</label>
+    <input type="number" id="mjd-dispersion-frequency" name="mjd-dispersion-frequency" value="{{ mjd_dispersion_frequency }}" step="any" required/>
+  </div>
 
-  <label for="maximum-sun-elevation" class="form-label">Maximum Sun elevation (°):</label>
-  <input type="number" class="form-control" id="maximum-sun-elevation" name="maximum-sun-elevation" value="{{ max_sun_el }}" step="any" required/>
+  <div class="compact-form-item">
+    <label for="minimum-elevation">Minimum elevation (°):</label>
+    <input type="number" id="minimum-elevation" name="minimum-elevation" value="{{ min_el }}" step="any" required/>
+  </div>
 
-  <label for="output-toa-format" class="form-label">Output TOA format:</label>
-  <select id='output-toa-format' name='output-toa-format' class="form-control" required>
-    {% for output_toa_format in output_toa_formats %}
-    <option value='{{ output_toa_format }}' {% if output_toa_format == selected_output_toa_format %}selected{% endif %}>{{ output_toa_format.upper }}</option>
-    {% endfor %}
-  </select>
+  <div class="compact-form-item">
+    <label for="maximum-sun-elevation">Maximum Sun elevation (°):</label>
+    <input type="number" id="maximum-sun-elevation" name="maximum-sun-elevation" value="{{ max_sun_el }}" step="any" required/>
+  </div>
+
+  <div class="compact-form-item">
+    <label for="output-toa-format">Output TOA format:</label>
+    <select id='output-toa-format' name='output-toa-format' required>
+      {% for output_toa_format in output_toa_formats %}
+      <option value='{{ output_toa_format }}' {% if output_toa_format == selected_output_toa_format %}selected{% endif %}>{{ output_toa_format.upper }}</option>
+      {% endfor %}
+    </select>
+  </div>
 
   <input type="submit" class="btn btn-primary" value="Generate TOAs"/>
 </form>

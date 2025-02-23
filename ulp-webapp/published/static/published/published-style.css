@@ -84,7 +84,7 @@ h1, h2, h3, h4, h5 {
 }
 
 .compact-form-item > label {
-  width: 100px;
+  width: 250px;
   background-color: field;
 }
 
