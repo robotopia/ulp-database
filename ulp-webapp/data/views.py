@@ -173,6 +173,17 @@ def timing_residual_view(request, pk):
     # Now limit only to those that this user has view access to
     toas = permitted_to_view_filter(toas, request.user)
 
+    # Get the working ephemerides that are available to this user
+    working_ephemerides = permitted_to_view_filter(models.WorkingEphemeris.objects.filter(ulp=ulp), request.user)
+
+    # If there aren't any, make a default one for the user!
+    if not working_ephemerides.exists():
+        we = models.WorkingEphemeris(owner=request.user, ulp=ulp)
+        we.save()
+        working_ephemerides = permitted_to_view_filter(models.WorkingEphemeris.objects.filter(ulp=ulp), request.user)
+
+    context['working_ephemerides'] = working_ephemerides
+
     ephemeris_measurements = models.EphemerisMeasurement.objects.filter(
         Q(measurement__ulp=ulp) &
         (Q(measurement__access_groups__user=request.user) |

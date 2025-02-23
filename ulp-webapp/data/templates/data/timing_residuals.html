@@ -21,6 +21,15 @@
 
 <h2>Ephemeris</h2>
 
+<div>
+  <label for="working_ephemeris_select">Owner:</label>
+  <select id="working_ephemeris_select" name="working_ephemeris_pk">
+    {% for we in working_ephemerides %}
+    <option value="{{ we.pk }}">{{ we.owner }}</option>
+    {% endfor %}
+  </select>
+</div>
+
 <form method="post" action="#prediction-table">
   {% csrf_token %}
 
