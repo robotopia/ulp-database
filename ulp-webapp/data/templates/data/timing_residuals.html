@@ -100,8 +100,8 @@
 <p>*KNOWN ISSUE: Changes to RA and Dec won't update the residual plot (i.e. by recalculating the barycentric correction) until the changes are saved and the page refreshed.</p>
 
 <div>
-  <button type="button" onclick="reset_ephemeris_fields();">Reset</button>
-  <button type="button" onclick="update_selected_working_ephemeris();">Save</button>
+  <button type="button" class="btn btn-primary" onclick="reset_ephemeris_fields();">Reset</button>
+  <button type="button" class="btn btn-primary" onclick="update_selected_working_ephemeris();">Save</button>
 </div>
 
 <h2>Predictions</h2>
@@ -120,7 +120,7 @@
     <input id="mjd-start" name="mjd-start" value="{{ mjd_start }}" required/>
     <select name="mjd-start-format" required>
       {% for time_format in time_formats %}
-      <option value="{{ time_format }}" {% if time_format == mjd_start_format %}selected{% endif %}>{{ time_format }}</option>
+      <option value="{{ time_format }}" {% if time_format == mjd_start_format %}selected{% endif %}>{{ time_format.upper }}</option>
       {% endfor %}
     </select>
   </div>
@@ -130,7 +130,7 @@
     <input id="mjd-end" name="mjd-end" value="{{ mjd_end }}" step="any" required/>
     <select name="mjd-end-format" required>
       {% for time_format in time_formats %}
-      <option value="{{ time_format }}" {% if time_format == mjd_end_format %}selected{% endif %}>{{ time_format }}</option>
+      <option value="{{ time_format }}" {% if time_format == mjd_end_format %}selected{% endif %}>{{ time_format.upper }}</option>
       {% endfor %}
     </select>
   </div>
@@ -138,6 +138,7 @@
   <div class="compact-form-item">
     <label for="telescope">Telescope:</label>
     <select id='telescope' name='telescope' required>
+      <option value=""></option>
       {% for telescope in telescopes %}
       <option value='{{ telescope }}' {% if telescope == selected_telescope %}selected{% endif %}>{{ telescope }}</option>
       {% endfor %}
@@ -160,10 +161,10 @@
   </div>
 
   <div class="compact-form-item">
-    <label for="output-toa-format">Output TOA format:</label>
+    <label for="output-toa-format">Output ToA format:</label>
     <select id='output-toa-format' name='output-toa-format' required>
-      {% for output_toa_format in output_toa_formats %}
-      <option value='{{ output_toa_format }}' {% if output_toa_format == selected_output_toa_format %}selected{% endif %}>{{ output_toa_format.upper }}</option>
+      {% for time_format in time_formats %}
+      <option value='{{ time_format }}' {% if time_format == selected_output_toa_format %}selected{% endif %}>{{ time_format.upper }}</option>
       {% endfor %}
     </select>
   </div>
