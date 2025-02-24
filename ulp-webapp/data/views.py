@@ -271,7 +271,6 @@ def timing_residual_view(request, pk):
         if mjd_start is not None and mjd_end is not None and mjd_dispersion_frequency is not None and PEPOCH is not None and P0 is not None and telescope is not None:
             # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
             # so to get the right range, convert them to dedispersed, barycentric
-            coord = ephemeris_to_skycoord(ephemeris)
             dmdelay = calc_dmdelay(ephemeris['DM']*u.pc/u.cm**3, mjd_dispersion_frequency*u.MHz, np.inf*u.MHz)
             mjd_range -= dmdelay
             mjd_range += bc_corr(coord, mjd_range)
