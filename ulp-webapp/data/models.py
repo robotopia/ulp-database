@@ -16,6 +16,63 @@ from decimal import Decimal
 from common.models import AbstractPermission
 from common.utils import barycentre, scale_to_frequency
 
+
+class Observation(models.Model):
+
+    telescope_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="The telescope that made this observation. Must match a string in AstroPy's EarthLocation.get_site_names().",
+    )
+
+    freq = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The centre frequency of this observation, in MHz.",
+        verbose_name="Frequency (MHz)",
+    )
+
+    bw = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The bandwidth of this observation, in MHz.",
+        verbose_name="Bandwidth (MHz)",
+    )
+
+    start_mjd = models.DecimalField(
+        decimal_places=20,
+        max_digits=30,
+        help_text="The MJD of the start of the observation.",
+        verbose_name="Start MJD",
+    )
+
+    duration = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The duration of the observation, in seconds.",
+        verbose_name="Duration (s)",
+    )
+
+    ulps = models.ManyToManyField(
+        blank=True,
+        help_text="ULPs which might be detectable in this observation.",
+        related_name="observations",
+        verbose_name="ULPs",
+    )
+
+    def __str__(self):
+        return f'{self.telescope_name} ({self.start_mjd})'
+
+    def clean(self):
+        if self.telescope_name and self.telescope_name not in EarthLocation.get_site_names():
+            raise ValidationError(f"\"{self.telescope_name}\" is not found among AstroPy's EarthLocation's site names.")
+
+    class Meta:
+        ordering = ['start_mjd', 'freq', 'telescope_name']
+
+
+
 class TimeOfArrival(AbstractPermission):
 
     ulp = models.ForeignKey(
@@ -69,7 +126,7 @@ class TimeOfArrival(AbstractPermission):
         null=True,
         blank=True,
         help_text="The bandwidth of this detection.",
-        verbose_name="Bandwidth",
+        verbose_name="Bandwidth (MHz)",
     )
 
     spectral_index = models.FloatField(
