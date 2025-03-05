@@ -55,6 +55,7 @@ class Observation(models.Model):
     )
 
     ulps = models.ManyToManyField(
+        published_models.Ulp,
         blank=True,
         help_text="ULPs which might be detectable in this observation.",
         related_name="observations",
