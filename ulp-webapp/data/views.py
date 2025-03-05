@@ -138,6 +138,32 @@ def toa_data(request, we_pk):
 
 
 @login_required
+def obs_data(request, we_pk):
+
+    # Retrieve the selected ULP and working ephemeris
+    we = get_object_or_404(models.WorkingEphemeris, pk=we_pk)
+
+    # Get the ToAs that this user is allowed to view
+    obss = models.Observation.objects.filter(ulps=we.ulp, freq__isnull=False)
+
+    # Barycentre
+    mjds = Time([float(obs.start_mjd) for obs in obss], format='mjd') + ([obs.duration for obs in obss] * u.s)/2
+    bc_corrections = bc_corr(we.coord, mjds).to('day').value
+
+    obss_json = [
+        {
+            'mjd': float(mjds[i].mjd),
+            'mjd_err': float(obss[i].duration)/2,
+            'freq_MHz': float(obss[i].freq),
+            'bc_correction': bc_corrections[i],
+            'detail_link': "",  # TODO: Change me!
+        } for i in range(len(obss))
+    ]
+
+    return JsonResponse(obss_json, safe=False)
+
+
+@login_required
 def timing_choose_ulp_view(request):
 
     # Get ULPs to which they have access
