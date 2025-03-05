@@ -62,6 +62,11 @@ class Observation(models.Model):
         verbose_name="ULPs",
     )
 
+    @property
+    def start_gps(self):
+        t = Time(self.start_mjd, scale='utc', format='mjd')
+        return float(t.gps)
+
     def __str__(self):
         return f'{self.telescope_name} ({self.start_mjd})'
 

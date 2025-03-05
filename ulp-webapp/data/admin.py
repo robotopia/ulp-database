@@ -96,3 +96,9 @@ class TemplateComponentAdmin(admin.ModelAdmin):
 class ToaAdmin(admin.ModelAdmin):
     list_display = ['pk', 'toa_mjd', 'toa_err_s', 'template', 'pulse', 'ampl']
     list_filter = ['template__working_ephemeris__ulp']
+
+@admin.register(Observation)
+class ObservationAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'telescope_name', 'freq', 'bw', 'start_mjd', 'start_gps', 'duration']
+    list_filter = ['telescope_name']
+
