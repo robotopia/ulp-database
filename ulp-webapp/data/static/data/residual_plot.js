@@ -197,7 +197,7 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
   plot.zero_residual_path.attr("d", "M 0," + plot.y(0) + " l " + plot.width + ",0");
 }
 
-function add_residual_data(plot, toa_url, color, ephemeris, barycentre) {
+function add_residual_data(plot, toa_url, appearance, ephemeris, barycentre, label) {
   // plot should be an object returned by create_residual_plot_elements()
   // toas should be an array of objects of the form:
   //     [{mjd: 60001.0, mjd_err: 1e-4, bc_correction: 0.001, freq_MHz: 200.0}, ... ]
@@ -208,28 +208,31 @@ function add_residual_data(plot, toa_url, color, ephemeris, barycentre) {
   d3.json(toa_url, function(toas) {
 
     const datapoints = plot.g.append("g")
+    plot[label] = {};
 
-    plot.toa_err_points = datapoints
+    plot[label].err = datapoints
       .selectAll(".err")
       .data(toas)
       .enter()
       .append("a")
       .attr("xlink:href", function(toa) { return toa.detail_link; })
       .append("path")
-      .style("stroke", color)
-      .style("stroke-width", "2");
+      .style("stroke", appearance.color)
+      .style("stroke-width", appearance.stroke_width);
 
-    plot.toa_points = datapoints
+    plot[label].points = datapoints
       .selectAll(".data")
       .data(toas)
       .enter()
       .append("a")
       .attr("xlink:href", function(toa) { return toa.detail_link; })
       .append("circle")
-      .attr("r", 3)
-      .style("fill", color);
+      .attr("r", appearance.circle_radius)
+      .style("fill", appearance.color);
 
-    position_residual_data(plot, ephemeris, barycentre);
+    plot[label].appearance = appearance;
+
+    position_residual_data(plot, ephemeris, barycentre, label);
   });
 }
 
@@ -249,22 +252,23 @@ function apply_corrections(toa, ephemeris, barycentre) {
   return adjusted_mjd;
 }
 
-function position_residual_data(plot, ephemeris, barycentre) {
+function position_residual_data(plot, ephemeris, barycentre, label) {
   // plot should be an object returned by create_residual_plot_elements()
   // ephemeris should be an object of the form:
   //     {folding_period: 1000.0, pepoch: 60000.0, dm: 100.0}
 
-  plot.toa_points
-    .attr("cx", function (toa) {
-
+  if (plot[label].appearance.display_points === true) {
+    plot[label].points.attr("cx", function (toa) {
       return plot.x2(calc_pulse_phase(apply_corrections(toa, ephemeris, barycentre), ephemeris).pulse);
-    })
-    .attr("cy", function (toa) {
+    }).attr("cy", function (toa) {
       return plot.y(calc_pulse_phase(apply_corrections(toa, ephemeris, barycentre), ephemeris).phase);
-    })
+    }).attr("visibility", "visible");
+  } else {
+    plot[label].points.attr("visibility", "hidden");
+  }
 
-  plot.toa_err_points
-    .attr("d", function (toa) {
+  if (plot[label].appearance.display_err === true) {
+    plot[label].err.attr("d", function (toa) {
       const pulse_phase_lo = calc_pulse_phase(apply_corrections(toa, ephemeris, barycentre) - toa.mjd_err, ephemeris);
       const pulse_phase_hi = calc_pulse_phase(apply_corrections(toa, ephemeris, barycentre) + toa.mjd_err, ephemeris);
 
@@ -286,19 +290,21 @@ function position_residual_data(plot, ephemeris, barycentre) {
         // The errors do not straddle the phase = 0.5 boundary between adjacent pulses,
         // so draw a single line
         path = " M " + xpos_lo + "," + ypos_lo +
-               " L " + xpos_hi + "," + ypos_hi;
+          " L " + xpos_hi + "," + ypos_hi;
       } else {
         // The errors *do* straddle the phase = 0.5 boundary between adjacent pulses,
         // so draw two line segments
         path = " M " + xpos_lo + "," + ypos_lo +
-               " L " + xpos_lo + "," + plot.y(0.5) +
-               " M " + xpos_hi + "," + plot.y(-0.5) +
-               " L " + xpos_hi + "," + ypos_hi;
+          " L " + xpos_lo + "," + plot.y(0.5) +
+          " M " + xpos_hi + "," + plot.y(-0.5) +
+          " L " + xpos_hi + "," + ypos_hi;
       }
 
       return path;
-    })
-
+    }).attr("visibility", "visible");
+  } else {
+    plot[label].err.attr("visibility", "hidden");
+  }
 }
 
 // A handy function for plotting the period path
@@ -343,7 +349,6 @@ function plot_zoom(plot, pos, ephemeris, barycentre) {
   }
 
   set_residual_plot_dimensions(plot, [xmin, xmax], [ymin, ymax], plot.margins, ephemeris);
-  position_residual_data(plot, ephemeris, barycentre);
 }
 
 /******************************************************\
@@ -359,7 +364,7 @@ function edit_period_mousedown() {
   period_ref_factor = null;
 }
 
-function edit_period_mousemove(plot, ephemeris, pos, barycentre) {
+function edit_period_mousemove(plot, ephemeris, pos, barycentre, label) {
 
   var pepoch = pepoch_element.value;
   var folding_period = folding_period_element.value;
@@ -373,7 +378,7 @@ function edit_period_mousemove(plot, ephemeris, pos, barycentre) {
     ephemeris.folding_period *= (1 - (factor - period_ref_factor));
 
     // Update plot
-    position_residual_data(plot, ephemeris, barycentre);
+    position_residual_data(plot, ephemeris, barycentre, label);
   }
 
   period_ref_factor = factor;

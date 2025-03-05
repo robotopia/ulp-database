@@ -21,8 +21,14 @@
 
 <fieldset id="plot_settings">
   <legend>Plot settings</legend>
-  <input id="barycentre" type="checkbox" checked onchange="replot();"/>
-  <label for="barycentre">Barycentre ToAs?</label>
+  <div>
+    <input id="barycentre" type="checkbox" checked onchange="replot();"/>
+    <label for="barycentre">Barycentre ToAs?</label>
+  </div>
+  <div>
+    <input id="display_obs" type="checkbox" onchange="replot();"/>
+    <label for="display_obs">Display observations?</label>
+  </div>
 </fieldset>
 
 <h2>Ephemeris</h2>
@@ -231,6 +237,7 @@
   const pepoch_element = document.getElementById("pepoch");
   const dm_element = document.getElementById("dm");
   const barycentre_element = document.getElementById("barycentre");
+  const display_obs_element = document.getElementById("display_obs");
 
   // set the dimensions and margins of the graph
   var parentDiv = document.getElementById("residual-plot");
@@ -260,7 +267,9 @@
       pepoch: pepoch_element.value,
       dm: dm_element.value,
     };
-    position_residual_data(plot, ephemeris, barycentre_element.checked);
+    plot["Observations"].appearance.display_err = display_obs_element.checked;
+    position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
+    position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
   }
 
   // Zoom on mouse wheel
@@ -276,6 +285,8 @@
     };
 
     plot_zoom(plot, scrollpos, ephemeris, barycentre_element.checked);
+    position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
+    position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
   });
 
   // Change period on mouse drag
@@ -292,7 +303,8 @@
         pepoch: pepoch_element.value,
         dm: dm_element.value,
       };
-      edit_period_mousemove(plot, ephemeris, movepos, barycentre_element.checked);
+      edit_period_mousemove(plot, ephemeris, movepos, barycentre_element.checked, "ToAs");
+      edit_period_mousemove(plot, ephemeris, movepos, barycentre_element.checked, "Observations");
 
       // Change the value in the input field
       folding_period_element.value = ephemeris.folding_period;
@@ -304,7 +316,31 @@
   });
 
   // Plot once to get started
-  add_residual_data(plot, "{% url 'toa_data' we_pk=selected_working_ephemeris.pk %}", "#d090f8", ephemeris, barycentre_element.checked);
+  add_residual_data(plot,
+    "{% url 'toa_data' we_pk=selected_working_ephemeris.pk %}",
+    {
+      color: "#d090f8",
+      display_points: true,
+      display_err: true,
+      stroke_width: "2",
+      circle_radius: 3,
+    },
+    ephemeris,
+    barycentre_element.checked,
+    "ToAs"
+  );
+  add_residual_data(plot,
+    "{% url 'obs_data' we_pk=selected_working_ephemeris.pk %}",
+    {
+      color: "#cc9999",
+      display_points: false,
+      display_err: false,
+      stroke_width: "1",
+    },
+    ephemeris,
+    barycentre_element.checked,
+    "Observations"
+  );
 
   // When an ephemeris value changes, compare it to the selected working ephemeris value
   // and color the cell differently if the values are different
