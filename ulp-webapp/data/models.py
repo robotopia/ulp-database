@@ -17,7 +17,7 @@ from common.models import AbstractPermission
 from common.utils import barycentre, scale_to_frequency
 
 
-class Observation(models.Model):
+class Observation(AbstractPermission):
 
     telescope_name = models.CharField(
         max_length=255,
