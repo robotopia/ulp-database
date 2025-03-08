@@ -11,8 +11,8 @@
     <div class="collapse navbar-collapse">
       <div class="navbar-nav">
         <a class="nav-link" href="{% url 'timing_residuals' pk=ulp.pk %}">Predict ToAs</a>
-        <!--<a class="nav-link nav-link-active" href="{% url 'toas_view' pk=ulp.pk %}">Edit ToAs</a>-->
         <span class="nav-link nav-link-active" style="cursor: default;">Edit ToAs</span>
+        <a class="nav-link" href="{% url 'observations_view' pk=ulp.pk %}">Edit observations</a>
       </div>
     </div>
   </div>

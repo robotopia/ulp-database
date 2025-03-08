@@ -114,24 +114,31 @@ h1, h2, h3, h4, h5 {
   padding: 0px;
 }
 
-.toa-list > * {
+.observation-list {
+  display: grid;
+  grid-template-columns: 40px 120px 250px 120px 120px 300px 120px;
+  gap: 0px;
+  padding: 0px;
+}
+
+.toa-list, .observation-list > * {
   border: 0px;
   display: inline-block;
   background-color: field;
 }
 
-.toa-row > * {
+.toa-row, .observation-row > * {
   border: 0px;
   /*width: 500px;*/
 }
 
-.toa-row > input::-webkit-outer-spin-button,
-.toa-row > input::-webkit-inner-spin-button {
+.toa-row, .observation-row > input::-webkit-outer-spin-button,
+.toa-row, .observation-row > input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.toa-row > input[type=number] {
+.toa-row, .observation-row > input[type=number] {
   -moz-appearance: textfield;
 }
 

@@ -38,6 +38,8 @@ site_names = sorted(EarthLocation.get_site_names(), key=str.casefold)
 # Defined at the database level
 toa_freq_units = "MHz"
 toa_mjd_err_units = "d"
+observation_freq_units = "MHz"
+observation_duration_units = "s"
 
 def calc_dmdelay(dm, flo, fhi):
     return 4.148808e3 * u.s * (dm.to('pc/cm3').value) * (1/flo.to('MHz').value**2 - 1/fhi.to('MHz').value**2)
@@ -144,7 +146,7 @@ def obs_data(request, we_pk):
     we = get_object_or_404(models.WorkingEphemeris, pk=we_pk)
 
     # Get the ToAs that this user is allowed to view
-    obss = models.Observation.objects.filter(ulps=we.ulp, freq__isnull=False)
+    obss = permitted_to_view_filter(models.Observation.objects.filter(ulps=we.ulp, freq__isnull=False), request.user)
 
     # Barycentre
     mjds = Time([float(obs.start_mjd) for obs in obss], format='mjd') + ([obs.duration for obs in obss] * u.s)/2
@@ -428,6 +430,42 @@ def toas_view(request, pk):
     return render(request, 'data/toas.html', context)
 
 
+@login_required
+def observations_view(request, pk):
+
+    # Retrieve the selected Observations from the specified ULP
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+    observations = ulp.observations.all()
+
+    # Now limit only to those that this user has view access to
+    observations = permitted_to_view_filter(observations, request.user)
+
+    # Make sure the requested display units are dimensionally correct; if not, use default
+    freq_units = "MHz"
+    bw_units = "MHz"
+    duration_units = "s"
+
+    # Annotate ToAs according to whether the user can edit it or not
+    # See, e.g., https://stackoverflow.com/questions/41354910/how-to-annotate-the-result-of-a-model-method-to-a-django-queryset
+    for observation in observations:
+        observation.editable = observation.can_edit(request.user)
+        # Also switch units to whatever is requested
+        observation.freq = (observation.freq * u.Unit(observation_freq_units)).to(freq_units).value if observation.freq else None
+        observation.bw = (observation.bw * u.Unit(observation_freq_units)).to(bw_units).value if observation.bw else None
+        observation.duration = (observation.duration * u.Unit(observation_duration_units)).to(duration_units).value if observation.duration else None
+
+    context = {
+        "ulp": ulp,
+        "observations": observations,
+        "telescopes": site_names,
+        "duration_units": duration_units,
+        "freq_units": freq_units,
+        "bw_units": bw_units,
+    }
+
+    return render(request, 'data/observations.html', context)
+
+
 def add_or_update_pulse(request, pk):
 
     lightcurve = get_object_or_404(models.Lightcurve, pk=pk)
@@ -536,6 +574,24 @@ def act_on_toas(request, pk):
 
 
 @login_required
+def act_on_observations(request, pk):
+
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    # Parse out the ToA primary keys from the selected checkbox names
+    observation_pks = [int(key[3:]) for key in request.POST.keys() if key.startswith('cb_')]
+
+    if request.POST.get('action_on_selected') == 'delete':
+
+        # Get only the observations the user has permission to dete
+        observations = permitted_to_delete_filter(models.Observation.objects.filter(pk__in=observation_pks), request.user)
+
+        observations.delete()
+
+    return redirect('observations_view', pk=pk)
+
+
+@login_required
 def add_toa(request, pk):
 
     ulp = get_object_or_404(published_models.Ulp, pk=pk)
@@ -569,6 +625,43 @@ def add_toa(request, pk):
 
     return redirect('toas_view', pk=pk)
 
+
+@login_required
+def add_observation(request, pk):
+
+    ulp = get_object_or_404(published_models.Ulp, pk=pk)
+
+    try:
+        telescope_name = request.POST.get('telescope_name')
+        freq = float(request.POST.get('freq'))
+        bw = float(request.POST.get('bw'))
+        start_mjd = float(request.POST.get('start_mjd'))
+        duration = float(request.POST.get('duration'))
+        freq_units = request.POST.get('freq_units')
+        bw_units = request.POST.get('bw_units')
+        duration_units = request.POST.get('duration_units')
+
+        freq *= u.Unit(freq_units)
+        bw *= u.Unit(bw_units)
+        duration *= u.Unit(duration_units)
+    except Exception as err:
+        return HttpResponse(str(err), status=400)
+
+    observation = models.Observation(
+        owner=request.user,
+        telescope_name=telescope_name,
+        freq=freq.to(observation_freq_units).value,
+        bw=bw.to(observation_freq_units).value,
+        start_mjd=start_mjd,
+        duration=duration.to(observation_duration_units).value,
+    )
+
+    observation.save()
+    observation.ulps.add(ulp)
+
+    return redirect('observations_view', pk=pk)
+
+
 @login_required
 def update_toa(request):
 
@@ -594,6 +687,38 @@ def update_toa(request):
     # Save the result to the database
     try:
         toa.save()
+    except ValidationError as err:
+        return HttpResponse(str(err), status=400)
+
+    # Return "all is well"
+    return HttpResponse(status=200)
+
+
+@login_required
+def update_observation(request):
+
+    # Turn the data into a dictionary
+    data = json.loads(request.body.decode('utf-8'))
+
+    # Get the relevant TOA object
+    observation = get_object_or_404(models.Observation, pk=data['pk'])
+
+    # Second, they have to belong to a group that has been granted edit privileges
+    if not observation.can_edit(request.user):
+        return HttpResponse(status=403)
+
+    # Set the field value
+    value = data['value']
+    unit = u.Unit(data['unit'])
+    if data['field'] in ["mjd_err"]:
+        value = (float(value)*unit).to(observation_mjd_err_units).value
+    if data['field'] in ["freq", "bw"]:
+        value = (float(value)*unit).to(observation_freq_units).value
+    setattr(observation, data['field'], value)
+
+    # Save the result to the database
+    try:
+        observation.save()
     except ValidationError as err:
         return HttpResponse(str(err), status=400)
 
