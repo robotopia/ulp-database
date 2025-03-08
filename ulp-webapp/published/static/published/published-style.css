@@ -121,24 +121,24 @@ h1, h2, h3, h4, h5 {
   padding: 0px;
 }
 
-.toa-list, .observation-list > * {
+.toa-list > *, .observation-list > * {
   border: 0px;
   display: inline-block;
   background-color: field;
 }
 
-.toa-row, .observation-row > * {
+.toa-row > *, .observation-row > * {
   border: 0px;
   /*width: 500px;*/
 }
 
-.toa-row, .observation-row > input::-webkit-outer-spin-button,
-.toa-row, .observation-row > input::-webkit-inner-spin-button {
+.toa-row > input::-webkit-outer-spin-button, .observation-row > input::-webkit-outer-spin-button,
+.toa-row > input::-webkit-inner-spin-button, .observation-row > input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.toa-row, .observation-row > input[type=number] {
+.toa-row > input[type=number], .observation-row > input[type=number] {
   -moz-appearance: textfield;
 }
 

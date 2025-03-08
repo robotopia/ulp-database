@@ -42,6 +42,7 @@
 
   <span></span>
   <span></span>
+  <span></span>
   <select id="freq_units" name="freq_units" form="add_observation" onchange="convert_freq_units();">
     <option value="Hz" {% if freq_units == "Hz" %}selected{% endif %}>Hz</option>
     <option value="kHz" {% if freq_units == "kHz" %}selected{% endif %}>kHz</option>
@@ -63,7 +64,6 @@
     <option value="hr" {% if duration_units == "hr" %}selected{% endif %}>hr</option>
     <option value="d" {% if duration_units == "d" %}selected{% endif %}>d</option>
   </select>
-  <span></span>
 
   {% for observation in observations %}
   {% if observation.editable is False %}

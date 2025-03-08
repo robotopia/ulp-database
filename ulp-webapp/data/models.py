@@ -71,8 +71,19 @@ class Observation(AbstractPermission):
         return f'{self.telescope_name} ({self.start_mjd})'
 
     def clean(self):
+        # Make sure the telescope is listed in Astropy
         if self.telescope_name and self.telescope_name not in EarthLocation.get_site_names():
             raise ValidationError(f"\"{self.telescope_name}\" is not found among AstroPy's EarthLocation's site names.")
+
+        # Check for observations with the same telescope that overlap in time with this one
+        if self.telescope_name and self.duration:
+            qs = Observations.objects.filter(
+                     telescope=self.telescope,
+                     start_mjd__gte=this.start_mjd,
+                     start_mjd__lte=this.start_mjd + this.duration/86400.0,
+                 )
+            if qs.exists():
+                raise ValidationError(f"At least once observation already exists at this time ({qs.first().start_mjd})")
 
     class Meta:
         ordering = ['start_mjd', 'freq', 'telescope_name']
