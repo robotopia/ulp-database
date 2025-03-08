@@ -31,7 +31,8 @@
     <label for="display_obs">Display observations?</label>
   </div>
   <div>
-    <button type="button" class="btn btn-primary" onclick="zoom_out_yaxis();">Reset y-axis to [-0.5,0.5]</button>
+    <button type="button" class="btn btn-primary" onclick="reset_zoom_xaxis();">Reset x-axis</button>
+    <button type="button" class="btn btn-primary" onclick="reset_zoom_yaxis();">Reset y-axis</button>
   </div>
 </fieldset>
 
@@ -445,8 +446,14 @@
     reset_ephemeris_fields();
   }
 
-  function zoom_out_yaxis() {
-    set_residual_plot_dimensions(plot, plot.xlim, [-0.5, 0.5], plot.margins, ephemeris);
+  function reset_zoom_xaxis() {
+    set_residual_plot_dimensions(plot, xlim, plot.ylim, plot.margins, ephemeris);
+    position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
+    position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
+  }
+
+  function reset_zoom_yaxis() {
+    set_residual_plot_dimensions(plot, plot.xlim, ylim, plot.margins, ephemeris);
     position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
     position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
   }
