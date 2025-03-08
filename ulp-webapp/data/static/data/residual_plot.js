@@ -68,10 +68,10 @@ function create_residual_plot_elements(parentDivId) {
     .attr("fill", "var(--bs-body-color)");
 
   // Add the axes themselves (as groups)
-  var xaxis = g.append("g");
-  var yaxis = g.append("g");
-  var x2axis = g.append("g");
-  var y2axis = g.append("g");
+  var xaxis = g.append("g").attr("pointer-events", "bounding-box").attr("cursor", "ew-resize");
+  var yaxis = g.append("g").attr("pointer-events", "bounding-box").attr("cursor", "ns-resize");
+  var x2axis = g.append("g").attr("pointer-events", "bounding-box").attr("cursor", "ew-resize");
+  var y2axis = g.append("g").attr("pointer-events", "bounding-box").attr("cursor", "ns-resize");
 
   // Add a dashed vertical line to mark PEPOCH
   var pepoch_path = g.append("path")

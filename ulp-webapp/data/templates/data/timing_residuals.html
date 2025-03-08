@@ -300,7 +300,7 @@
   plot.svg.on("mousedown", edit_period_mousedown);
 
   plot.svg.on("mousemove", function() {
-    if (svg_mousedown) {
+    if (svg_mousedown) { // If the mouse button is still down after having been clicked on the plot
       d3.event.preventDefault();
 
       let movepos = d3.mouse(this);
