@@ -99,10 +99,10 @@ class ToaAdmin(admin.ModelAdmin):
 
 @admin.register(Observation)
 class ObservationAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'telescope_name', 'freq', 'bw', 'start_mjd', 'start_gps', 'duration']
+    list_display = ['pk', 'telescope_name', 'obsid', 'freq', 'bw', 'start_mjd', 'start_gps', 'duration']
     list_filter = ['telescope_name', 'ulps']
     fieldsets = [
         PermissionFieldset,
-        (None, {"fields": ["telescope_name", "freq", "bw", "start_mjd", "duration", "ulps"]}),
+        (None, {"fields": ["telescope_name", "obsid", "freq", "bw", "start_mjd", "duration", "ulps"]}),
     ]
 

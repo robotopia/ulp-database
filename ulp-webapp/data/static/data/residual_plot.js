@@ -197,35 +197,35 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
   plot.zero_residual_path.attr("d", "M 0," + plot.y(0) + " l " + plot.width + ",0");
 }
 
-function add_residual_data(plot, toa_url, appearance, ephemeris, barycentre, label) {
+function add_residual_data(plot, json_url, appearance, ephemeris, barycentre, label) {
   // plot should be an object returned by create_residual_plot_elements()
-  // toas should be an array of objects of the form:
+  // json_url should return a JSON object of the form:
   //     [{mjd: 60001.0, mjd_err: 1e-4, bc_correction: 0.001, freq_MHz: 200.0}, ... ]
   // color can be any string representing a valid color
   // ephemeris should be an object of the form:
   //     {folding_period: 1000.0, pepoch: 60000.0, dm: 100.0}
 
-  d3.json(toa_url, function(toas) {
+  d3.json(json_url, function(data) {
 
     const datapoints = plot.g.append("g")
     plot[label] = {};
 
     plot[label].err = datapoints
       .selectAll(".err")
-      .data(toas)
+      .data(data)
       .enter()
       .append("a")
-      .attr("xlink:href", function(toa) { return toa.detail_link; })
+      .attr("xlink:href", function(datum) { return datum.detail_link; })
       .append("path")
       .style("stroke", appearance.color)
       .style("stroke-width", appearance.stroke_width);
 
     plot[label].points = datapoints
       .selectAll(".data")
-      .data(toas)
+      .data(data)
       .enter()
       .append("a")
-      .attr("xlink:href", function(toa) { return toa.detail_link; })
+      .attr("xlink:href", function(datum) { return datum.detail_link; })
       .append("circle")
       .attr("r", appearance.circle_radius)
       .style("fill", appearance.color);

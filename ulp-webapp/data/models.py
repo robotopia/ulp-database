@@ -19,6 +19,14 @@ from common.utils import barycentre, scale_to_frequency
 
 class Observation(AbstractPermission):
 
+    obsid = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Observation ID",
+        verbose_name="ObsID",
+    )
+
     telescope_name = models.CharField(
         max_length=255,
         null=True,
@@ -62,6 +70,20 @@ class Observation(AbstractPermission):
         verbose_name="ULPs",
     )
 
+    pointing_raj_deg = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The right ascension (J2000) of the pointing centre, in deg.",
+        verbose_name="RA (J2000) (°)",
+    )
+
+    pointing_decj_deg = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The declination (J2000) of the pointing centre, in deg.",
+        verbose_name="Dec (J2000) (°)",
+    )
+
     @property
     def start_gps(self):
         t = Time(self.start_mjd, scale='utc', format='mjd')
@@ -74,6 +96,14 @@ class Observation(AbstractPermission):
         # Make sure the telescope is listed in Astropy
         if self.telescope_name and self.telescope_name not in EarthLocation.get_site_names():
             raise ValidationError(f"\"{self.telescope_name}\" is not found among AstroPy's EarthLocation's site names.")
+
+        # Check for unique Observation IDs (per telescope)
+        # Have to do this here (instead of as a unique constraint) because we're allowing
+        # these fields to be NULL, in which case the constraint doesn't apply
+        if self.telescope_name and self.obsid:
+            qs = Observations.objects.filter(telescope_name=self.telescope_name, obsid=self.obsid)
+            if qs.exists():
+                raise ValidationError(f"An observation for {self.telescope} already exists with the ObsID {self.obsid}")
 
         # Check for observations with the same telescope that overlap in time with this one
         if self.telescope_name and self.duration:

@@ -154,11 +154,12 @@ def obs_data(request, we_pk):
 
     obss_json = [
         {
+            'obsid': obss[i].obsid,
             'mjd': float(mjds[i].mjd),
             'mjd_err': obss[i].duration/86400/2,
             'freq_MHz': float(obss[i].freq),
             'bc_correction': bc_corrections[i],
-            'detail_link': "",  # TODO: Change me!
+            'detail_link': obss[i].obsid,  # TODO: Change me!
         } for i in range(len(obss))
     ]
 
