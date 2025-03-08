@@ -30,6 +30,9 @@
     <input id="display_obs" type="checkbox" onchange="replot();"/>
     <label for="display_obs">Display observations?</label>
   </div>
+  <div>
+    <button type="button" class="btn btn-primary" onclick="zoom_out_yaxis();">Reset y-axis to [-0.5,0.5]</button>
+  </div>
 </fieldset>
 
 <h2>Ephemeris</h2>
@@ -269,6 +272,8 @@
       dm: dm_element.value,
     };
     plot["Observations"].appearance.display_err = display_obs_element.checked;
+
+    set_residual_plot_dimensions(plot, plot.xlim, plot.ylim, margin, ephemeris);
     position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
     position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
   }
@@ -309,11 +314,16 @@
 
       // Change the value in the input field
       folding_period_element.value = ephemeris.folding_period;
+      update_ephemeris_field(folding_period_element, "P0");
     }
   });
 
   plot.svg.on("mouseup", function() {
     edit_period_mouseup(plot);
+    replot();
+    //set_residual_plot_dimensions(plot, plot.xlim, plot.ylim, margin, ephemeris);
+    //position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
+    //position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
   });
 
   // Plot once to get started
@@ -347,11 +357,7 @@
   // and color the cell differently if the values are different
   function update_ephemeris_field(element, field_name) {
     var value = selected_working_ephemeris[field_name];
-    if (value == element.value) {
-      element.style.backgroundColor = "field";
-    } else {
-      element.style.backgroundColor = "#880";
-    }
+    element.style.backgroundColor = (value == element.value ? "field" : "#880");
 
     replot();
   }
@@ -437,6 +443,12 @@
     // With selected_working_ephemeris now set, we can "reset" the values
     // and update the plot, etc.
     reset_ephemeris_fields();
+  }
+
+  function zoom_out_yaxis() {
+    set_residual_plot_dimensions(plot, plot.xlim, [-0.5, 0.5], plot.margins, ephemeris);
+    position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
+    position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
   }
 
 </script>
