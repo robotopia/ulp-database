@@ -261,8 +261,8 @@
     dm: dm_element.value,
   };
 
-  var xlim = [{{ plot_specs.xmin }}, {{ plot_specs.xmax }}];
-  var ylim = [-0.5, 0.5];
+  const xlim = [{{ plot_specs.xmin }}, {{ plot_specs.xmax }}];
+  const ylim = [-0.5, 0.5];
 
   set_residual_plot_dimensions(plot, xlim, ylim, margin, ephemeris);
 
@@ -298,6 +298,10 @@
 
   // Change period on mouse drag
   plot.svg.on("mousedown", edit_period_mousedown);
+  plot.xaxis.on("mousedown", function() { edit_axis_mousedown(d3.mouse(this)); });
+  plot.yaxis.on("mousedown", function() { edit_axis_mousedown(d3.mouse(this)); });
+  plot.x2axis.on("mousedown", function() { edit_axis_mousedown(d3.mouse(this)); });
+  plot.y2axis.on("mousedown", function() { edit_axis_mousedown(d3.mouse(this)); });
 
   plot.svg.on("mousemove", function() {
     if (svg_mousedown) { // If the mouse button is still down after having been clicked on the plot
@@ -319,12 +323,14 @@
     }
   });
 
+  plot.xaxis.on("mousemove", function () { edit_axis_mousemove(plot, d3.mouse(this), "x"); replot(); });
+  plot.yaxis.on("mousemove", function () { edit_axis_mousemove(plot, d3.mouse(this), "y"); replot(); });
+  plot.x2axis.on("mousemove", function () { edit_axis_mousemove(plot, d3.mouse(this), "x"); replot(); });
+  plot.y2axis.on("mousemove", function () { edit_axis_mousemove(plot, d3.mouse(this), "y"); replot(); });
+
   plot.svg.on("mouseup", function() {
-    edit_period_mouseup(plot);
+    edit_mouseup(plot);
     replot();
-    //set_residual_plot_dimensions(plot, plot.xlim, plot.ylim, margin, ephemeris);
-    //position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
-    //position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
   });
 
   // Plot once to get started
@@ -447,15 +453,13 @@
   }
 
   function reset_zoom_xaxis() {
-    set_residual_plot_dimensions(plot, xlim, plot.ylim, plot.margins, ephemeris);
-    position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
-    position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
+    plot.xlim = [...xlim];
+    replot();
   }
 
   function reset_zoom_yaxis() {
-    set_residual_plot_dimensions(plot, plot.xlim, ylim, plot.margins, ephemeris);
-    position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
-    position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
+    plot.ylim = [...ylim];
+    replot();
   }
 
 </script>

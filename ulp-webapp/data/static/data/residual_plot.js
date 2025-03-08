@@ -132,8 +132,8 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
 
   // Attach margins amd lims to plot object
   plot.margins = margins;
-  plot.xlim = xlim;
-  plot.ylim = ylim;
+  plot.xlim = [...xlim]; // Shallow copy
+  plot.ylim = [...ylim];
 
   // Set up graph coordinates
   plot.g.attr("transform", "translate(" + margins.left + "," + margins.top + ")");
@@ -351,17 +351,26 @@ function plot_zoom(plot, pos, ephemeris, barycentre) {
   set_residual_plot_dimensions(plot, [xmin, xmax], [ymin, ymax], plot.margins, ephemeris);
 }
 
-/******************************************************\
-*  Mouse interaction functions for editing the period  *
-\******************************************************/
+/*****************************************************************\
+*  Mouse interaction functions for editing the period and/or axes *
+\*****************************************************************/
 
 // Global state
 svg_mousedown = false;
+axis_mousedown = false;
 period_ref_factor = null;
+prev_pos = {x: 0, y: 0}; // Dummy values. Set on mousedown
 
 function edit_period_mousedown() {
   svg_mousedown = true;
   period_ref_factor = null;
+}
+
+function edit_axis_mousedown(pos) {
+  d3.event.stopPropagation();
+  axis_mousedown = true;
+  prev_pos.x = plot.x.invert(pos[0] - plot.margins.left);
+  prev_pos.y = plot.y.invert(pos[1] - plot.margins.top);
 }
 
 function edit_period_mousemove(plot, ephemeris, pos, barycentre, label) {
@@ -386,11 +395,34 @@ function edit_period_mousemove(plot, ephemeris, pos, barycentre, label) {
   plot_period_line(plot, pos);
 }
 
-function edit_period_mouseup(plot) {
+function edit_axis_mousemove(plot, pos, axis) {
+  if (axis_mousedown === true) {
+    d3.event.stopPropagation();
+    if (axis == "x") {
+      xpos = plot.x.invert(pos[0] - plot.margins.left);
+      xdiff = xpos - prev_pos.x;
+      plot.xlim[0] -= xdiff;
+      plot.xlim[1] -= xdiff;
+    } else if (axis == "y") {
+      ypos = plot.y.invert(pos[1] - plot.margins.top);
+      ydiff = ypos - prev_pos.y;
+      plot.ylim[0] -= ydiff;
+      plot.ylim[1] -= ydiff;
+    }
+  }
+}
 
-  svg_mousedown = false;
+function edit_mouseup(plot) {
 
-  plot.period_path
-    .style("stroke-opacity", "0.0");
+  if (svg_mousedown === true) {
+    svg_mousedown = false;
+
+    plot.period_path
+      .style("stroke-opacity", "0.0");
+  }
+
+  if (axis_mousedown === true) {
+    axis_mousedown = false;
+  }
 }
 
