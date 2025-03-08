@@ -239,7 +239,7 @@ def timing_residual_view(request, pk):
     }
     coord = selected_working_ephemeris.coord
 
-    # Do something similar for toas that are not yet dediserpsed, but for which a frequency is given
+    # Do something similar for toas that are not yet dedispersed, but for which a frequency is given
     if 'DM' in ephemeris.keys() and ephemeris['DM'] is not None:
         dm = ephemeris['DM'] * u.pc / u.cm**3
         for toa in toas:
@@ -348,27 +348,16 @@ def timing_residual_view(request, pk):
     )
     context['periods'] = periods
 
-    mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
-    mjd_errs = [float(toa.mjd_err) for toa in toas] * u.d
-
     # Calculate some sensible initial plot dimensions
+    mjds = Time([float(toa.mjd) for toa in toas], format='mjd')
     xdata_min = np.min(mjds).mjd
     xdata_max = np.max(mjds).mjd
     xdata_range = xdata_max - xdata_min
-
-    min_phases = (calc_pulse_phase(mjds - mjd_errs, ephemeris) + 0.5) % 1 - 0.5
-    max_phases = (calc_pulse_phase(mjds + mjd_errs, ephemeris) + 0.5) % 1 - 0.5
-    ydata_min = np.min(min_phases)
-    ydata_max = np.max(max_phases)
-    ydata_range = ydata_max - ydata_min
 
     plot_specs = {
         'xmin': xdata_min - 0.05*xdata_range,  # With an extra margin buffer
         'xmax': xdata_max + 0.05*xdata_range,
         'xrange': xdata_range,
-        'ymin': ydata_min - 0.05*ydata_range,
-        'ymax': ydata_max + 0.05*ydata_range,
-        'yrange': ydata_range,
     }
     context['plot_specs'] = plot_specs
 
