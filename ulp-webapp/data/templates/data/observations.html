@@ -1,0 +1,224 @@
+{% extends "published/main.html" %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>{{ ulp }}</h1>
+
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <div class="collapse navbar-collapse">
+      <div class="navbar-nav">
+        <a class="nav-link" href="{% url 'timing_residuals' pk=ulp.pk %}">Predict ToAs</a>
+        <a class="nav-link" href="{% url 'toas_view' pk=ulp.pk %}">Edit ToAs</a>
+        <span class="nav-link nav-link-active" style="cursor: default;">Edit Observations</span>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div style="padding: 10px;">
+  <form id="act_on_observations" method="post" action="{% url 'act_on_observations' pk=ulp.pk %}">
+    {% csrf_token %}
+    <select name="action_on_selected">
+      <option value=""></option>
+      <option value="delete">Delete selected observations</option>
+    </select>
+    <input type="submit" value="Go"/>
+  </form>
+</div>
+
+<div class="observation-list">
+
+  <!--<span><b>ID</b></span>-->
+  <input type="checkbox" id="select_all" onchange="toggle_select_all();"/>
+  <span><b>Owner</b></span>
+  <span><b>(Astropy) Telescope name</b></span>
+  <span><b>Frequency</b></span>
+  <span><b>Bandwidth</b></span>
+  <span><b>Start (MJD)</b></span>
+  <span><b>Duration</b></span>
+
+  <span></span>
+  <span></span>
+  <select id="freq_units" name="freq_units" form="add_observation" onchange="convert_freq_units();">
+    <option value="Hz" {% if freq_units == "Hz" %}selected{% endif %}>Hz</option>
+    <option value="kHz" {% if freq_units == "kHz" %}selected{% endif %}>kHz</option>
+    <option value="MHz" {% if freq_units == "MHz" %}selected{% endif %}>MHz</option>
+    <option value="GHz" {% if freq_units == "GHz" %}selected{% endif %}>GHz</option>
+  </select>
+  <select id="bw_units" name="bw_units" form="add_observation" onchange="convert_bw_units();">
+    <option value="Hz" {% if bw_units == "Hz" %}selected{% endif %}>Hz</option>
+    <option value="kHz" {% if bw_units == "kHz" %}selected{% endif %}>kHz</option>
+    <option value="MHz" {% if bw_units == "MHz" %}selected{% endif %}>MHz</option>
+    <option value="GHz" {% if bw_units == "GHz" %}selected{% endif %}>GHz</option>
+  </select>
+  <span></span>
+  <select id="duration_units" name="duration_units" form="add_observation" onchange="convert_time_units();">
+    <option value="us" {% if duration_units == "us" %}selected{% endif %}>μs</option>
+    <option value="ms" {% if duration_units == "ms" %}selected{% endif %}>ms</option>
+    <option value="s" {% if duration_units == "s" %}selected{% endif %}>s</option>
+    <option value="min" {% if duration_units == "min" %}selected{% endif %}>min</option>
+    <option value="hr" {% if duration_units == "hr" %}selected{% endif %}>hr</option>
+    <option value="d" {% if duration_units == "d" %}selected{% endif %}>d</option>
+  </select>
+  <span></span>
+
+  {% for observation in observations %}
+  {% if observation.editable is False %}
+  <span></span>
+  {% else %}
+  <input type="checkbox" id="cb_{{ observation.id }}" name="cb_{{ observation.id }}" class="observation-cbs" form="act_on_observations"/>
+  {% endif %}
+  <span>{{ observation.owner }}</span>
+  <select id="telescope_name_{{ observation.id }}" name="telescope_name" {% if observation.editable is False %}disabled{% endif %} onchange="update_observation({{ observation.pk }}, 'telescope_name', this, '');">
+    <option value="">--Select telescope--</option>
+    {% for telescope in telescopes %}
+    <option value="{{ telescope }}" {% if telescope == observation.telescope_name %}selected{% endif %}>{{ telescope }}</option>
+    {% endfor %}
+  </select>
+  <input type="number" class="freq-unit" id="freq_{{ observation.id }}" name="freq" value="{{ observation.freq|default_if_none:"" }}" {% if observation.editable is False %}disabled{% endif %} onchange="update_observation({{ observation.pk }}, 'freq', this, 'freq');" required/>
+  <input type="number" class="freq-unit" id="bw_{{ observation.id }}" name="bw" value="{{ observation.bw|default_if_none:"" }}" {% if observation.editable is False %}disabled{% endif %} onchange="update_observation({{ observation.pk }}, 'bw', this, 'freq');" required/>
+  <input type="number" class="time-unit" id="start_mjd_{{ observation.id }}" name="start_mjd" value="{{ observation.start_mjd|default_if_none:"" }}" {% if observation.editable is False %}disabled{% endif %} onchange="update_observation({{ observation.pk }}, 'start_mjd', this, '');"/>
+  <input type="number" id="duration_{{ observation.id }}" name="duration" value="{{ observation.duration|default_if_none:"" }}" {% if observation.editable is False %}disabled{% endif %} onchange="update_observation({{ observation.pk }}, 'duration', this, '');"/>
+  <!--
+  <input type='checkbox' id="barycentred" name="barycentred" {% if observation.editable is False %}disabled{% endif %} {% if observation.barycentred %}checked{% endif %} onchange="update_observation({{ observation.pk }}, 'barycentred', this);"/>
+  <input type='checkbox' id="dedispersed" name="dedispersed" {% if observation.editable is False %}disabled{% endif %} {% if observation.dedispersed %}checked{% endif %} onchange="update_observation({{ observation.pk }}, 'dedispersed', this);"/>
+  -->
+  {% endfor %}
+
+  <input type="submit" value="+" form="add_observation"/>
+  <span></span>
+  <select id="new_telescope_name" name="telescope_name" form="add_observation" required>
+    <option value="">--Select telescope--</option>
+    {% for telescope in telescopes %}
+    <option value="{{ telescope }}">{{ telescope }}</option>
+    {% endfor %}
+  </select>
+  <input type="number" class="freq-unit" id="new_freq" name="freq" form="add_observation" required/>
+  <input type="number" class="freq-unit" id="new_bw" name="bw" form="add_observation" required/>
+  <input type="number" id="new_start_mjd" name="start_mjd" form="add_observation" required/>
+  <input type="number" class="time-unit" id="new_duration" name="duration" form="add_observation" required/>
+</div>
+
+<form id="add_observation" method="post" action="{% url 'add_observation' pk=ulp.pk %}">
+  {% csrf_token %}
+</form>
+
+<script>
+  var current_duration_unit = "{{ duration_units }}";
+  var current_freq_unit = "{{ freq_units }}";
+  var current_bw_unit = "{{ bw_units }}";
+
+  const select_all = document.getElementById('select_all');
+  const observation_cbs = document.getElementsByClassName('observation-cbs');
+
+  function toggle_select_all() {
+    for (observation_cb of observation_cbs) {
+      observation_cb.checked = select_all.checked;
+    }
+  }
+
+  function update_observation(pk, field, cell, unit) {
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', "{% url 'update_observation' %}");
+    xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+    xhr.setRequestHeader("Content-type", "application/json");
+
+    const data = {
+      pk: pk,
+      field: field,
+      value: (cell.type === 'checkbox' ? cell.checked : cell.value),
+      unit: (unit == 'time' ? current_time_unit : (unit == 'freq' ? current_freq_unit : '')),
+    }
+
+    xhr.onload = () => {
+      if (xhr.status != 200) {
+        cell.style.backgroundColor = "#600";
+        alert(xhr.responseText);
+        return;
+      }
+
+      cell.style.backgroundColor = "field";
+    }
+
+    xhr.send(JSON.stringify(data));
+    cell.style.backgroundColor = "#880";
+  }
+
+  function convert_freq_units() {
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', "{% url 'convert_units' %}");
+    xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+    xhr.setRequestHeader("Content-type", "application/json");
+
+    select = document.getElementById('freq_units');
+    cells = document.getElementsByClassName('freq-unit');
+    const data = {
+      values: Array.from(cells, (c) => parseFloat(c.value)),
+      from_unit: current_freq_unit,
+      to_unit: select.value,
+    };
+
+    xhr.onload = () => {
+      if (xhr.status != 200) {
+        select.style.backgroundColor = "#600";
+        select.value = current_freq_unit;
+        alert(xhr.responseText);
+        return;
+      }
+
+      // Update the cells' values
+      new_values = JSON.parse(xhr.response);
+      Array.from(cells).forEach((c, i) => {
+        c.value = new_values[i];
+      });
+      select.style.backgroundColor = "field";
+      current_freq_unit = data.to_unit;
+    }
+
+    xhr.send(JSON.stringify(data));
+    select.style.backgroundColor = "#880";
+  }
+
+  function convert_time_units() {
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', "{% url 'convert_units' %}");
+    xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+    xhr.setRequestHeader("Content-type", "application/json");
+
+    select = document.getElementById('mjd_err_units');
+    cells = document.getElementsByClassName('time-unit');
+    const data = {
+      values: Array.from(cells, (c) => parseFloat(c.value)),
+      from_unit: current_time_unit,
+      to_unit: select.value,
+    };
+
+    xhr.onload = () => {
+      if (xhr.status != 200) {
+        select.style.backgroundColor = "#600";
+        select.value = current_time_unit;
+        alert(xhr.responseText);
+        return;
+      }
+
+      // Update the cells' values
+      new_values = JSON.parse(xhr.response);
+      Array.from(cells).forEach((c, i) => {
+        c.value = new_values[i];
+      });
+      select.style.backgroundColor = "field";
+      current_time_unit = data.to_unit;
+    }
+
+    xhr.send(JSON.stringify(data));
+    select.style.backgroundColor = "#880";
+  }
+</script>
+
+{% endblock %}
