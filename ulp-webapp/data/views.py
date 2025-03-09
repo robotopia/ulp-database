@@ -40,6 +40,7 @@ toa_freq_units = "MHz"
 toa_mjd_err_units = "d"
 observation_freq_units = "MHz"
 observation_duration_units = "s"
+observation_start_mjd_format = "mjd"
 
 def calc_dmdelay(dm, flo, fhi):
     return 4.148808e3 * u.s * (dm.to('pc/cm3').value) * (1/flo.to('MHz').value**2 - 1/fhi.to('MHz').value**2)
@@ -430,12 +431,50 @@ def observations_view(request, pk):
     # Now limit only to those that this user has view access to
     observations = permitted_to_view_filter(observations, request.user)
 
+    # Apply filters
+    try:
+        from_date = Time(request.GET.get('from_date'), scale='utc', format=request.GET.get('time_format'))
+    except:
+        from_date = None
+    if from_date:
+        observations = observations.filter(start_mjd__gte=from_date.mjd)
+
+    try:
+        to_date = Time(request.GET.get('to_date'), scale='utc', format=request.GET.get('time_format'))
+    except:
+        to_date = None
+    if to_date:
+        observations = observations.filter(start_mjd__lte=to_date.mjd)
+
+    # Paging!
+    try:
+        page = int(request.GET.get("page"))
+    except:
+        page = 1
+
+    try:
+        page_size = int(request.GET.get("page_size"))
+    except:
+        page_size = 50
+
+    start_idx = (page - 1)*page_size
+    end_idx = start_idx + page_size
+    npages = len(observations) // page_size + 1
+
+    if start_idx >= len(observations) or start_idx < 0:
+        observations = models.Observation.objects.none()
+    elif end_idx > len(observations):
+        observations = observations[start_idx:]
+    else:
+        observations = observations[start_idx:end_idx]
+
     # Make sure the requested display units are dimensionally correct; if not, use default
     freq_units = "MHz"
     bw_units = "MHz"
     duration_units = "s"
+    start_mjd_format = "mjd"
 
-    # Annotate ToAs according to whether the user can edit it or not
+    # Annotate observations according to whether the user can edit it or not
     # See, e.g., https://stackoverflow.com/questions/41354910/how-to-annotate-the-result-of-a-model-method-to-a-django-queryset
     for observation in observations:
         observation.editable = observation.can_edit(request.user)
@@ -448,9 +487,26 @@ def observations_view(request, pk):
         "ulp": ulp,
         "observations": observations,
         "telescopes": site_names,
-        "duration_units": duration_units,
-        "freq_units": freq_units,
-        "bw_units": bw_units,
+        "column_formats": {
+            "duration_units": duration_units,
+            "freq_units": freq_units,
+            "bw_units": bw_units,
+            "start_mjd_format": start_mjd_format,
+        },
+        "pages": {
+            "first": 1,
+            "prev": page-1 if page > 1 else 1,
+            "this": page,
+            "next": page+1 if page < npages else npages,
+            "last": npages,
+            "size": page_size,
+        },
+        "filters": {
+            'time_formats': sorted(list(Time.FORMATS.keys())),
+            'selected_time_format': request.GET.get('time_format', 'mjd'),
+            'from_date': request.GET.get('from_date'),
+            'to_date': request.GET.get('to_date'),
+        }
     }
 
     return render(request, 'data/observations.html', context)
@@ -545,6 +601,27 @@ def convert_units(request):
     return JsonResponse(new_values, safe=False, status=200)
 
 
+def convert_time_format(request):
+
+    # Turn the data into a dictionary
+    data = json.loads(request.body.decode('utf-8'))
+
+    # Get the values to be converted, and the units conversions to be effected
+    try:
+        values = data['values']
+        from_format = data['from_format']
+        to_format = data['to_format']
+
+        # Do the conversion
+        # astropy.Time can't handle None's being in the array, so have to do this one value at a time
+        new_values = [getattr(Time(value, scale='utc', format=from_format), to_format) if value != None else None for value in values]
+
+    except Exception as err:
+        return HttpResponse(str(err), status=400)
+
+    return JsonResponse(new_values, safe=False, status=200)
+
+
 @login_required
 def act_on_toas(request, pk):
 
@@ -625,15 +702,18 @@ def add_observation(request, pk):
         telescope_name = request.POST.get('telescope_name')
         freq = float(request.POST.get('freq'))
         bw = float(request.POST.get('bw'))
-        start_mjd = float(request.POST.get('start_mjd'))
+        start_mjd = request.POST.get('start_mjd')
         duration = float(request.POST.get('duration'))
         freq_units = request.POST.get('freq_units')
         bw_units = request.POST.get('bw_units')
         duration_units = request.POST.get('duration_units')
+        start_mjd_format = request.POST.get('start_mjd_format')
 
         freq *= u.Unit(freq_units)
         bw *= u.Unit(bw_units)
         duration *= u.Unit(duration_units)
+        start_mjd = Time(start_mjd, scale='utc', format=start_mjd_format).mjd
+
     except Exception as err:
         return HttpResponse(str(err), status=400)
 
@@ -701,7 +781,7 @@ def update_observation(request):
     value = data['value']
     unit = u.Unit(data['unit'])
     if data['field'] in ["mjd_err"]:
-        value = (float(value)*unit).to(observation_mjd_err_units).value
+        value = (float(value)*unit).to(observation_duration_units).value
     if data['field'] in ["freq", "bw"]:
         value = (float(value)*unit).to(observation_freq_units).value
     setattr(observation, data['field'], value)

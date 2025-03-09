@@ -30,6 +30,7 @@ urlpatterns = [
     re_path(r'^api/update_toa$', views.update_toa, name="update_toa"),
     re_path(r'^api/update_observation$', views.update_observation, name="update_observation"),
     re_path(r'^api/convert_units$', views.convert_units, name="convert_units"),
+    re_path(r'^api/convert_time_format$', views.convert_time_format, name="convert_time_format"),
     re_path(r'^api/update_permissions$', views.update_permissions, name="update_permissions"),
     re_path(r'^api/upload_lightcurve$', views.upload_lightcurve, name="upload_lightcurve"),
     re_path(r'^api/update_selected_working_ephemeris$', views.update_selected_working_ephemeris, name="update_selected_working_ephemeris"),
