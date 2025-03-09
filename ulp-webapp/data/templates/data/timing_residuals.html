@@ -462,6 +462,10 @@
     replot();
   }
 
+  window.addEventListener('resize', function(event) {
+    replot();
+  }, true);
+
 </script>
 
 {% endblock %}

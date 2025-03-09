@@ -143,7 +143,7 @@ h1, h2, h3, h4, h5 {
 }
 
 /* For D3 axis labels */
-.tick text {
+.tick text, .axis-label {
   user-select: none;
   pointer-events: none;
 }

@@ -51,21 +51,25 @@ function create_residual_plot_elements(parentDivId) {
   var xlabel = g.append("text")
     .attr("text-anchor", "middle")
     .text("MJD")
-    .attr("fill", "var(--bs-body-color)");
+    .attr("fill", "var(--bs-body-color)")
+    .classed("axis-label", true);
   var x2label = g.append("text")
     .attr("text-anchor", "middle")
     .text("Pulse number")
-    .attr("fill", "var(--bs-body-color)");
+    .attr("fill", "var(--bs-body-color)")
+    .classed("axis-label", true);
   var ylabel = g.append("text")
     .attr("transform", "rotate(-90)")
     .attr("text-anchor", "middle")
     .text("Residual (phase)")
-    .attr("fill", "var(--bs-body-color)");
+    .attr("fill", "var(--bs-body-color)")
+    .classed("axis-label", true);
   var y2label = g.append("text")
     .attr("transform", "rotate(-90)")
     .attr("text-anchor", "middle")
     .text("Residual (s)")
-    .attr("fill", "var(--bs-body-color)");
+    .attr("fill", "var(--bs-body-color)")
+    .classed("axis-label", true);
 
   // Add the axes themselves (as groups)
   var xaxis = g.append("g").attr("pointer-events", "bounding-box").attr("cursor", "ew-resize");
