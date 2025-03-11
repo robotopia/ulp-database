@@ -97,23 +97,25 @@ class Observation(AbstractPermission):
         if self.telescope_name and self.telescope_name not in EarthLocation.get_site_names():
             raise ValidationError(f"\"{self.telescope_name}\" is not found among AstroPy's EarthLocation's site names.")
 
-        # Check for unique Observation IDs (per telescope)
-        # Have to do this here (instead of as a unique constraint) because we're allowing
-        # these fields to be NULL, in which case the constraint doesn't apply
-        if self.telescope_name and self.obsid:
-            qs = Observations.objects.filter(telescope_name=self.telescope_name, obsid=self.obsid)
-            if qs.exists():
-                raise ValidationError(f"An observation for {self.telescope} already exists with the ObsID {self.obsid}")
+        # The following checks only apply to new observations
+        if self.pk is None:
+            # Check for unique Observation IDs (per telescope)
+            # Have to do this here (instead of as a unique constraint) because we're allowing
+            # these fields to be NULL, in which case the constraint doesn't apply
+            if self.telescope_name and self.obsid:
+                qs = Observations.objects.filter(telescope_name=self.telescope_name, obsid=self.obsid)
+                if qs.exists():
+                    raise ValidationError(f"An observation for {self.telescope} already exists with the ObsID {self.obsid}")
 
-        # Check for observations with the same telescope that overlap in time with this one
-        if self.telescope_name and self.duration:
-            qs = Observations.objects.filter(
-                     telescope=self.telescope,
-                     start_mjd__gte=this.start_mjd,
-                     start_mjd__lte=this.start_mjd + this.duration/86400.0,
-                 )
-            if qs.exists():
-                raise ValidationError(f"At least once observation already exists at this time ({qs.first().start_mjd})")
+            # Check for observations with the same telescope that overlap in time with this one
+            if self.telescope_name and self.duration:
+                qs = Observations.objects.filter(
+                         telescope=self.telescope,
+                         start_mjd__gte=this.start_mjd,
+                         start_mjd__lte=this.start_mjd + Decimal(this.duration/86400.0),
+                     )
+                if qs.exists():
+                    raise ValidationError(f"At least once observation already exists at this time ({qs.first().start_mjd})")
 
     class Meta:
         ordering = ['start_mjd', 'freq', 'telescope_name']
