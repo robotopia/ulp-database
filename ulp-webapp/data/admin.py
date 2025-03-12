@@ -106,3 +106,8 @@ class ObservationAdmin(admin.ModelAdmin):
         (None, {"fields": ["telescope_name", "obsid", "freq", "bw", "start_mjd", "duration", "ulps"]}),
     ]
 
+@admin.register(Nondetection)
+class NondetectionAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'observation', 'ulp', 'local_rms']
+    list_filter = ['observation', 'ulp']
+

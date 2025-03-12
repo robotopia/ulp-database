@@ -121,6 +121,39 @@ class Observation(AbstractPermission):
         ordering = ['start_mjd', 'freq', 'telescope_name']
 
 
+class Nondetection(models.Model):
+
+    observation = models.ForeignKey(
+        "Observation",
+        on_delete=models.CASCADE,
+        help_text="The observation being searched for a detection.",
+        related_name="nondetections",
+    )
+
+    ulp = models.ForeignKey(
+        published_models.Ulp,
+        on_delete=models.CASCADE,
+        help_text="The ULP being searched for.",
+        verbose_name="ULP",
+        related_name="nondetections",
+    )
+
+    local_rms = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The local rms of the observation, in Jy, which may be used to define an upper limit for the non-detection.",
+    )
+
+    def __str__(self):
+        return f"Non-detection of {self.ulp} in {self.observation}"
+
+    class Meta:
+        verbose_name = "Non-detection"
+        verbose_name_plural = "Non-detections"
+        constraints = [
+            models.UniqueConstraint(fields=['observation', 'ulp'], name="unique_obs_ulp_for_nondetection"),
+        ]
+
 
 class TimeOfArrival(AbstractPermission):
 
