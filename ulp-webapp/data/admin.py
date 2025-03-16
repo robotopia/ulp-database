@@ -12,7 +12,7 @@ class TimeOfArrivalAdmin(admin.ModelAdmin):
         PermissionFieldset,
         (
             None, {
-                "fields": ["ulp", ("mjd", "mjd_err"), "raw_mjd", "telescope_name", "freq", "bw", "spectral_index", "rotation_measure", "peak_flux_Jy", "upper_limit", "pulse_width", "barycentred", "dedispersed", "notes", "plots"],
+                "fields": ["ulp", ("mjd", "mjd_err"), "raw_mjd", "telescope_name", "freq", "bw", ("barycentred", "dedispersed"), "peak_flux_Jy", "fluence_Jy_s", "spectral_index", "rotation_measure", "upper_limit", "pulse_width", "notes"],
             }
         ),
     ]

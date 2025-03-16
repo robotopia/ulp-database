@@ -229,6 +229,12 @@ class TimeOfArrival(AbstractPermission):
         help_text="The peak flux of the pulse in Jy.",
     )
 
+    fluence_Jy_s = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The fluence of the pulse in Jy s.",
+    )
+
     upper_limit = models.BooleanField(
         default=False,
         help_text="Whether the given peak flux is an upper limit (thereby signifying that this ToA is a \"non-detection\").",
