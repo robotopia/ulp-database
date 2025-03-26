@@ -4,7 +4,7 @@
 
 {% block body %}
 
-Choose ULP:
+Choose LPT:
 <ul>
   {% for ulp in ulps %}
   <li><a href="{% url 'timing_residuals' pk=ulp.pk %}">{{ ulp }}</a></li>
