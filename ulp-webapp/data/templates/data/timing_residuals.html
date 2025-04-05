@@ -23,7 +23,7 @@
 <fieldset id="plot_settings">
   <legend>Plot settings</legend>
   <div>
-    <input id="barycentre" type="checkbox" checked onchange="replot();"/>
+    <input id="barycentre" type="checkbox" onchange="replot();"/>
     <label for="barycentre">Barycentre ToAs?</label>
   </div>
   <div>
@@ -32,11 +32,11 @@
   </div>
   <div>
     <label for="toa_color">ToA color:</label>
-    <input type="color" id="toa_color" value="#d090f8" onchange="update_toa_color();">
+    <input type="color" id="toa_color" onchange="update_toa_color();">
   </div>
   <div>
     <label for="observation_color">Observation color:</label>
-    <input type="color" id="observation_color" value="#cc9999" onchange="update_observation_color();">
+    <input type="color" id="observation_color" onchange="update_observation_color();">
   </div>
   <div>
     <button type="button" class="btn btn-primary" onclick="reset_zoom_xaxis();">Reset x-axis</button>
@@ -254,6 +254,12 @@
   const toa_color_element = document.getElementById("toa_color");
   const observation_color_element = document.getElementById("observation_color");
 
+  // Set some default values
+  toa_color_element.value = localStorage.getItem("toa_color") || getComputedStyle(document.body).getPropertyValue('--bs-body-color');
+  observation_color_element.value = localStorage.getItem("observation_color") || getComputedStyle(document.body).getPropertyValue('--bs-body-color');
+  barycentre_element.checked = localStorage.getItem("barycentre_toas") !== null ? localStorage.getItem("barycentre_toas") === "true" : true;
+  display_obs_element.checked = localStorage.getItem("display_observations") !== null ? localStorage.getItem("display_observations") === "true" : false;
+
   // set the dimensions and margins of the graph
   var parentDiv = document.getElementById("residual-plot");
 
@@ -287,17 +293,22 @@
     set_residual_plot_dimensions(plot, plot.xlim, plot.ylim, margin, ephemeris);
     position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
     position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
+
+    localStorage.setItem("barycentre_toas", barycentre_element.checked);
+    localStorage.setItem("display_observations", display_obs_element.checked);
   }
 
   function update_toa_color() {
     plot["ToAs"].appearance.color = toa_color_element.value;
     plot["ToAs"].points.style("fill", toa_color_element.value);
     plot["ToAs"].err.style("stroke", toa_color_element.value);
+    localStorage.setItem("toa_color", toa_color_element.value);
   }
 
   function update_observation_color() {
     plot["Observations"].appearance.color = observation_color_element.value;
     plot["Observations"].err.style("stroke", observation_color_element.value);
+    localStorage.setItem("observation_color", observation_color_element.value);
   }
 
   // Zoom on mouse wheel
@@ -373,7 +384,7 @@
     {
       color: observation_color_element.value,
       display_points: false,
-      display_err: false,
+      display_err: display_obs_element.checked,
       stroke_width: "1",
     },
     ephemeris,
