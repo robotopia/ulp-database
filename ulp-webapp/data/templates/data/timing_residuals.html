@@ -18,7 +18,7 @@
   </div>
 </nav>
 
-<div id="residual-plot" style="height: 500px;"></div>
+<div id="residual-plot" style="height: 500px;" class="{% if request.user.setting %}{{ request.user.setting.get_site_theme_display|lower|default_if_none:'dark' }}{% else %}dark{% endif %}"></div>
 
 <fieldset id="plot_settings">
   <legend>Plot settings</legend>

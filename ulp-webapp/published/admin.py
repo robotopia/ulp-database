@@ -38,3 +38,7 @@ class ParameterSetAdmin(admin.ModelAdmin):
 class UlpAdmin(admin.ModelAdmin):
     list_display = ['pk', 'name', 'abbr']
 
+@admin.register(UserSetting)
+class UserSettingAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'user', 'site_theme']
+

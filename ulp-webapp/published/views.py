@@ -269,3 +269,16 @@ def galactic_view(request):
 
     return render(request, 'published/galactic_view.html', context)
 
+
+def user_settings(request):
+
+    # Create a UserSetting for this user if needed
+    if not hasattr(request.user, 'setting'):
+        setting = models.UserSetting(user=request.user)
+        setting.save()
+
+    if request.method == 'POST':
+        request.user.setting.site_theme = request.POST.get('site_theme')
+        request.user.setting.save()
+
+    return render(request, 'published/user_settings.html')

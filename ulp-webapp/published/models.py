@@ -532,3 +532,29 @@ class Covariance(models.Model):
 
     class Meta:
         ordering = ['measurement1', 'measurement2']
+
+
+class UserSetting(models.Model):
+
+    SITE_THEMES = [
+        ('l', 'Light'),
+        ('d', 'Dark'),
+    ]
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name='setting',
+    )
+
+    site_theme = models.CharField(
+        max_length=1,
+        choices=SITE_THEMES,
+        default='l',
+        help_text="Choice of light or dark theme for the website",
+    )
+
+    def __str__(self) -> str:
+        return f"Settings for {self.user}"
+
+

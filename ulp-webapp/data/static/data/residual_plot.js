@@ -77,21 +77,22 @@ function create_residual_plot_elements(parentDivId) {
   var x2axis = g.append("g").attr("pointer-events", "bounding-box").attr("cursor", "ew-resize");
   var y2axis = g.append("g").attr("pointer-events", "bounding-box").attr("cursor", "ns-resize");
 
+  var dashed_line_color = (parentDiv.classList.contains("dark") ? "#aaee1180" : "#55770880");
   // Add a dashed vertical line to mark PEPOCH
   var pepoch_path = g.append("path")
-    .style("stroke", "#aaee1180")
+    .style("stroke", dashed_line_color)
     .style("stroke-width", "2")
     .style("stroke-dasharray", "7");
 
   // Add a dashed horizontal line to mark the zero residual line
   var zero_residual_path = g.append("path")
-    .style("stroke", "#aaee1180")
+    .style("stroke", dashed_line_color)
     .style("stroke-width", "2")
     .style("stroke-dasharray", "7");
 
   // Add a similar dashed line to be used for changing the period
   var period_path = g.append("path")
-      .style("stroke", "#aaee1180")
+      .style("stroke", dashed_line_color)
       .style("stroke-width", "2")
       .style("stroke-dasharray", "7")
       .style("stroke-opacity", "0");
