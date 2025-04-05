@@ -31,6 +31,14 @@
     <label for="display_obs">Display observations?</label>
   </div>
   <div>
+    <label for="toa_color">ToA color:</label>
+    <input type="color" id="toa_color" value="#d090f8" onchange="update_toa_color();">
+  </div>
+  <div>
+    <label for="observation_color">Observation color:</label>
+    <input type="color" id="observation_color" value="#cc9999" onchange="update_observation_color();">
+  </div>
+  <div>
     <button type="button" class="btn btn-primary" onclick="reset_zoom_xaxis();">Reset x-axis</button>
     <button type="button" class="btn btn-primary" onclick="reset_zoom_yaxis();">Reset y-axis</button>
   </div>
@@ -243,6 +251,8 @@
   const dm_element = document.getElementById("dm");
   const barycentre_element = document.getElementById("barycentre");
   const display_obs_element = document.getElementById("display_obs");
+  const toa_color_element = document.getElementById("toa_color");
+  const observation_color_element = document.getElementById("observation_color");
 
   // set the dimensions and margins of the graph
   var parentDiv = document.getElementById("residual-plot");
@@ -277,6 +287,17 @@
     set_residual_plot_dimensions(plot, plot.xlim, plot.ylim, margin, ephemeris);
     position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
     position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
+  }
+
+  function update_toa_color() {
+    plot["ToAs"].appearance.color = toa_color_element.value;
+    plot["ToAs"].points.style("fill", toa_color_element.value);
+    plot["ToAs"].err.style("stroke", toa_color_element.value);
+  }
+
+  function update_observation_color() {
+    plot["Observations"].appearance.color = observation_color_element.value;
+    plot["Observations"].err.style("stroke", observation_color_element.value);
   }
 
   // Zoom on mouse wheel
@@ -337,7 +358,7 @@
   add_residual_data(plot,
     "{% url 'toa_data' we_pk=selected_working_ephemeris.pk %}",
     {
-      color: "#d090f8",
+      color: toa_color_element.value,
       display_points: true,
       display_err: true,
       stroke_width: "2",
@@ -350,7 +371,7 @@
   add_residual_data(plot,
     "{% url 'obs_data' we_pk=selected_working_ephemeris.pk %}",
     {
-      color: "#cc9999",
+      color: observation_color_element.value,
       display_points: false,
       display_err: false,
       stroke_width: "1",

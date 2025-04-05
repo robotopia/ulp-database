@@ -206,7 +206,7 @@ function add_residual_data(plot, json_url, appearance, ephemeris, barycentre, la
   // plot should be an object returned by create_residual_plot_elements()
   // json_url should return a JSON object of the form:
   //     [{mjd: 60001.0, mjd_err: 1e-4, bc_correction: 0.001, freq_MHz: 200.0}, ... ]
-  // color can be any string representing a valid color
+  // appearance should be ... TODO
   // ephemeris should be an object of the form:
   //     {folding_period: 1000.0, pepoch: 60000.0, dm: 100.0}
 
