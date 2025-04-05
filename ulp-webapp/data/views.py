@@ -225,6 +225,7 @@ def timing_residual_view(request, pk):
         selected_working_ephemeris = working_ephemerides.get(pk=request.POST.get('working_ephemeris_pk'))
     except:
         selected_working_ephemeris = working_ephemerides.get(owner=request.user)
+    print(f"{selected_working_ephemeris.covariance = }")
     context['selected_working_ephemeris'] = selected_working_ephemeris
 
     # Pool together lists of published values to offer as options to the user
@@ -1485,14 +1486,22 @@ def upload_lightcurve(request):
 @permission_classes([IsAuthenticated])
 def fit_ephemeris(request, ulp_pk):
 
+    data = json.loads(request.body.decode('utf-8'))
+
     # Retrieve the selected ULP and working ephemeris
     ulp = get_object_or_404(published_models.Ulp, pk=ulp_pk)
 
-    we = models.WorkingEphemeris.objects.get(owner=request.user, ulp=ulp)
+    we = models.WorkingEphemeris(
+        owner=request.user,
+        ulp=ulp,
+        ra=data['ra'],
+        dec=data['dec'],
+        pepoch=float(data['pepoch']),
+        p0=float(data['p0']),
+        dm=float(data['dm']),
+    )
 
     toas_data = toa_data(request.user, we)
-
-    data = json.loads(request.body.decode('utf-8'))
 
     bounds_dict = {
         'ra': [0.0, 360.0],
@@ -1520,11 +1529,17 @@ def fit_ephemeris(request, ulp_pk):
 
         popt, pcov = curve_fit(func, x, x, p0=p0, bounds=bounds, sigma=sigma)
 
-        best_fit_ephemeris['pepoch'] = popt[0]
-        best_fit_ephemeris['p0'] = popt[1]
-        print(popt)
+        best_fit_ephemeris['pepoch'] = f"{popt[0]}"
+        best_fit_ephemeris['p0'] = f"{popt[1]}"
+
+        # Populate a covariance
+        cov = {
+            'pepoch_pepoch': pcov[0,0],
+            'pepoch_p0': pcov[0,1],
+            'p0_p0': pcov[1,1],
+        }
 
     else:
         return JsonResponse({'message': 'The chosen combination of fit parameters is not yet supported'}, status=400)
 
-    return JsonResponse(best_fit_ephemeris, status=200)
+    return JsonResponse([best_fit_ephemeris, cov], safe=False, status=200)

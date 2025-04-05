@@ -59,6 +59,8 @@
 <div class="compact-form-item">
   <label><b>Parameter</b></label>
   <span><b>Value</b></span>
+  <span style="width: 30px; user-select: none;"></span>
+  <span></span>
   <span><b>Set to published value</b></span>
   <span><b>Allow to be fitted</b></span>
 </div>
@@ -66,6 +68,8 @@
 <div class="compact-form-item">
   <label for="raj">RAJ*</label>
   <input id="raj" form="prediction_form" name="raj" value="{{ ephemeris.RAJ }}" step="any" required onchange="update_ephemeris_field(this, 'RAJ');"/>
+  <span style="width: 30px; user-select: none;">±</span>
+  <span id='raj_err'>{{ selected_working_ephemeris.covariance.raj_err|default_if_none:'' }}</span>
   <select onchange="set_to_published_value(this, 'RAJ')">
     <option value=""></option>
     {% for ra in published_ephemeris_values.ras %}
@@ -78,6 +82,8 @@
 <div class="compact-form-item">
   <label for="decj">DECJ*</label>
   <input id="decj" form="prediction_form" name="decj" value="{{ ephemeris.DECJ }}" step="any" required onchange="update_ephemeris_field(this, 'DECJ');"/>
+  <span style="width: 30px; user-select: none;">±</span>
+  <span id='decj_err'>{{ selected_working_ephemeris.covariance.decj_err|default_if_none:'' }}</span>
   <select onchange="set_to_published_value(this, 'DECJ')">
     <option value=""></option>
     {% for dec in published_ephemeris_values.decs %}
@@ -90,6 +96,8 @@
 <div class="compact-form-item">
   <label for="pepoch">PEPOCH</label>
   <input type="number" id="pepoch" form="prediction_form" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="update_ephemeris_field(this, 'PEPOCH');" required/>
+  <span style="width: 30px; user-select: none;">±</span>
+  <span id='pepoch_err'>{{ selected_working_ephemeris.covariance.pepoch_err|default_if_none:'' }}</span>
   <select onchange="set_to_published_value(this, 'PEPOCH')">
     <option value=""></option>
     {% for pepoch in published_ephemeris_values.pepochs %}
@@ -102,6 +110,8 @@
 <div class="compact-form-item">
   <label for="folding-period">P0</label>
   <input type="number" id="folding-period" form="prediction_form" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="update_ephemeris_field(this, 'P0');" required/>
+  <span style="width: 30px; user-select: none;">±</span>
+  <span id='p0_err'>{{ selected_working_ephemeris.covariance.p0_err|default_if_none:'' }}</span>
   <select onchange="set_to_published_value(this, 'P0')">
     <option value=""></option>
     {% for period in published_ephemeris_values.periods %}
@@ -114,6 +124,8 @@
 <div class="compact-form-item">
   <label for="dm">DM</label>
   <input type="number" id="dm" form="prediction_form" name="dm" value="{{ ephemeris.DM }}" step="any" onchange="update_ephemeris_field(this, 'DM');" required/>
+  <span style="width: 30px; user-select: none;">±</span>
+  <span id='dm_err'>{{ selected_working_ephemeris.covariance.dm_err|default_if_none:'' }}</span>
   <select onchange="set_to_published_value(this, 'DM')">
     <option value=""></option>
     {% for dm in published_ephemeris_values.dms %}
@@ -509,12 +521,20 @@
 
       // Update the elements
       updated_data = JSON.parse(xhr.responseText);
+      let [best_fit_ephemeris, cov] = updated_data;
 
-      folding_period_element.value = updated_data.p0;
-      pepoch_element.value = updated_data.pepoch;
+      folding_period_element.value = best_fit_ephemeris.p0;
+      pepoch_element.value = best_fit_ephemeris.pepoch;
 
       update_ephemeris_field(folding_period_element, 'P0');
       update_ephemeris_field(pepoch_element, 'PEPOCH');
+
+      console.log(Math.sqrt(cov.pepoch_pepoch));
+      document.getElementById('raj_err').innerHTML = Math.sqrt(cov.ra_ra) || "";
+      document.getElementById('decj_err').innerHTML = Math.sqrt(cov.dec_dec) || "";
+      document.getElementById('pepoch_err').innerHTML = Math.sqrt(cov.pepoch_pepoch) || "";
+      document.getElementById('p0_err').innerHTML = Math.sqrt(cov.p0_p0) || "";
+      document.getElementById('dm_err').innerHTML = Math.sqrt(cov.dm_dm) || "";
     }
 
     xhr.send(JSON.stringify(data));
