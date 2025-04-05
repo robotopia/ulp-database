@@ -57,15 +57,16 @@
 </div>
 
 <div class="compact-form-item">
+  <span style="width: 40px;"></span>
   <label><b>Parameter</b></label>
   <span><b>Value</b></span>
   <span style="width: 30px; user-select: none;"></span>
   <span></span>
   <span><b>Set to published value</b></span>
-  <span><b>Allow to be fitted</b></span>
 </div>
 
 <div class="compact-form-item">
+  <span style="width: 40px; text-align: center;"><input id="select_raj" name="select_raj" type="checkbox"/></span>
   <label for="raj">RAJ*</label>
   <input id="raj" form="prediction_form" name="raj" value="{{ ephemeris.RAJ }}" step="any" required onchange="update_ephemeris_field(this, 'RAJ');"/>
   <span style="width: 30px; user-select: none;">±</span>
@@ -76,10 +77,10 @@
     <option value="{{ ra.formatted_quantity }}">{{ ra.formatted_quantity }} from {{ ra.article }}</option>
     {% endfor %}
   </select>
-  <input id="fit_raj" name="fit_raj" type="checkbox" disabled/>
 </div>
 
 <div class="compact-form-item">
+  <span style="width: 40px; text-align: center;"><input id="select_decj" name="select_decj" type="checkbox"/></span>
   <label for="decj">DECJ*</label>
   <input id="decj" form="prediction_form" name="decj" value="{{ ephemeris.DECJ }}" step="any" required onchange="update_ephemeris_field(this, 'DECJ');"/>
   <span style="width: 30px; user-select: none;">±</span>
@@ -90,10 +91,10 @@
     <option value="{{ dec.formatted_quantity }}">{{ dec.formatted_quantity }} from {{ dec.article }}</option>
     {% endfor %}
   </select>
-  <input id="fit_decj" name="fit_decj" type="checkbox" disabled/>
 </div>
 
 <div class="compact-form-item">
+  <span style="width: 40px; text-align: center;"><input id="select_pepoch" name="select_pepoch" type="checkbox"/></span>
   <label for="pepoch">PEPOCH</label>
   <input type="number" id="pepoch" form="prediction_form" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="update_ephemeris_field(this, 'PEPOCH');" required/>
   <span style="width: 30px; user-select: none;">±</span>
@@ -104,10 +105,10 @@
     <option value="{{ pepoch.quantity }}">{{ pepoch.formatted_quantity }} from {{ pepoch.article }}</option>
     {% endfor %}
   </select>
-  <input id="fit_pepoch" name="fit_pepoch" type="checkbox" checked/>
 </div>
 
 <div class="compact-form-item">
+  <span style="width: 40px; text-align: center;"><input id="select_p0" name="select_p0" type="checkbox"/></span>
   <label for="folding-period">P0</label>
   <input type="number" id="folding-period" form="prediction_form" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="update_ephemeris_field(this, 'P0');" required/>
   <span style="width: 30px; user-select: none;">±</span>
@@ -118,10 +119,10 @@
     <option value="{{ period.quantity }}">{{ period.formatted_quantity }} from {{ period.article }}</option>
     {% endfor %}
   </select>
-  <input id="fit_period" name="fit_period" type="checkbox" checked/>
 </div>
 
 <div class="compact-form-item">
+  <span style="width: 40px; text-align: center;"><input id="select_dm" name="select_dm" type="checkbox"/></span>
   <label for="dm">DM</label>
   <input type="number" id="dm" form="prediction_form" name="dm" value="{{ ephemeris.DM }}" step="any" onchange="update_ephemeris_field(this, 'DM');" required/>
   <span style="width: 30px; user-select: none;">±</span>
@@ -132,7 +133,6 @@
     <option value="{{ dm.quantity }}">{{ dm.formatted_quantity }} from {{ dm.article }}</option>
     {% endfor %}
   </select>
-  <input id="fit_dm" name="fit_dm" type="checkbox"/>
 </div>
 
 <div style="background-color: #ff000030;">
@@ -456,6 +456,11 @@
 
     const data = {
       pk: document.getElementById('working_ephemeris_select').value,
+      select_ra: document.getElementById('select_raj').checked,
+      select_dec: document.getElementById('select_decj').checked,
+      select_pepoch: document.getElementById('select_pepoch').checked,
+      select_p0: document.getElementById('select_p0').checked,
+      select_dm: document.getElementById('select_dm').checked,
       ra: raj_element.value,
       dec: decj_element.value,
       pepoch: pepoch_element.value,
@@ -501,11 +506,11 @@
     xhr.setRequestHeader("Content-type", "application/json");
 
     const data = {
-      fit_ra: document.getElementById('fit_raj').checked,
-      fit_dec: document.getElementById('fit_decj').checked,
-      fit_pepoch: document.getElementById('fit_pepoch').checked,
-      fit_p0: document.getElementById('fit_period').checked,
-      fit_dm: document.getElementById('fit_dm').checked,
+      select_ra: document.getElementById('select_raj').checked,
+      select_dec: document.getElementById('select_decj').checked,
+      select_pepoch: document.getElementById('select_pepoch').checked,
+      select_p0: document.getElementById('select_p0').checked,
+      select_dm: document.getElementById('select_dm').checked,
       ra: raj_element.value,
       dec: decj_element.value,
       pepoch: pepoch_element.value,

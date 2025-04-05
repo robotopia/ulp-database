@@ -1185,9 +1185,18 @@ def update_selected_working_ephemeris(request):
             except:
                 value = data[field]
 
+            new_ephemeris_values[field] = value
+            # This ^^^ makes sure the page gets populated with the original value,
+            # even if the corresponding model isn't updated
+
+            try:
+                if data[f'select_{field}'] == False:
+                    continue
+            except:
+                pass
+
             try:
                 setattr(working_ephemeris, field, value)
-                new_ephemeris_values[field] = value
             except:
                 pass
 
@@ -1517,7 +1526,7 @@ def fit_ephemeris(request, ulp_pk):
         best_fit_ephemeris[param] = data[param]
 
     # RA-No  DEC-No  PEPOCH-Yes  P0-Yes  DM-No
-    if not data['fit_ra'] and not data['fit_dec'] and data['fit_pepoch'] and data['fit_p0'] and not data['fit_dm']:
+    if not data['select_ra'] and not data['select_dec'] and data['select_pepoch'] and data['select_p0'] and not data['select_dm']:
         func = fit_ephemeris_pepoch_p0
         x = [toa['mjd'] - calc_dmdelay(we.dm*u.pc/u.cm**3, toa['freq_MHz']*u.MHz, np.inf*u.MHz).to('d').value + toa['bc_correction'] for toa in toas_data]
         sigma = [toa['mjd_err'] for toa in toas_data]
