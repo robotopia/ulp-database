@@ -114,20 +114,16 @@ def generate_toas(time_start, time_end, ephemeris):
     return mjds
 
 
-@login_required
-def toa_data(request, we_pk):
-
-    # Retrieve the selected ULP and working ephemeris
-    we = get_object_or_404(models.WorkingEphemeris, pk=we_pk)
+def toa_data(user, we):
 
     # Get the ToAs that this user is allowed to view
-    toas = permitted_to_view_filter(models.TimeOfArrival.objects.filter(ulp=we.ulp, raw_mjd__isnull=False, freq__isnull=False), request.user)
+    toas = permitted_to_view_filter(models.TimeOfArrival.objects.filter(ulp=we.ulp, raw_mjd__isnull=False, freq__isnull=False), user)
 
     # Barycentre
     mjds = Time([float(toa.raw_mjd) for toa in toas], format='mjd')
     bc_corrections = bc_corr(we.coord, mjds).to('day').value
 
-    toas_json = [
+    toas_data = [
         {
             'mjd': float(toas[i].raw_mjd),
             'mjd_err': float(toas[i].mjd_err),
@@ -137,7 +133,16 @@ def toa_data(request, we_pk):
         } for i in range(len(toas))
     ]
 
-    return JsonResponse(toas_json, safe=False)
+    return toas_data
+
+
+@login_required
+def toa_json(request, we_pk):
+
+    # Retrieve the selected ULP and working ephemeris
+    we = get_object_or_404(models.WorkingEphemeris, pk=we_pk)
+
+    return JsonResponse(toa_data(request.user, we), safe=False)
 
 
 @login_required
@@ -1475,3 +1480,51 @@ def upload_lightcurve(request):
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def fit_ephemeris(request, ulp_pk):
+
+    # Retrieve the selected ULP and working ephemeris
+    ulp = get_object_or_404(published_models.Ulp, pk=ulp_pk)
+
+    we = models.WorkingEphemeris.objects.get(owner=request.user, ulp=ulp)
+
+    toas_data = toa_data(request.user, we)
+
+    data = json.loads(request.body.decode('utf-8'))
+
+    bounds_dict = {
+        'ra': [0.0, 360.0],
+        'dec': [-90.0, 90.0],
+        'pepoch': [-np.inf, np.inf],
+        'p0': [0, np.inf],
+        'dm': [0, np.inf],
+    }
+
+    # Initialise the answer to be the same thing as the input
+    best_fit_ephemeris = {}
+    for param in ['ra', 'dec', 'pepoch', 'p0', 'dm']:
+        best_fit_ephemeris[param] = data[param]
+
+    # RA-No  DEC-No  PEPOCH-Yes  P0-Yes  DM-No
+    if not data['fit_ra'] and not data['fit_dec'] and data['fit_pepoch'] and data['fit_p0'] and not data['fit_dm']:
+        func = fit_ephemeris_pepoch_p0
+        x = [toa['mjd'] - calc_dmdelay(we.dm*u.pc/u.cm**3, toa['freq_MHz']*u.MHz, np.inf*u.MHz).to('d').value + toa['bc_correction'] for toa in toas_data]
+        sigma = [toa['mjd_err'] for toa in toas_data]
+        p0 = [data['pepoch'], data['p0']]
+        bounds = [
+            (bounds_dict['pepoch'][0], bounds_dict['p0'][0]),
+            (bounds_dict['pepoch'][1], bounds_dict['p0'][1]),
+        ]
+
+        popt, pcov = curve_fit(func, x, x, p0=p0, bounds=bounds, sigma=sigma)
+
+        best_fit_ephemeris['pepoch'] = popt[0]
+        best_fit_ephemeris['p0'] = popt[1]
+        print(popt)
+
+    else:
+        return JsonResponse({'message': 'The chosen combination of fit parameters is not yet supported'}, status=400)
+
+    return JsonResponse(best_fit_ephemeris, status=200)

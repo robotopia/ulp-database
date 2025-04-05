@@ -25,7 +25,7 @@ urlpatterns = [
     re_path(r'^timing/toa_for_pulse/(?P<pk>[0-9]+)$', views.toa_for_pulse, name="toa_for_pulse"),
     re_path(r'^timing/download_toas/(?P<pk>[0-9]+)$', views.download_toas, name="download_toas"),
     re_path(r'^timing/download_working_ephemeris/(?P<pk>[0-9]+)$', views.download_working_ephemeris, name="download_working_ephemeris"),
-    re_path(r'^api/toa_data/(?P<we_pk>[0-9]+)$', views.toa_data, name="toa_data"),
+    re_path(r'^api/toa_json/(?P<we_pk>[0-9]+)$', views.toa_json, name="toa_json"),
     re_path(r'^api/obs_data/(?P<we_pk>[0-9]+)$', views.obs_data, name="obs_data"),
     re_path(r'^api/update_toa$', views.update_toa, name="update_toa"),
     re_path(r'^api/update_observation$', views.update_observation, name="update_observation"),
@@ -34,4 +34,5 @@ urlpatterns = [
     re_path(r'^api/update_permissions$', views.update_permissions, name="update_permissions"),
     re_path(r'^api/upload_lightcurve$', views.upload_lightcurve, name="upload_lightcurve"),
     re_path(r'^api/update_selected_working_ephemeris$', views.update_selected_working_ephemeris, name="update_selected_working_ephemeris"),
+    re_path(r'^api/fit_ephemeris/(?P<ulp_pk>[0-9]+)$', views.fit_ephemeris, name="fit_ephemeris"),
 ]

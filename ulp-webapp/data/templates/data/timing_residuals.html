@@ -60,6 +60,7 @@
   <label><b>Parameter</b></label>
   <span><b>Value</b></span>
   <span><b>Set to published value</b></span>
+  <span><b>Allow to be fitted</b></span>
 </div>
 
 <div class="compact-form-item">
@@ -71,6 +72,7 @@
     <option value="{{ ra.formatted_quantity }}">{{ ra.formatted_quantity }} from {{ ra.article }}</option>
     {% endfor %}
   </select>
+  <input id="fit_raj" name="fit_raj" type="checkbox" disabled/>
 </div>
 
 <div class="compact-form-item">
@@ -82,6 +84,7 @@
     <option value="{{ dec.formatted_quantity }}">{{ dec.formatted_quantity }} from {{ dec.article }}</option>
     {% endfor %}
   </select>
+  <input id="fit_decj" name="fit_decj" type="checkbox" disabled/>
 </div>
 
 <div class="compact-form-item">
@@ -93,6 +96,7 @@
     <option value="{{ pepoch.quantity }}">{{ pepoch.formatted_quantity }} from {{ pepoch.article }}</option>
     {% endfor %}
   </select>
+  <input id="fit_pepoch" name="fit_pepoch" type="checkbox" checked/>
 </div>
 
 <div class="compact-form-item">
@@ -104,6 +108,7 @@
     <option value="{{ period.quantity }}">{{ period.formatted_quantity }} from {{ period.article }}</option>
     {% endfor %}
   </select>
+  <input id="fit_period" name="fit_period" type="checkbox" checked/>
 </div>
 
 <div class="compact-form-item">
@@ -115,6 +120,7 @@
     <option value="{{ dm.quantity }}">{{ dm.formatted_quantity }} from {{ dm.article }}</option>
     {% endfor %}
   </select>
+  <input id="fit_dm" name="fit_dm" type="checkbox"/>
 </div>
 
 <div style="background-color: #ff000030;">
@@ -125,6 +131,7 @@
 <div>
   <button type="button" class="btn btn-primary" onclick="reset_ephemeris_fields();">Reset</button>
   <button type="button" class="btn btn-primary" onclick="update_selected_working_ephemeris();">Save</button>
+  <button type="button" class="btn btn-primary" onclick="fit_to_toas();">Fit to ToAs</button>
 </div>
 
 <h2>Predictions</h2>
@@ -371,7 +378,7 @@
 
   // Plot once to get started
   add_residual_data(plot,
-    "{% url 'toa_data' we_pk=selected_working_ephemeris.pk %}",
+    "{% url 'toa_json' we_pk=selected_working_ephemeris.pk %}",
     {
       color: toa_color_element.value,
       display_points: true,
@@ -468,6 +475,46 @@
       working_ephemerides[updated_data.pk].DM = updated_data.dm;
 
       reset_ephemeris_fields();
+    }
+
+    xhr.send(JSON.stringify(data));
+  }
+
+  // For updating the ephemeris values and saving them to the database
+  function fit_to_toas() {
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', "{% url 'fit_ephemeris' ulp.pk %}");
+    xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+    xhr.setRequestHeader("Content-type", "application/json");
+
+    const data = {
+      fit_ra: document.getElementById('fit_raj').checked,
+      fit_dec: document.getElementById('fit_decj').checked,
+      fit_pepoch: document.getElementById('fit_pepoch').checked,
+      fit_p0: document.getElementById('fit_period').checked,
+      fit_dm: document.getElementById('fit_dm').checked,
+      ra: raj_element.value,
+      dec: decj_element.value,
+      pepoch: pepoch_element.value,
+      p0: folding_period_element.value,
+      dm: dm_element.value,
+    }
+
+    xhr.onload = () => {
+      if (xhr.status != 200) {
+        alert(JSON.parse(xhr.responseText).message);
+        return;
+      }
+
+      // Update the elements
+      updated_data = JSON.parse(xhr.responseText);
+
+      folding_period_element.value = updated_data.p0;
+      pepoch_element.value = updated_data.pepoch;
+
+      update_ephemeris_field(folding_period_element, 'P0');
+      update_ephemeris_field(pepoch_element, 'PEPOCH');
     }
 
     xhr.send(JSON.stringify(data));
