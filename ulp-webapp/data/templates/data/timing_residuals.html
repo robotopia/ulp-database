@@ -39,6 +39,7 @@
     <input type="color" id="observation_color" onchange="update_observation_color();">
   </div>
   <div>
+    <button type="button" class="btn btn-primary" onclick="localStorage.clear(); location.reload();">Reset to defaults</button>
     <button type="button" class="btn btn-primary" onclick="reset_zoom_xaxis();">Reset x-axis</button>
     <button type="button" class="btn btn-primary" onclick="reset_zoom_yaxis();">Reset y-axis</button>
   </div>
@@ -116,7 +117,10 @@
   </select>
 </div>
 
-<p>*KNOWN ISSUE: Changes to RA and Dec won't update the residual plot (i.e. by recalculating the barycentric correction) until the changes are saved and the page refreshed.</p>
+<div style="background-color: #ff000030;">
+  <h4>Known issue</h4>
+  <p>Changes to RA and Dec won't update the residual plot (i.e. by recalculating the barycentric correction) until the changes are saved and the page refreshed.</p>
+</div>
 
 <div>
   <button type="button" class="btn btn-primary" onclick="reset_ephemeris_fields();">Reset</button>
