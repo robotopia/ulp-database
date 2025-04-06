@@ -47,11 +47,11 @@ def calc_dmdelay(dm, flo, fhi):
 
 def ephemeris_to_skycoord(ephemeris):
     '''
-    ephemeris_measurements_qs is a QuerySet. If it contains both RAJ and DECJ,
+    ephemeris_measurements_qs is a QuerySet. If it contains both RA and DEC,
     a SkyCoord object will be constructed therefrom.
     '''
     try:
-        coord = SkyCoord(ra=ephemeris['RAJ'], dec=ephemeris['DECJ'], unit=(u.deg, u.deg), frame='icrs')
+        coord = SkyCoord(ra=ephemeris['ra'], dec=ephemeris['dec'], unit=(u.deg, u.deg), frame='icrs')
     except:
         coord = None
 
@@ -83,13 +83,13 @@ def bc_corr(coord, times, ephemeris_file='de430.bsp'):
 def calc_pulse_phase(time, ephemeris):
     '''
     time is an astropy Time object
-    ephemeris['PEPOCH'] should be in days
-    ephemeris['P0'] should be in seconds
+    ephemeris['pepoch'] should be in days
+    ephemeris['p0'] should be in seconds
     '''
     try:
-        pepoch = Time(ephemeris['PEPOCH'], format='mjd')
-        P0 = ephemeris['P0']*u.s
-        return ((time - pepoch)/P0).decompose()
+        pepoch = Time(ephemeris['pepoch'], format='mjd')
+        p0 = ephemeris['p0']*u.s
+        return ((time - pepoch)/p0).decompose()
     except:
         return 0.0
 
@@ -98,9 +98,9 @@ def calc_mjd(pulse_phase, ephemeris):
     '''
     This is the inverse of calc_pulse_phase()
     '''
-    pepoch = Time(ephemeris['PEPOCH'], format='mjd')
-    P0 = ephemeris['P0']*u.s
-    return pepoch + pulse_phase*P0
+    pepoch = Time(ephemeris['pepoch'], format='mjd')
+    p0 = ephemeris['p0']*u.s
+    return pepoch + pulse_phase*p0
 
 
 def generate_toas(time_start, time_end, ephemeris):
@@ -239,17 +239,17 @@ def timing_residual_view(request, pk):
 
     # Construct a dictionary out of the ephemeris
     ephemeris = {
-        'RAJ': selected_working_ephemeris.ra,
-        'DECJ': selected_working_ephemeris.dec,
-        'PEPOCH': selected_working_ephemeris.pepoch,
-        'P0': selected_working_ephemeris.p0,
-        'DM': selected_working_ephemeris.dm,
+        'ra': selected_working_ephemeris.ra,
+        'dec': selected_working_ephemeris.dec,
+        'pepoch': selected_working_ephemeris.pepoch,
+        'p0': selected_working_ephemeris.p0,
+        'dm': selected_working_ephemeris.dm,
     }
     coord = selected_working_ephemeris.coord
 
     # Do something similar for toas that are not yet dedispersed, but for which a frequency is given
-    if 'DM' in ephemeris.keys() and ephemeris['DM'] is not None:
-        dm = ephemeris['DM'] * u.pc / u.cm**3
+    if 'dm' in ephemeris.keys() and ephemeris['dm'] is not None:
+        dm = ephemeris['dm'] * u.pc / u.cm**3
         for toa in toas:
             if toa.freq is not None: # and toa.dedispersed == False:
                 delay = calc_dmdelay(dm, toa.freq*u.MHz, np.inf*u.MHz)
@@ -266,11 +266,11 @@ def timing_residual_view(request, pk):
     if request.method == "POST":
 
         # Get form values
-        PEPOCH = float(request.POST.get('pepoch', '0.0'))
-        P0 = float(request.POST.get('p0', '0.0'))
-        DM = float(request.POST.get('dm', '0.0'))
-        RAJ = request.POST.get('raj', '00:00:00')
-        DECJ = request.POST.get('decj', '00:00:00')
+        pepoch = float(request.POST.get('pepoch', '0.0'))
+        p0 = float(request.POST.get('p0', '0.0'))
+        dm = float(request.POST.get('dm', '0.0'))
+        ra = request.POST.get('ra', '00:00:00')
+        dec = request.POST.get('dec', '00:00:00')
 
         mjd_start_format = request.POST.get('mjd-start-format')
         mjd_end_format = request.POST.get('mjd-end-format')
@@ -297,17 +297,17 @@ def timing_residual_view(request, pk):
         output_toa_format = request.POST.get('output-toa-format')
 
         # Populate the ephemeris from the form values
-        ephemeris['PEPOCH'] = PEPOCH
-        ephemeris['P0'] = P0
-        ephemeris['DM'] = DM
-        ephemeris['RAJ'] = RAJ
-        ephemeris['DECJ'] = DECJ
+        ephemeris['pepoch'] = pepoch
+        ephemeris['p0'] = p0
+        ephemeris['dm'] = dm
+        ephemeris['ra'] = ra
+        ephemeris['dec'] = dec
 
         # If they've also provided other form values, make a table of predicted values
-        if mjd_start is not None and mjd_end is not None and mjd_dispersion_frequency is not None and PEPOCH is not None and P0 is not None and telescope is not None:
+        if mjd_start is not None and mjd_end is not None and mjd_dispersion_frequency is not None and pepoch is not None and p0 is not None and telescope is not None:
             # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
             # so to get the right range, convert them to dedispersed, barycentric
-            dmdelay = calc_dmdelay(ephemeris['DM']*u.pc/u.cm**3, mjd_dispersion_frequency*u.MHz, np.inf*u.MHz)
+            dmdelay = calc_dmdelay(ephemeris['dm']*u.pc/u.cm**3, mjd_dispersion_frequency*u.MHz, np.inf*u.MHz)
             mjd_range -= dmdelay
             mjd_range += bc_corr(coord, mjd_range)
 

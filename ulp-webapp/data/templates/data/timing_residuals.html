@@ -66,12 +66,12 @@
 </div>
 
 <div class="compact-form-item">
-  <span style="width: 40px; text-align: center;"><input id="select_raj" name="select_raj" type="checkbox"/></span>
-  <label for="raj">RAJ</label>
-  <input id="raj" form="prediction_form" name="raj" value="{{ ephemeris.RAJ }}" step="any" required onchange="update_ephemeris_field(this, 'RAJ');"/>
+  <span style="width: 40px; text-align: center;"><input id="select_ra" name="select_ra" type="checkbox"/></span>
+  <label for="ra">RAJ</label>
+  <input id="ra" form="prediction_form" name="ra" value="{{ ephemeris.ra }}" step="any" required onchange="update_ephemeris_field(this, 'ra');"/>
   <span style="width: 30px; user-select: none;">±</span>
-  <span id='raj_err'>{{ selected_working_ephemeris.covariance.raj_err|default_if_none:'' }}</span>
-  <select onchange="set_to_published_value(this, 'RAJ')">
+  <span id='ra_err'>{{ selected_working_ephemeris.covariance.ra_err|default_if_none:'' }}</span>
+  <select onchange="set_to_published_value(this, 'ra')">
     <option value=""></option>
     {% for ra in published_ephemeris_values.ras %}
     <option value="{{ ra.formatted_quantity }}">{{ ra.formatted_quantity }} from {{ ra.article }}</option>
@@ -80,12 +80,12 @@
 </div>
 
 <div class="compact-form-item">
-  <span style="width: 40px; text-align: center;"><input id="select_decj" name="select_decj" type="checkbox"/></span>
-  <label for="decj">DECJ</label>
-  <input id="decj" form="prediction_form" name="decj" value="{{ ephemeris.DECJ }}" step="any" required onchange="update_ephemeris_field(this, 'DECJ');"/>
+  <span style="width: 40px; text-align: center;"><input id="select_dec" name="select_dec" type="checkbox"/></span>
+  <label for="dec">DECJ</label>
+  <input id="dec" form="prediction_form" name="dec" value="{{ ephemeris.dec }}" step="any" required onchange="update_ephemeris_field(this, 'dec');"/>
   <span style="width: 30px; user-select: none;">±</span>
-  <span id='decj_err'>{{ selected_working_ephemeris.covariance.decj_err|default_if_none:'' }}</span>
-  <select onchange="set_to_published_value(this, 'DECJ')">
+  <span id='dec_err'>{{ selected_working_ephemeris.covariance.dec_err|default_if_none:'' }}</span>
+  <select onchange="set_to_published_value(this, 'dec')">
     <option value=""></option>
     {% for dec in published_ephemeris_values.decs %}
     <option value="{{ dec.formatted_quantity }}">{{ dec.formatted_quantity }} from {{ dec.article }}</option>
@@ -96,10 +96,10 @@
 <div class="compact-form-item">
   <span style="width: 40px; text-align: center;"><input id="select_pepoch" name="select_pepoch" type="checkbox"/></span>
   <label for="pepoch">PEPOCH</label>
-  <input type="number" id="pepoch" form="prediction_form" name="pepoch" value="{{ ephemeris.PEPOCH }}" step="any" onchange="update_ephemeris_field(this, 'PEPOCH');" required/>
+  <input type="number" id="pepoch" form="prediction_form" name="pepoch" value="{{ ephemeris.pepoch }}" step="any" onchange="update_ephemeris_field(this, 'pepoch');" required/>
   <span style="width: 30px; user-select: none;">±</span>
   <span id='pepoch_err'>{{ selected_working_ephemeris.covariance.pepoch_err|default_if_none:'' }}</span>
-  <select onchange="set_to_published_value(this, 'PEPOCH')">
+  <select onchange="set_to_published_value(this, 'pepoch')">
     <option value=""></option>
     {% for pepoch in published_ephemeris_values.pepochs %}
     <option value="{{ pepoch.quantity }}">{{ pepoch.formatted_quantity }} from {{ pepoch.article }}</option>
@@ -110,10 +110,10 @@
 <div class="compact-form-item">
   <span style="width: 40px; text-align: center;"><input id="select_p0" name="select_p0" type="checkbox"/></span>
   <label for="p0">P0</label>
-  <input type="number" id="p0" form="prediction_form" name="p0" value="{{ ephemeris.P0 }}" step="any" onchange="update_ephemeris_field(this, 'P0');" required/>
+  <input type="number" id="p0" form="prediction_form" name="p0" value="{{ ephemeris.p0 }}" step="any" onchange="update_ephemeris_field(this, 'p0');" required/>
   <span style="width: 30px; user-select: none;">±</span>
   <span id='p0_err'>{{ selected_working_ephemeris.covariance.p0_err|default_if_none:'' }}</span>
-  <select onchange="set_to_published_value(this, 'P0')">
+  <select onchange="set_to_published_value(this, 'p0')">
     <option value=""></option>
     {% for period in published_ephemeris_values.periods %}
     <option value="{{ period.quantity }}">{{ period.formatted_quantity }} from {{ period.article }}</option>
@@ -124,10 +124,10 @@
 <div class="compact-form-item">
   <span style="width: 40px; text-align: center;"><input id="select_dm" name="select_dm" type="checkbox"/></span>
   <label for="dm">DM</label>
-  <input type="number" id="dm" form="prediction_form" name="dm" value="{{ ephemeris.DM }}" step="any" onchange="update_ephemeris_field(this, 'DM');" required/>
+  <input type="number" id="dm" form="prediction_form" name="dm" value="{{ ephemeris.dm }}" step="any" onchange="update_ephemeris_field(this, 'dm');" required/>
   <span style="width: 30px; user-select: none;">±</span>
   <span id='dm_err'>{{ selected_working_ephemeris.covariance.dm_err|default_if_none:'' }}</span>
-  <select onchange="set_to_published_value(this, 'DM')">
+  <select onchange="set_to_published_value(this, 'dm')">
     <option value=""></option>
     {% for dm in published_ephemeris_values.dms %}
     <option value="{{ dm.quantity }}">{{ dm.formatted_quantity }} from {{ dm.article }}</option>
@@ -219,7 +219,7 @@
   <tr>
     <th>Barycentred TOA<br>(<a class="col0 copy-col" href='#'>copy</a>)</th>
     <th>Topocentric TOA<br>(<a class="col1 copy-col" href='#'>copy</a>)</th>
-    <th>Topocentric TOA at {{ mjd_dispersion_frequency }} MHz<br>for DM = {{ ephemeris.DM }} pc/cm3 (<a class="col2 copy-col" href='#'>copy</a>)</th>
+    <th>Topocentric TOA at {{ mjd_dispersion_frequency }} MHz<br>for DM = {{ ephemeris.dm }} pc/cm3 (<a class="col2 copy-col" href='#'>copy</a>)</th>
     <th>Source elevation (°)<br>(<a class="col3 copy-col" href='#'>copy</a>)</th>
     <th>Sun elevation (°)</th>
   </tr>
@@ -244,11 +244,11 @@
   var working_ephemerides = {
     {% for we in working_ephemerides %}
     "{{ we.pk }}": {
-      RAJ: "{{ we.ra }}",
-      DECJ: "{{ we.dec }}",
-      PEPOCH: {{ we.pepoch }},
-      P0: {{ we.p0 }},
-      DM: {{ we.dm }},
+      ra: "{{ we.ra }}",
+      dec: "{{ we.dec }}",
+      pepoch: {{ we.pepoch }},
+      p0: {{ we.p0 }},
+      dm: {{ we.dm }},
     },
     {% endfor %}
   };
@@ -266,9 +266,9 @@
     })
   });
 
-  // Get the p0 and the PEPOCH
-  const raj_element = document.getElementById("raj");
-  const decj_element = document.getElementById("decj");
+  // Get the p0 and the pepoch
+  const ra_element = document.getElementById("ra");
+  const dec_element = document.getElementById("dec");
   const p0_element = document.getElementById("p0");
   const pepoch_element = document.getElementById("pepoch");
   const dm_element = document.getElementById("dm");
@@ -276,8 +276,8 @@
   const display_obs_element = document.getElementById("display_obs");
   const toa_color_element = document.getElementById("toa_color");
   const observation_color_element = document.getElementById("observation_color");
-  const select_ra_element = document.getElementById('select_raj');
-  const select_dec_element = document.getElementById('select_decj');
+  const select_ra_element = document.getElementById('select_ra');
+  const select_dec_element = document.getElementById('select_dec');
   const select_pepoch_element = document.getElementById('select_pepoch');
   const select_p0_element = document.getElementById('select_p0');
   const select_dm_element = document.getElementById('select_dm');
@@ -391,7 +391,7 @@
 
       // Change the value in the input field
       p0_element.value = ephemeris.p0;
-      update_ephemeris_field(p0_element, "P0");
+      update_ephemeris_field(p0_element, "p0");
     }
   });
 
@@ -442,14 +442,14 @@
   }
 
   function reset_ephemeris_fields() {
-    raj_element.value = selected_working_ephemeris.RAJ;
-    decj_element.value = selected_working_ephemeris.DECJ;
-    pepoch_element.value = selected_working_ephemeris.PEPOCH;
-    p0_element.value = selected_working_ephemeris.P0;
-    dm_element.value = selected_working_ephemeris.DM;
+    ra_element.value = selected_working_ephemeris.ra;
+    dec_element.value = selected_working_ephemeris.dec;
+    pepoch_element.value = selected_working_ephemeris.pepoch;
+    p0_element.value = selected_working_ephemeris.p0;
+    dm_element.value = selected_working_ephemeris.dm;
 
-    raj_element.style.backgroundColor = "field";
-    decj_element.style.backgroundColor = "field";
+    ra_element.style.backgroundColor = "field";
+    dec_element.style.backgroundColor = "field";
     pepoch_element.style.backgroundColor = "field";
     p0_element.style.backgroundColor = "field";
     dm_element.style.backgroundColor = "field";
@@ -458,9 +458,10 @@
   }
 
   function set_to_published_value(element, field_name) {
-    element.previousElementSibling.value = element.value; // TODO Fix me!
+    var target_element = document.getElementById(field_name);
+    target_element.value = element.value;
     element.value = "";
-    update_ephemeris_field(element.previousElementSibling, field_name);
+    update_ephemeris_field(target_element, field_name);
   }
 
   // For updating the ephemeris values and saving them to the database
@@ -478,8 +479,8 @@
       select_pepoch: select_pepoch_element.checked,
       select_p0: select_p0_element.checked,
       select_dm: select_dm_element.checked,
-      ra: raj_element.value,
-      dec: decj_element.value,
+      ra: ra_element.value,
+      dec: dec_element.value,
       pepoch: pepoch_element.value,
       p0: p0_element.value,
       dm: dm_element.value,
@@ -494,19 +495,19 @@
       updated_data = JSON.parse(xhr.responseText);
 
       // Update the current selected working ephemeris
-      selected_working_ephemeris.RAJ = updated_data.ra;
-      selected_working_ephemeris.DECJ = updated_data.dec;
-      selected_working_ephemeris.PEPOCH = updated_data.pepoch;
-      selected_working_ephemeris.P0 = updated_data.p0;
-      selected_working_ephemeris.DM = updated_data.dm;
+      selected_working_ephemeris.ra = updated_data.ra;
+      selected_working_ephemeris.dec = updated_data.dec;
+      selected_working_ephemeris.pepoch = updated_data.pepoch;
+      selected_working_ephemeris.p0 = updated_data.p0;
+      selected_working_ephemeris.dm = updated_data.dm;
 
       // Also update the corresponding ephemeris in the list of all ephemerides
       // loaded on the page
-      working_ephemerides[updated_data.pk].RAJ = updated_data.ra;
-      working_ephemerides[updated_data.pk].DECJ = updated_data.dec;
-      working_ephemerides[updated_data.pk].PEPOCH = updated_data.pepoch;
-      working_ephemerides[updated_data.pk].P0 = updated_data.p0;
-      working_ephemerides[updated_data.pk].DM = updated_data.dm;
+      working_ephemerides[updated_data.pk].ra = updated_data.ra;
+      working_ephemerides[updated_data.pk].dec = updated_data.dec;
+      working_ephemerides[updated_data.pk].pepoch = updated_data.pepoch;
+      working_ephemerides[updated_data.pk].p0 = updated_data.p0;
+      working_ephemerides[updated_data.pk].dm = updated_data.dm;
 
       reset_ephemeris_fields();
     }
@@ -528,8 +529,8 @@
       select_pepoch: select_pepoch_element.checked,
       select_p0: select_p0_element.checked,
       select_dm: select_dm_element.checked,
-      ra: raj_element.value,
-      dec: decj_element.value,
+      ra: ra_element.value,
+      dec: dec_element.value,
       pepoch: pepoch_element.value,
       p0: p0_element.value,
       dm: dm_element.value,
@@ -547,32 +548,32 @@
 
       // Update the current selected working ephemeris
       if (data.select_ra) {
-        raj_element.value = best_fit_ephemeris.ra;
-        update_ephemeris_field(raj_element, 'RAJ');
-        document.getElementById('raj_err').innerHTML = Math.sqrt(cov.ra_ra) || "";
+        ra_element.value = best_fit_ephemeris.ra;
+        update_ephemeris_field(ra_element, 'ra');
+        document.getElementById('ra_err').innerHTML = Math.sqrt(cov.ra_ra) || "";
       }
 
       if (data.select_dec) {
-        decj_element.value = best_fit_ephemeris.dec;
-        update_ephemeris_field(decj_element, 'DECJ');
-        document.getElementById('decj_err').innerHTML = Math.sqrt(cov.dec_dec) || "";
+        dec_element.value = best_fit_ephemeris.dec;
+        update_ephemeris_field(dec_element, 'dec');
+        document.getElementById('dec_err').innerHTML = Math.sqrt(cov.dec_dec) || "";
       }
 
       if (data.select_pepoch) {
         pepoch_element.value = best_fit_ephemeris.pepoch;
-        update_ephemeris_field(pepoch_element, 'PEPOCH');
+        update_ephemeris_field(pepoch_element, 'pepoch');
         document.getElementById('pepoch_err').innerHTML = Math.sqrt(cov.pepoch_pepoch) || "";
       }
 
       if (data.select_p0) {
         p0_element.value = best_fit_ephemeris.p0;
-        update_ephemeris_field(p0_element, 'P0');
+        update_ephemeris_field(p0_element, 'p0');
         document.getElementById('p0_err').innerHTML = Math.sqrt(cov.p0_p0) || "";
       }
 
       if (data.select_dm) {
         dm_element.value = best_fit_ephemeris.dm;
-        update_ephemeris_field(dm_element, 'DM');
+        update_ephemeris_field(dm_element, 'dm');
         document.getElementById('dm_err').innerHTML = Math.sqrt(cov.dm_dm) || "";
       }
 
