@@ -225,16 +225,18 @@ def timing_residual_view(request, pk):
         selected_working_ephemeris = working_ephemerides.get(pk=request.POST.get('working_ephemeris_pk'))
     except:
         selected_working_ephemeris = working_ephemerides.get(owner=request.user)
-    print(f"{selected_working_ephemeris.covariance = }")
+    if selected_working_ephemeris.covariance is None:
+        selected_working_ephemeris.covariance = models.WorkingEphemerisCovariance()
+        selected_working_ephemeris.covariance.save()
     context['selected_working_ephemeris'] = selected_working_ephemeris
 
     # Pool together lists of published values to offer as options to the user
     context['published_ephemeris_values'] = {
-        'ras': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Right ascension", article__isnull=False),
-        'decs': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Declination", article__isnull=False),
-        'pepochs': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="PEPOCH", article__isnull=False),
-        'periods': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Period", article__isnull=False),
-        'dms': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Dispersion measure", article__isnull=False),
+        'ra': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Right ascension", article__isnull=False),
+        'dec': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Declination", article__isnull=False),
+        'pepoch': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="PEPOCH", article__isnull=False),
+        'p0': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Period", article__isnull=False),
+        'dm': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Dispersion measure", article__isnull=False),
     }
 
     # Construct a dictionary out of the ephemeris

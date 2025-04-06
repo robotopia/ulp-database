@@ -946,17 +946,11 @@ class WorkingEphemerisCovariance(models.Model):
         blank=True,
     )
 
-    @property
-    def pepoch_err(self):
-        return np.sqrt(self.pepoch_pepoch)
-
-    @property
-    def p0_err(self):
-        return np.sqrt(self.p0_p0)
-
-    @property
-    def dm_err(self):
-        return np.sqrt(self.dm_dm)
+    def err(self, param):
+        try:
+            return np.sqrt(getattr(self, f'{param}_{param}'))
+        except:
+            return None
 
     # A helper function to create a WorkingEphemerisCovariance instance from an array
     def from_array(array):

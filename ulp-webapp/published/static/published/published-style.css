@@ -78,14 +78,10 @@ h1, h2, h3, h4, h5 {
 
 .compact-form-item > input,
 .compact-form-item > span,
-.compact-form-item > select
+.compact-form-item > select,
+.compact-form-item > label
 {
   border: 0px;
-  width: 200px;
-  background-color: field;
-}
-
-.compact-form-item > label {
   width: 250px;
   background-color: field;
 }

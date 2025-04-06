@@ -1,6 +1,7 @@
 {% extends "published/main.html" %}
 
 {% load static %}
+{% load custom_tags %}
 
 {% block body %}
 
@@ -58,82 +59,30 @@
 
 <div class="compact-form-item">
   <span style="width: 40px;"></span>
-  <label><b>Parameter</b></label>
+  <span><b>Parameter</b></span>
   <span><b>Value</b></span>
   <span style="width: 30px; user-select: none;"></span>
   <span></span>
   <span><b>Set to published value</b></span>
 </div>
 
+{% for param, value in ephemeris.items %}
 <div class="compact-form-item">
-  <span style="width: 40px; text-align: center;"><input id="select_ra" name="select_ra" type="checkbox"/></span>
-  <label for="ra">RAJ</label>
-  <input id="ra" form="prediction_form" name="ra" value="{{ ephemeris.ra }}" step="any" required onchange="update_ephemeris_field(this, 'ra');"/>
+  <span style="width: 40px; text-align: center;"><input id="select_{{ param }}" name="select_{{ param }}" type="checkbox" onchange="localStorage(this.id) = this.checked"/></span>
+  <label for="{{ param }}">{{ param|upper }}</label>
+  <input id="{{ param }}" form="prediction_form" name="{{ param }}" value="{{ value }}" step="any" onchange="update_ephemeris_field(this, '{{ param }}');" required/>
   <span style="width: 30px; user-select: none;">±</span>
-  <span id='ra_err'>{{ selected_working_ephemeris.covariance.ra_err|default_if_none:'' }}</span>
-  <select onchange="set_to_published_value(this, 'ra')">
+  <span id='{{ param }}_err'>{{ selected_working_ephemeris.covariance|err:param|default_if_none:'' }}</span>
+  <select id="select_published_{{ param }}" onchange="set_to_published_value(this, '{{ param }}')">
     <option value=""></option>
-    {% for ra in published_ephemeris_values.ras %}
-    <option value="{{ ra.formatted_quantity }}">{{ ra.formatted_quantity }} from {{ ra.article }}</option>
+    {% with published_ephemeris_values|get_item:param as published_values %}
+    {% for published_value in published_values %}
+    <option value="{{ published_value.formatted_quantity }}">{{ published_value.formatted_quantity }} from {{ published_value.article }}</option>
     {% endfor %}
+    {% endwith %}
   </select>
 </div>
-
-<div class="compact-form-item">
-  <span style="width: 40px; text-align: center;"><input id="select_dec" name="select_dec" type="checkbox"/></span>
-  <label for="dec">DECJ</label>
-  <input id="dec" form="prediction_form" name="dec" value="{{ ephemeris.dec }}" step="any" required onchange="update_ephemeris_field(this, 'dec');"/>
-  <span style="width: 30px; user-select: none;">±</span>
-  <span id='dec_err'>{{ selected_working_ephemeris.covariance.dec_err|default_if_none:'' }}</span>
-  <select onchange="set_to_published_value(this, 'dec')">
-    <option value=""></option>
-    {% for dec in published_ephemeris_values.decs %}
-    <option value="{{ dec.formatted_quantity }}">{{ dec.formatted_quantity }} from {{ dec.article }}</option>
-    {% endfor %}
-  </select>
-</div>
-
-<div class="compact-form-item">
-  <span style="width: 40px; text-align: center;"><input id="select_pepoch" name="select_pepoch" type="checkbox"/></span>
-  <label for="pepoch">PEPOCH</label>
-  <input type="number" id="pepoch" form="prediction_form" name="pepoch" value="{{ ephemeris.pepoch }}" step="any" onchange="update_ephemeris_field(this, 'pepoch');" required/>
-  <span style="width: 30px; user-select: none;">±</span>
-  <span id='pepoch_err'>{{ selected_working_ephemeris.covariance.pepoch_err|default_if_none:'' }}</span>
-  <select onchange="set_to_published_value(this, 'pepoch')">
-    <option value=""></option>
-    {% for pepoch in published_ephemeris_values.pepochs %}
-    <option value="{{ pepoch.quantity }}">{{ pepoch.formatted_quantity }} from {{ pepoch.article }}</option>
-    {% endfor %}
-  </select>
-</div>
-
-<div class="compact-form-item">
-  <span style="width: 40px; text-align: center;"><input id="select_p0" name="select_p0" type="checkbox"/></span>
-  <label for="p0">P0</label>
-  <input type="number" id="p0" form="prediction_form" name="p0" value="{{ ephemeris.p0 }}" step="any" onchange="update_ephemeris_field(this, 'p0');" required/>
-  <span style="width: 30px; user-select: none;">±</span>
-  <span id='p0_err'>{{ selected_working_ephemeris.covariance.p0_err|default_if_none:'' }}</span>
-  <select onchange="set_to_published_value(this, 'p0')">
-    <option value=""></option>
-    {% for period in published_ephemeris_values.periods %}
-    <option value="{{ period.quantity }}">{{ period.formatted_quantity }} from {{ period.article }}</option>
-    {% endfor %}
-  </select>
-</div>
-
-<div class="compact-form-item">
-  <span style="width: 40px; text-align: center;"><input id="select_dm" name="select_dm" type="checkbox"/></span>
-  <label for="dm">DM</label>
-  <input type="number" id="dm" form="prediction_form" name="dm" value="{{ ephemeris.dm }}" step="any" onchange="update_ephemeris_field(this, 'dm');" required/>
-  <span style="width: 30px; user-select: none;">±</span>
-  <span id='dm_err'>{{ selected_working_ephemeris.covariance.dm_err|default_if_none:'' }}</span>
-  <select onchange="set_to_published_value(this, 'dm')">
-    <option value=""></option>
-    {% for dm in published_ephemeris_values.dms %}
-    <option value="{{ dm.quantity }}">{{ dm.formatted_quantity }} from {{ dm.article }}</option>
-    {% endfor %}
-  </select>
-</div>
+{% endfor %}
 
 <div style="background-color: #ff000030;">
   <h4>Known issue</h4>
@@ -152,7 +101,7 @@
   {% csrf_token %}
 
   <div class="compact-form-item">
-    <label></label>
+    <span></span>
     <span><b>Value</b></span>
     <span><b>Format</b></span>
   </div>
