@@ -68,7 +68,7 @@
 
 {% for param, value in ephemeris.items %}
 <div class="compact-form-item">
-  <span style="width: 40px; text-align: center;"><input id="select_{{ param }}" name="select_{{ param }}" type="checkbox" onchange="localStorage(this.id) = this.checked"/></span>
+  <span style="width: 40px; text-align: center;"><input id="select_{{ param }}" name="select_{{ param }}" type="checkbox" onchange="localStorage[this.id] = this.checked"/></span>
   <label for="{{ param }}">{{ param|upper }}</label>
   <input id="{{ param }}" form="prediction_form" name="{{ param }}" value="{{ value }}" step="any" onchange="update_ephemeris_field(this, '{{ param }}');" required/>
   <span style="width: 30px; user-select: none;">±</span>
@@ -200,7 +200,7 @@
       dm: {{ we.dm }},
     },
     {% endfor %}
-  };
+  }; // TODO: Can this ^^^ be looped over ephemeris parameters??
 
   Array.prototype.forEach.call(copy_links, function (copy_link) {
     copy_link.addEventListener('click', function (e) {
@@ -215,27 +215,27 @@
     })
   });
 
-  // Get the p0 and the pepoch
-  const ra_element = document.getElementById("ra");
-  const dec_element = document.getElementById("dec");
-  const p0_element = document.getElementById("p0");
-  const pepoch_element = document.getElementById("pepoch");
-  const dm_element = document.getElementById("dm");
+  // Set commonly used elements to const variables
+  {% for param in ephemeris.keys %}
+  const {{ param }}_element = document.getElementById("{{ param }}");
+  const select_{{ param }}_element = document.getElementById('select_{{ param }}');
+  {% endfor %}
+
   const barycentre_element = document.getElementById("barycentre");
   const display_obs_element = document.getElementById("display_obs");
   const toa_color_element = document.getElementById("toa_color");
   const observation_color_element = document.getElementById("observation_color");
-  const select_ra_element = document.getElementById('select_ra');
-  const select_dec_element = document.getElementById('select_dec');
-  const select_pepoch_element = document.getElementById('select_pepoch');
-  const select_p0_element = document.getElementById('select_p0');
-  const select_dm_element = document.getElementById('select_dm');
 
   // Set some default values for elements whose state may be preserved on page refresh via localStorage
   toa_color_element.value = localStorage.getItem("toa_color") || getComputedStyle(document.body).getPropertyValue('--bs-body-color');
   observation_color_element.value = localStorage.getItem("observation_color") || getComputedStyle(document.body).getPropertyValue('--bs-body-color');
   barycentre_element.checked = localStorage.getItem("barycentre_toas") !== null ? localStorage.getItem("barycentre_toas") === "true" : true;
   display_obs_element.checked = localStorage.getItem("display_observations") !== null ? localStorage.getItem("display_observations") === "true" : false;
+
+  // Set the ephemeris parameter selection checkboxes to their localStorage values, if they exist
+  {% for param in ephemeris.keys %}
+  document.getElementById('select_{{ param }}').checked = localStorage.getItem('select_{{ param }}') === "true";
+  {% endfor %}
 
   // Reset to default values
   function set_default_plot_settings() {
@@ -391,25 +391,21 @@
   }
 
   function reset_ephemeris_fields() {
-    ra_element.value = selected_working_ephemeris.ra;
-    dec_element.value = selected_working_ephemeris.dec;
-    pepoch_element.value = selected_working_ephemeris.pepoch;
-    p0_element.value = selected_working_ephemeris.p0;
-    dm_element.value = selected_working_ephemeris.dm;
-
-    ra_element.style.backgroundColor = "field";
-    dec_element.style.backgroundColor = "field";
-    pepoch_element.style.backgroundColor = "field";
-    p0_element.style.backgroundColor = "field";
-    dm_element.style.backgroundColor = "field";
+    {% for param in ephemeris.keys %}
+    {{ param }}_element.value = selected_working_ephemeris.{{ param }};
+    {{ param }}_element.style.backgroundColor = "field";
+    {% endfor %}
 
     replot();
   }
 
-  function set_to_published_value(element, field_name) {
+  function set_to_published_value(select_element, field_name) {
     var target_element = document.getElementById(field_name);
-    target_element.value = element.value;
-    element.value = "";
+    var error_element = document.getElementById(field_name + '_err');
+    [val, err] = select_element.value.split(" ± ");
+    target_element.value = val;
+    error_element.innerHTML = err || "";
+    select_element.value = "";
     update_ephemeris_field(target_element, field_name);
   }
 
@@ -423,17 +419,11 @@
 
     const data = {
       pk: document.getElementById('working_ephemeris_select').value,
-      select_ra: select_ra_element.checked,
-      select_dec: select_dec_element.checked,
-      select_pepoch: select_pepoch_element.checked,
-      select_p0: select_p0_element.checked,
-      select_dm: select_dm_element.checked,
-      ra: ra_element.value,
-      dec: dec_element.value,
-      pepoch: pepoch_element.value,
-      p0: p0_element.value,
-      dm: dm_element.value,
     }
+    {% for param in ephemeris.keys %}
+    data.select_{{ param }} = select_{{ param }}_element.checked;
+    data.{{ param }} = {{ param }}_element.value;
+    {% endfor %}
 
     xhr.onload = () => {
       if (xhr.status != 200) {
@@ -444,19 +434,12 @@
       updated_data = JSON.parse(xhr.responseText);
 
       // Update the current selected working ephemeris
-      selected_working_ephemeris.ra = updated_data.ra;
-      selected_working_ephemeris.dec = updated_data.dec;
-      selected_working_ephemeris.pepoch = updated_data.pepoch;
-      selected_working_ephemeris.p0 = updated_data.p0;
-      selected_working_ephemeris.dm = updated_data.dm;
-
       // Also update the corresponding ephemeris in the list of all ephemerides
       // loaded on the page
-      working_ephemerides[updated_data.pk].ra = updated_data.ra;
-      working_ephemerides[updated_data.pk].dec = updated_data.dec;
-      working_ephemerides[updated_data.pk].pepoch = updated_data.pepoch;
-      working_ephemerides[updated_data.pk].p0 = updated_data.p0;
-      working_ephemerides[updated_data.pk].dm = updated_data.dm;
+      {% for param in ephemeris.keys %}
+      selected_working_ephemeris.{{ param }} = updated_data.{{ param }};
+      working_ephemerides[updated_data.pk].{{ param }} = updated_data.{{ param }};
+      {% endfor %}
 
       reset_ephemeris_fields();
     }
@@ -472,18 +455,12 @@
     xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
     xhr.setRequestHeader("Content-type", "application/json");
 
-    const data = {
-      select_ra: select_ra_element.checked,
-      select_dec: select_dec_element.checked,
-      select_pepoch: select_pepoch_element.checked,
-      select_p0: select_p0_element.checked,
-      select_dm: select_dm_element.checked,
-      ra: ra_element.value,
-      dec: dec_element.value,
-      pepoch: pepoch_element.value,
-      p0: p0_element.value,
-      dm: dm_element.value,
-    }
+    const data = {};
+    {% for param in ephemeris.keys %}
+    data.select_{{ param }} = select_{{ param }}_element.checked;
+    data.{{ param }} = {{ param }}_element.value;
+    {% endfor %}
+
 
     xhr.onload = () => {
       if (xhr.status != 200) {
@@ -496,35 +473,13 @@
       let [best_fit_ephemeris, cov] = updated_data;
 
       // Update the current selected working ephemeris
-      if (data.select_ra) {
-        ra_element.value = best_fit_ephemeris.ra;
-        update_ephemeris_field(ra_element, 'ra');
-        document.getElementById('ra_err').innerHTML = Math.sqrt(cov.ra_ra) || "";
+      {% for param in ephemeris.keys %}
+      if (data.select_{{ param }}) {
+        {{ param }}_element.value = best_fit_ephemeris.{{ param }};
+        update_ephemeris_field({{ param }}_element, '{{ param }}');
+        document.getElementById('{{ param }}_err').innerHTML = Math.sqrt(cov.{{ param }}_{{ param }}) || "";
       }
-
-      if (data.select_dec) {
-        dec_element.value = best_fit_ephemeris.dec;
-        update_ephemeris_field(dec_element, 'dec');
-        document.getElementById('dec_err').innerHTML = Math.sqrt(cov.dec_dec) || "";
-      }
-
-      if (data.select_pepoch) {
-        pepoch_element.value = best_fit_ephemeris.pepoch;
-        update_ephemeris_field(pepoch_element, 'pepoch');
-        document.getElementById('pepoch_err').innerHTML = Math.sqrt(cov.pepoch_pepoch) || "";
-      }
-
-      if (data.select_p0) {
-        p0_element.value = best_fit_ephemeris.p0;
-        update_ephemeris_field(p0_element, 'p0');
-        document.getElementById('p0_err').innerHTML = Math.sqrt(cov.p0_p0) || "";
-      }
-
-      if (data.select_dm) {
-        dm_element.value = best_fit_ephemeris.dm;
-        update_ephemeris_field(dm_element, 'dm');
-        document.getElementById('dm_err').innerHTML = Math.sqrt(cov.dm_dm) || "";
-      }
+      {% endfor %}
 
       replot();
     }
