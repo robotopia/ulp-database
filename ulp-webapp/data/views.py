@@ -267,7 +267,7 @@ def timing_residual_view(request, pk):
 
         # Get form values
         PEPOCH = float(request.POST.get('pepoch', '0.0'))
-        P0 = float(request.POST.get('folding-period', '0.0'))
+        P0 = float(request.POST.get('p0', '0.0'))
         DM = float(request.POST.get('dm', '0.0'))
         RAJ = request.POST.get('raj', '00:00:00')
         DECJ = request.POST.get('decj', '00:00:00')

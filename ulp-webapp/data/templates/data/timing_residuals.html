@@ -39,7 +39,7 @@
     <input type="color" id="observation_color" onchange="update_observation_color();">
   </div>
   <div>
-    <button type="button" class="btn btn-primary" onclick="localStorage.clear(); location.reload();">Reset to defaults</button>
+    <button type="button" class="btn btn-primary" onclick="set_default_plot_settings();">Reset to defaults</button>
     <button type="button" class="btn btn-primary" onclick="reset_zoom_xaxis();">Reset x-axis</button>
     <button type="button" class="btn btn-primary" onclick="reset_zoom_yaxis();">Reset y-axis</button>
   </div>
@@ -67,7 +67,7 @@
 
 <div class="compact-form-item">
   <span style="width: 40px; text-align: center;"><input id="select_raj" name="select_raj" type="checkbox"/></span>
-  <label for="raj">RAJ*</label>
+  <label for="raj">RAJ</label>
   <input id="raj" form="prediction_form" name="raj" value="{{ ephemeris.RAJ }}" step="any" required onchange="update_ephemeris_field(this, 'RAJ');"/>
   <span style="width: 30px; user-select: none;">±</span>
   <span id='raj_err'>{{ selected_working_ephemeris.covariance.raj_err|default_if_none:'' }}</span>
@@ -81,7 +81,7 @@
 
 <div class="compact-form-item">
   <span style="width: 40px; text-align: center;"><input id="select_decj" name="select_decj" type="checkbox"/></span>
-  <label for="decj">DECJ*</label>
+  <label for="decj">DECJ</label>
   <input id="decj" form="prediction_form" name="decj" value="{{ ephemeris.DECJ }}" step="any" required onchange="update_ephemeris_field(this, 'DECJ');"/>
   <span style="width: 30px; user-select: none;">±</span>
   <span id='decj_err'>{{ selected_working_ephemeris.covariance.decj_err|default_if_none:'' }}</span>
@@ -109,8 +109,8 @@
 
 <div class="compact-form-item">
   <span style="width: 40px; text-align: center;"><input id="select_p0" name="select_p0" type="checkbox"/></span>
-  <label for="folding-period">P0</label>
-  <input type="number" id="folding-period" form="prediction_form" name="folding-period" value="{{ ephemeris.P0 }}" step="any" onchange="update_ephemeris_field(this, 'P0');" required/>
+  <label for="p0">P0</label>
+  <input type="number" id="p0" form="prediction_form" name="p0" value="{{ ephemeris.P0 }}" step="any" onchange="update_ephemeris_field(this, 'P0');" required/>
   <span style="width: 30px; user-select: none;">±</span>
   <span id='p0_err'>{{ selected_working_ephemeris.covariance.p0_err|default_if_none:'' }}</span>
   <select onchange="set_to_published_value(this, 'P0')">
@@ -266,22 +266,39 @@
     })
   });
 
-  // Get the folding period and the PEPOCH
+  // Get the p0 and the PEPOCH
   const raj_element = document.getElementById("raj");
   const decj_element = document.getElementById("decj");
-  const folding_period_element = document.getElementById("folding-period");
+  const p0_element = document.getElementById("p0");
   const pepoch_element = document.getElementById("pepoch");
   const dm_element = document.getElementById("dm");
   const barycentre_element = document.getElementById("barycentre");
   const display_obs_element = document.getElementById("display_obs");
   const toa_color_element = document.getElementById("toa_color");
   const observation_color_element = document.getElementById("observation_color");
+  const select_ra_element = document.getElementById('select_raj');
+  const select_dec_element = document.getElementById('select_decj');
+  const select_pepoch_element = document.getElementById('select_pepoch');
+  const select_p0_element = document.getElementById('select_p0');
+  const select_dm_element = document.getElementById('select_dm');
 
-  // Set some default values
+  // Set some default values for elements whose state may be preserved on page refresh via localStorage
   toa_color_element.value = localStorage.getItem("toa_color") || getComputedStyle(document.body).getPropertyValue('--bs-body-color');
   observation_color_element.value = localStorage.getItem("observation_color") || getComputedStyle(document.body).getPropertyValue('--bs-body-color');
   barycentre_element.checked = localStorage.getItem("barycentre_toas") !== null ? localStorage.getItem("barycentre_toas") === "true" : true;
   display_obs_element.checked = localStorage.getItem("display_observations") !== null ? localStorage.getItem("display_observations") === "true" : false;
+
+  // Reset to default values
+  function set_default_plot_settings() {
+    toa_color_element.value = getComputedStyle(document.body).getPropertyValue('--bs-body-color');
+    observation_color_element.value = getComputedStyle(document.body).getPropertyValue('--bs-body-color');
+    barycentre_element.checked = true;
+    display_obs_element.checked = false;
+
+    update_toa_color();
+    update_observation_color();
+    replot();
+  }
 
   // set the dimensions and margins of the graph
   var parentDiv = document.getElementById("residual-plot");
@@ -291,11 +308,11 @@
 
   // "g" is the main group containing all plotted elements
   var margin = {top: 50, right: 80, bottom: 50, left: 80};
-  var folding_period = folding_period_element.value;
+  var p0 = p0_element.value;
   var pepoch = pepoch_element.value;
   var dm = dm_element.value;
   var ephemeris = {
-    folding_period: folding_period_element.value,
+    p0: p0_element.value,
     pepoch: pepoch_element.value,
     dm: dm_element.value,
   };
@@ -307,7 +324,7 @@
 
   function replot() {
     ephemeris = {
-      folding_period: folding_period_element.value,
+      p0: p0_element.value,
       pepoch: pepoch_element.value,
       dm: dm_element.value,
     };
@@ -341,7 +358,7 @@
     scrollpos = d3.mouse(this);
 
     var ephemeris = {
-      folding_period: folding_period_element.value,
+      p0: p0_element.value,
       pepoch: pepoch_element.value,
       dm: dm_element.value,
     };
@@ -365,7 +382,7 @@
       let movepos = d3.mouse(this);
 
       var ephemeris = {
-        folding_period: folding_period_element.value,
+        p0: p0_element.value,
         pepoch: pepoch_element.value,
         dm: dm_element.value,
       };
@@ -373,8 +390,8 @@
       edit_period_mousemove(plot, ephemeris, movepos, barycentre_element.checked, "Observations");
 
       // Change the value in the input field
-      folding_period_element.value = ephemeris.folding_period;
-      update_ephemeris_field(folding_period_element, "P0");
+      p0_element.value = ephemeris.p0;
+      update_ephemeris_field(p0_element, "P0");
     }
   });
 
@@ -428,20 +445,20 @@
     raj_element.value = selected_working_ephemeris.RAJ;
     decj_element.value = selected_working_ephemeris.DECJ;
     pepoch_element.value = selected_working_ephemeris.PEPOCH;
-    folding_period_element.value = selected_working_ephemeris.P0;
+    p0_element.value = selected_working_ephemeris.P0;
     dm_element.value = selected_working_ephemeris.DM;
 
     raj_element.style.backgroundColor = "field";
     decj_element.style.backgroundColor = "field";
     pepoch_element.style.backgroundColor = "field";
-    folding_period_element.style.backgroundColor = "field";
+    p0_element.style.backgroundColor = "field";
     dm_element.style.backgroundColor = "field";
 
     replot();
   }
 
   function set_to_published_value(element, field_name) {
-    element.previousElementSibling.value = element.value;
+    element.previousElementSibling.value = element.value; // TODO Fix me!
     element.value = "";
     update_ephemeris_field(element.previousElementSibling, field_name);
   }
@@ -456,15 +473,15 @@
 
     const data = {
       pk: document.getElementById('working_ephemeris_select').value,
-      select_ra: document.getElementById('select_raj').checked,
-      select_dec: document.getElementById('select_decj').checked,
-      select_pepoch: document.getElementById('select_pepoch').checked,
-      select_p0: document.getElementById('select_p0').checked,
-      select_dm: document.getElementById('select_dm').checked,
+      select_ra: select_ra_element.checked,
+      select_dec: select_dec_element.checked,
+      select_pepoch: select_pepoch_element.checked,
+      select_p0: select_p0_element.checked,
+      select_dm: select_dm_element.checked,
       ra: raj_element.value,
       dec: decj_element.value,
       pepoch: pepoch_element.value,
-      p0: folding_period_element.value,
+      p0: p0_element.value,
       dm: dm_element.value,
     }
 
@@ -506,15 +523,15 @@
     xhr.setRequestHeader("Content-type", "application/json");
 
     const data = {
-      select_ra: document.getElementById('select_raj').checked,
-      select_dec: document.getElementById('select_decj').checked,
-      select_pepoch: document.getElementById('select_pepoch').checked,
-      select_p0: document.getElementById('select_p0').checked,
-      select_dm: document.getElementById('select_dm').checked,
+      select_ra: select_ra_element.checked,
+      select_dec: select_dec_element.checked,
+      select_pepoch: select_pepoch_element.checked,
+      select_p0: select_p0_element.checked,
+      select_dm: select_dm_element.checked,
       ra: raj_element.value,
       dec: decj_element.value,
       pepoch: pepoch_element.value,
-      p0: folding_period_element.value,
+      p0: p0_element.value,
       dm: dm_element.value,
     }
 
@@ -528,18 +545,38 @@
       updated_data = JSON.parse(xhr.responseText);
       let [best_fit_ephemeris, cov] = updated_data;
 
-      folding_period_element.value = best_fit_ephemeris.p0;
-      pepoch_element.value = best_fit_ephemeris.pepoch;
+      // Update the current selected working ephemeris
+      if (data.select_ra) {
+        raj_element.value = best_fit_ephemeris.ra;
+        update_ephemeris_field(raj_element, 'RAJ');
+        document.getElementById('raj_err').innerHTML = Math.sqrt(cov.ra_ra) || "";
+      }
 
-      update_ephemeris_field(folding_period_element, 'P0');
-      update_ephemeris_field(pepoch_element, 'PEPOCH');
+      if (data.select_dec) {
+        decj_element.value = best_fit_ephemeris.dec;
+        update_ephemeris_field(decj_element, 'DECJ');
+        document.getElementById('decj_err').innerHTML = Math.sqrt(cov.dec_dec) || "";
+      }
 
-      console.log(Math.sqrt(cov.pepoch_pepoch));
-      document.getElementById('raj_err').innerHTML = Math.sqrt(cov.ra_ra) || "";
-      document.getElementById('decj_err').innerHTML = Math.sqrt(cov.dec_dec) || "";
-      document.getElementById('pepoch_err').innerHTML = Math.sqrt(cov.pepoch_pepoch) || "";
-      document.getElementById('p0_err').innerHTML = Math.sqrt(cov.p0_p0) || "";
-      document.getElementById('dm_err').innerHTML = Math.sqrt(cov.dm_dm) || "";
+      if (data.select_pepoch) {
+        pepoch_element.value = best_fit_ephemeris.pepoch;
+        update_ephemeris_field(pepoch_element, 'PEPOCH');
+        document.getElementById('pepoch_err').innerHTML = Math.sqrt(cov.pepoch_pepoch) || "";
+      }
+
+      if (data.select_p0) {
+        p0_element.value = best_fit_ephemeris.p0;
+        update_ephemeris_field(p0_element, 'P0');
+        document.getElementById('p0_err').innerHTML = Math.sqrt(cov.p0_p0) || "";
+      }
+
+      if (data.select_dm) {
+        dm_element.value = best_fit_ephemeris.dm;
+        update_ephemeris_field(dm_element, 'DM');
+        document.getElementById('dm_err').innerHTML = Math.sqrt(cov.dm_dm) || "";
+      }
+
+      replot();
     }
 
     xhr.send(JSON.stringify(data));

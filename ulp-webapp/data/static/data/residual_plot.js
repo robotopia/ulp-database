@@ -9,8 +9,8 @@ Number.prototype.mod = function (n) {
 // Function to calculate the pulse numbers and phases of TOAs
 function calc_pulse_phase(mjd, ephemeris) {
   // mjd and pepoch should be in days,
-  // P (the folding period) in seconds
-  var pulse_phase = 86400*(mjd - ephemeris.pepoch)/ephemeris.folding_period; // Dimensionless
+  // P (the p0) in seconds
+  var pulse_phase = 86400*(mjd - ephemeris.pepoch)/ephemeris.p0; // Dimensionless
   var pulse = Math.round(pulse_phase)
   var phase = (pulse_phase + 0.5).mod(1) - 0.5;
   return {pulse: pulse, phase: phase, pulse_phase: pulse_phase};
@@ -18,7 +18,7 @@ function calc_pulse_phase(mjd, ephemeris) {
 
 function calc_mjd(pulse_phase, ephemeris) {
   // This is the inverse of calc_pulse_phase
-  return ephemeris.pepoch + pulse_phase*ephemeris.folding_period/86400;
+  return ephemeris.pepoch + pulse_phase*ephemeris.p0/86400;
 }
 
 function generate_toas(mjd_start, mjd_end, ephemeris) {
@@ -132,7 +132,7 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
   // xlim and ylim should be of the form:
   //     [-5, 5]
   // ephemeris should be an object of the form:
-  //     {folding_period: 1000.0, pepoch: 60000.0, dm: 100.0}
+  //     {p0: 1000.0, pepoch: 60000.0, dm: 100.0}
   // plot should be an object returned by create_residual_plot_elements()
 
   // Attach margins amd lims to plot object
@@ -156,7 +156,7 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
 
   plot.y.domain(ylim).range([plot.height, 0]);
   plot.y2
-    .domain([ylim[0]*ephemeris.folding_period, ylim[1]*ephemeris.folding_period])
+    .domain([ylim[0]*ephemeris.p0, ylim[1]*ephemeris.p0])
     .range([plot.height, 0]);
 
   // Construct X axes
@@ -208,7 +208,7 @@ function add_residual_data(plot, json_url, appearance, ephemeris, barycentre, la
   //     [{mjd: 60001.0, mjd_err: 1e-4, bc_correction: 0.001, freq_MHz: 200.0}, ... ]
   // appearance should be ... TODO
   // ephemeris should be an object of the form:
-  //     {folding_period: 1000.0, pepoch: 60000.0, dm: 100.0}
+  //     {p0: 1000.0, pepoch: 60000.0, dm: 100.0}
 
   d3.json(json_url, function(data) {
 
@@ -260,7 +260,7 @@ function apply_corrections(toa, ephemeris, barycentre) {
 function position_residual_data(plot, ephemeris, barycentre, label) {
   // plot should be an object returned by create_residual_plot_elements()
   // ephemeris should be an object of the form:
-  //     {folding_period: 1000.0, pepoch: 60000.0, dm: 100.0}
+  //     {p0: 1000.0, pepoch: 60000.0, dm: 100.0}
 
   if (plot[label].appearance.display_points === true) {
     plot[label].points.attr("cx", function (toa) {
@@ -381,15 +381,15 @@ function edit_axis_mousedown(pos) {
 function edit_period_mousemove(plot, ephemeris, pos, barycentre, label) {
 
   var pepoch = pepoch_element.value;
-  var folding_period = folding_period_element.value;
+  var p0 = p0_element.value;
 
-  // Record for later use the world coords of the clicked event, as well as the folding period
+  // Record for later use the world coords of the clicked event, as well as the p0
   let mjd = plot.x.invert(pos[0] - plot.margins.left) - ephemeris.pepoch; // world coords of click pos
   let res = plot.y2.invert(pos[1] - plot.margins.top);          // world coords of click pos
   let factor = res / (mjd*86400);
 
   if (period_ref_factor !== null) {
-    ephemeris.folding_period *= (1 - (factor - period_ref_factor));
+    ephemeris.p0 *= (1 - (factor - period_ref_factor));
 
     // Update plot
     position_residual_data(plot, ephemeris, barycentre, label);
