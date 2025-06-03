@@ -188,6 +188,40 @@ def timing_choose_ulp_view(request):
     return render(request, 'data/timing_choose_ulp.html', context)
 
 
+def get_toa_predictions(start, end, freq_MHz, pepoch, p0, dm, telescope, coord, output_toa_format='mjd'):
+
+    # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
+    # so to get the right range, convert them to dedispersed, barycentric
+    time_range = Time([start, end])
+    dmdelay = calc_dmdelay(dm, freq_MHz, np.inf*u.MHz)
+    time_range -= dmdelay
+    time_range += bc_corr(coord, time_range)
+
+    predicted_barycentric_toas = generate_toas(time_range[0], time_range[1], ephemeris)
+    predicted_topocentric_toas = predicted_barycentric_toas - bc_corr(coord, predicted_barycentric_toas)
+    predicted_dispersed_toas = predicted_topocentric_toas + dmdelay
+
+    altaz = coord.transform_to(AltAz(obstime=predicted_dispersed_toas, location=EarthLocation.of_site(telescope)))
+    sun_altaz = [get_sun(predicted_dispersed_toas[i]).transform_to(AltAz(obstime=predicted_dispersed_toas[i], location=EarthLocation.of_site(telescope))) for i in range(len(predicted_barycentric_toas))]
+
+    # Set to the requested format
+    predicted_barycentric_toas.format = output_toa_format
+    predicted_topocentric_toas.format = output_toa_format
+    predicted_dispersed_toas.format = output_toa_format
+
+    predicted_toas = [
+        {
+            'bary': predicted_barycentric_toas[i],
+            'topo': predicted_topocentric_toas[i],
+            'topo_disp': predicted_dispersed_toas[i],
+            'elevation': int(np.round(altaz[i].alt.value)),
+            'sun_elevation': int(np.round(sun_altaz[i].alt.value)),
+        } for i in range(len(predicted_barycentric_toas)) if altaz[i].alt.value >= min_el and sun_altaz[i].alt.value < max_sun_el
+    ]
+
+    return predicted_toas
+
+
 @login_required
 def timing_residual_view(request, pk):
 
@@ -307,35 +341,17 @@ def timing_residual_view(request, pk):
 
         # If they've also provided other form values, make a table of predicted values
         if mjd_start is not None and mjd_end is not None and mjd_dispersion_frequency is not None and pepoch is not None and p0 is not None and telescope is not None:
-            # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
-            # so to get the right range, convert them to dedispersed, barycentric
-            dmdelay = calc_dmdelay(ephemeris['dm']*u.pc/u.cm**3, mjd_dispersion_frequency*u.MHz, np.inf*u.MHz)
-            mjd_range -= dmdelay
-            mjd_range += bc_corr(coord, mjd_range)
-
-            predicted_barycentric_toas = generate_toas(mjd_range[0], mjd_range[1], ephemeris)
-            predicted_topocentric_toas = predicted_barycentric_toas - bc_corr(coord, predicted_barycentric_toas)
-            predicted_dispersed_toas = predicted_topocentric_toas + dmdelay
-
-            altaz = coord.transform_to(AltAz(obstime=predicted_dispersed_toas, location=EarthLocation.of_site(telescope)))
-            sun_altaz = [get_sun(predicted_dispersed_toas[i]).transform_to(AltAz(obstime=predicted_dispersed_toas[i], location=EarthLocation.of_site(telescope))) for i in range(len(predicted_barycentric_toas))]
-
-            # Set to the requested format
-            predicted_barycentric_toas.format = output_toa_format
-            predicted_topocentric_toas.format = output_toa_format
-            predicted_dispersed_toas.format = output_toa_format
-
-            predicted_toas = [
-                {
-                    'bary': predicted_barycentric_toas[i],
-                    'topo': predicted_topocentric_toas[i],
-                    'topo_disp': predicted_dispersed_toas[i],
-                    'elevation': int(np.round(altaz[i].alt.value)),
-                    'sun_elevation': int(np.round(sun_altaz[i].alt.value)),
-                } for i in range(len(predicted_barycentric_toas)) if altaz[i].alt.value >= min_el and sun_altaz[i].alt.value < max_sun_el
-            ]
-
-            context['predicted_toas'] = predicted_toas
+            context['predicted_toas'] = get_toa_predictions(
+                mjd_range[0],                       # Start of time range
+                mjd_range[-1],                      # End of time range
+                mjd_dispersion_frequency*u.MHz,     # Observing frequency
+                pepoch,                             # PEPOCH (MJD)
+                p0,                                 # Period
+                ephemeris['dm']*u.pc/u.cm**3,       # DM
+                telescope,                          # Telescope string
+                coord,                              # Target source coordinates
+                output_toa_format=output_toa_format # Desired output ToA format
+            )
 
         context['mjd_dispersion_frequency'] = mjd_dispersion_frequency
 
