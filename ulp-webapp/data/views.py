@@ -188,14 +188,22 @@ def timing_choose_ulp_view(request):
     return render(request, 'data/timing_choose_ulp.html', context)
 
 
-def get_toa_predictions(start, end, freq_MHz, pepoch, p0, dm, telescope, coord, output_toa_format='mjd'):
+def get_toa_predictions(start, end, freq, pepoch, p0, dm, telescope, coord, output_toa_format='mjd', min_el=0, max_sun_el=90):
 
     # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
     # so to get the right range, convert them to dedispersed, barycentric
     time_range = Time([start, end])
-    dmdelay = calc_dmdelay(dm, freq_MHz, np.inf*u.MHz)
+    dmdelay = calc_dmdelay(dm, freq, np.inf*u.MHz)
     time_range -= dmdelay
     time_range += bc_corr(coord, time_range)
+
+    ephemeris = {
+        'ra': coord.ra.deg,
+        'dec': coord.dec.deg,
+        'pepoch': pepoch,
+        'p0': p0,
+        'dm': dm.to('pc cm-3').value,
+    }
 
     predicted_barycentric_toas = generate_toas(time_range[0], time_range[1], ephemeris)
     predicted_topocentric_toas = predicted_barycentric_toas - bc_corr(coord, predicted_barycentric_toas)
@@ -220,6 +228,84 @@ def get_toa_predictions(start, end, freq_MHz, pepoch, p0, dm, telescope, coord, 
     ]
 
     return predicted_toas
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_toa_predictions_json(request):
+
+    ulp_name = request.GET.get('lpt')
+    ulp = published_models.Ulp.objects.filter(name=ulp_name).first()
+    if ulp is None:
+        return JsonResponse({'message': f"Couldn't identify an LPT with the name {ulp_name}"}, status=400)
+
+    default_date_format = 'mjd'
+
+    input_date_format = request.GET.get('input_date_format', default_date_format)
+    if input_date_format not in Time.FORMATS.keys():
+        return JsonResponse({'message': f"{input_date_format} is not a valid AstroPy date format. Please select one of the following (default='{default_date_format}'):\n{', '.join(list(Time.FORMATS.keys()))}"}, status=400)
+
+    output_toa_format = request.GET.get('output_toa_format', default_date_format)
+
+    start = Time(request.GET.get("start"), scale='utc', format=input_date_format)
+    end = Time(request.GET.get("end"), scale='utc', format=input_date_format)
+
+    try:
+        freq = float(request.GET.get("freq_MHz")) * u.MHz
+    except:
+        return JsonResponse({'message': f"Couldn't parse frequency '{request.GET.get('freq_MHz')}' as a valid float"}, status=400)
+
+    telescope = request.GET.get("telescope")
+    if telescope is None:
+        return JsonResponse({'message': f"Must provide a telescope"}, status=400)
+    if telescope not in site_names:
+        return JsonResponse({'message': f"{telescope} not in AstroPy's list of 'site names'"}, status=400)
+
+    try:
+        min_el = float(request.GET.get("min_el", 0))
+    except:
+        return JsonResponse({'message': f"Couldn't parse min_el = '{request.GET.get('min_el')}' as a valid float"}, status=400)
+
+    try:
+        max_sun_el = float(request.GET.get("max_sun_el", 90))
+    except:
+        return JsonResponse({'message': f"Couldn't parse max_sun_el = '{request.GET.get('max_sun_el')}' as a valid float"}, status=400)
+
+    # Get the working ephemerides that are available to this user
+    working_ephemeris = models.WorkingEphemeris.objects.filter(ulp=ulp, owner=request.user).first()
+
+    if not working_ephemeris:
+        return JsonResponse({'message': f"No ephemerides available for {ulp.name} owned by {request.user}. Please go onto the Timing page on the website to create one."}, status=400)
+
+    ra = working_ephemeris.ra
+    dec = working_ephemeris.dec
+    pepoch = working_ephemeris.pepoch
+    p0 = working_ephemeris.p0
+    dm = working_ephemeris.dm * u.pc / u.cm**3
+
+    coord = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg), frame='icrs')
+
+    predictions = get_toa_predictions(
+        start,
+        end,
+        freq,
+        pepoch,
+        p0,
+        dm,
+        telescope,
+        coord,
+        output_toa_format=output_toa_format,
+        min_el=min_el,
+        max_sun_el=max_sun_el,
+    )
+    
+    for prediction in predictions:
+        prediction['bary'] = prediction['bary'].to_value(output_toa_format)
+        prediction['topo'] = prediction['topo'].to_value(output_toa_format)
+        prediction['topo_disp'] = prediction['topo_disp'].to_value(output_toa_format)
+
+    return JsonResponse(predictions, safe=False, status=200)
 
 
 @login_required

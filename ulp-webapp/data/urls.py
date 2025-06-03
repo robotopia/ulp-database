@@ -33,6 +33,7 @@ urlpatterns = [
     re_path(r'^api/convert_time_format$', views.convert_time_format, name="convert_time_format"),
     re_path(r'^api/update_permissions$', views.update_permissions, name="update_permissions"),
     re_path(r'^api/upload_lightcurve$', views.upload_lightcurve, name="upload_lightcurve"),
+    re_path(r'^api/get_toa_predictions_json$', views.get_toa_predictions_json, name="get_toa_predictions_json"),
     re_path(r'^api/update_selected_working_ephemeris$', views.update_selected_working_ephemeris, name="update_selected_working_ephemeris"),
     re_path(r'^api/fit_ephemeris/(?P<ulp_pk>[0-9]+)$', views.fit_ephemeris, name="fit_ephemeris"),
 ]
