@@ -278,13 +278,10 @@ def get_toa_predictions_json(request):
     if not working_ephemeris:
         return JsonResponse({'message': f"No ephemerides available for {ulp.name} owned by {request.user}. Please go onto the Timing page on the website to create one."}, status=400)
 
-    ra = working_ephemeris.ra
-    dec = working_ephemeris.dec
+    coord = working_ephemeris.coord
     pepoch = working_ephemeris.pepoch
     p0 = working_ephemeris.p0
     dm = working_ephemeris.dm * u.pc / u.cm**3
-
-    coord = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg), frame='icrs')
 
     predictions = get_toa_predictions(
         start,
