@@ -23,6 +23,7 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord, Angle, EarthLocation, AltAz, get_sun
 from astropy.constants import c
 from astropy.time import Time
+from astropy.table import QTable
 from decimal import Decimal
 import io
 
@@ -1653,3 +1654,21 @@ def fit_ephemeris(request, ulp_pk):
         return JsonResponse({'message': 'The chosen combination of fit parameters is not yet supported'}, status=400)
 
     return JsonResponse([best_fit_ephemeris, cov], safe=False, status=200)
+
+
+
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def write_toas(request):
+
+    if 'file' in request.FILES:
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    ecsv = request.FILES['file']
+
+    try:
+        table = QTable.read(ecsv)
+    except:
+        return JsonResponse({'error': 'The uploaded file could not be parsed as an AstroPy QTable'}, status=400)
+
+    return JsonResponse(table, safe=False, status=200)

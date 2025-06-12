@@ -85,9 +85,9 @@
 
   <input type="submit" value="+" form="add_toa"/>
   <span></span>
-  <input type="number" class="freq-unit" id="new_freq" name="freq" form="add_toa" required/>
-  <input type="number" id="new_raw_mjd" name="raw_mjd" form="add_toa" required/>
-  <input type="number" class="time-unit" id="new_mjd_err" name="mjd_err" form="add_toa" required/>
+  <input type="number" class="freq-unit" id="new_freq" name="freq" form="add_toa" step="any" required/>
+  <input type="number" id="new_raw_mjd" name="raw_mjd" form="add_toa" step="any" required/>
+  <input type="number" class="time-unit" id="new_mjd_err" name="mjd_err" form="add_toa" step="any" required/>
   <select id="new_telescope_name" name="telescope_name" form="add_toa" required>
     <option value="">--Select telescope--</option>
     {% for telescope in telescopes %}

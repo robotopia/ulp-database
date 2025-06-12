@@ -36,4 +36,5 @@ urlpatterns = [
     re_path(r'^api/get_toa_predictions_json$', views.get_toa_predictions_json, name="get_toa_predictions_json"),
     re_path(r'^api/update_selected_working_ephemeris$', views.update_selected_working_ephemeris, name="update_selected_working_ephemeris"),
     re_path(r'^api/fit_ephemeris/(?P<ulp_pk>[0-9]+)$', views.fit_ephemeris, name="fit_ephemeris"),
+    re_path(r'^api/write_toas$', views.write_toas, name="write_toas"),
 ]
