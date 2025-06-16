@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
+import rest_framework.exceptions as rest_exceptions
 
 from published import models as published_models
 from published.views import get_accessible_measurements
@@ -1657,18 +1658,49 @@ def fit_ephemeris(request, ulp_pk):
 
 
 
+@api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def write_toas(request):
 
-    if 'file' in request.FILES:
-        return JsonResponse({'error': 'Invalid request'}, status=400)
+    if 'toa_file' not in request.FILES:
+        raise rest_exceptions.ParseError("No file uploaded")
 
-    ecsv = request.FILES['file']
+    toa_file = request.FILES['toa_file']
 
-    try:
-        table = QTable.read(ecsv)
-    except:
-        return JsonResponse({'error': 'The uploaded file could not be parsed as an AstroPy QTable'}, status=400)
+    fmt = request.data.get('format', 'tim_format_1')
+    mode = request.data.get('mode', 'ignore')
+    #ulp = Ulp.objects.request.data.get('lpt')
 
-    return JsonResponse(table, safe=False, status=200)
+    supported_formats = ['astropy_qtable', 'tim_format_1']
+    if fmt not in supported_formats:
+        raise rest_exceptions.ParseError(f"{fmt} is not a supported format")
+
+    if fmt.lower() == 'astropy_qtable':
+        try:
+            table = QTable.read(toa_file, format='ascii.ecsv')
+        except:
+            raise rest_exceptions.ParseError('The uploaded file could not be parsed as an AstroPy QTable')
+
+        # Make sure the necessary columns are present
+        columns = table.keys()
+        required_columns = ['ToA', 'ToA_err', 'freq', 'telescope']
+        for required_column in required_columns:
+            if required_column not in columns:
+                raise rest_exception.ParseError(f"QTable missing '{required_column}' column")
+
+        # Go through the rows one by one
+        for row in table:
+            raw_mjd = row.get('ToA')
+            mjd_err = row.get('ToA_error').to('d').value
+            telescope_name = row.get('telescope')
+            freq = row.get('freq').to('MHz').value
+            fluence_Jy_s = row.get('fluence').to('Jy s').value
+            peak_flux_Jy = row.get('fitted_peak_flux_density').to('Jy').value
+            barycentred = False
+            dedispersed = False
+
+    else:
+        raise rest_exceptions.ParseError(f"Format '{fmt}' not yet implemented. Working on it!")
+
+    return JsonResponse('Success', safe=False, status=200)
