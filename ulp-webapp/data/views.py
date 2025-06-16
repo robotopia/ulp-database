@@ -1669,8 +1669,22 @@ def write_toas(request):
     toa_file = request.FILES['toa_file']
 
     fmt = request.data.get('format', 'tim_format_1')
-    mode = request.data.get('mode', 'ignore')
-    #ulp = Ulp.objects.request.data.get('lpt')
+
+    # Get overwrite/add/ignore mode
+    mode = request.data.get('mode')
+    supported_modes = ['overwrite', 'add', 'ignore']
+    if mode not in supported_modes:
+        raise rest_exceptions.ParseError(f"Mode {mode} not supported. Must be one of {supported_modes}.")
+
+    # Get specified LPT (required)
+    ulp = published_models.Ulp.objects.filter(name=request.data.get('lpt')).first()
+    if ulp is None:
+        raise rest_exceptions.ParseError(f"Unrecognised LPT: '{request.data.get('lpt')}'")
+
+    # Get user's working ephemeris (required)
+    we = models.WorkingEphemeris.objects.filter(owner=request.user, ulp=ulp).first()
+    if we is None:
+        raise rest_exceptions.ParseError(f"User {request.user} has no working ephemeris for {ulp}'")
 
     supported_formats = ['astropy_qtable', 'tim_format_1']
     if fmt not in supported_formats:
@@ -1689,18 +1703,55 @@ def write_toas(request):
             if required_column not in columns:
                 raise rest_exception.ParseError(f"QTable missing '{required_column}' column")
 
-        # Go through the rows one by one
-        for row in table:
-            raw_mjd = row.get('ToA')
-            mjd_err = row.get('ToA_error').to('d').value
-            telescope_name = row.get('telescope')
-            freq = row.get('freq').to('MHz').value
-            fluence_Jy_s = row.get('fluence').to('Jy s').value
-            peak_flux_Jy = row.get('fitted_peak_flux_density').to('Jy').value
-            barycentred = False
-            dedispersed = False
+        # Generate list of ToAs based on table contents
+        toas = [
+            models.TimeOfArrival(
+                owner=request.user,
+                ulp=ulp,
+                raw_mjd=row.get('ToA'),
+                mjd=row.get('ToA'),
+                mjd_err=row.get('ToA_err').to('d').value,
+                telescope_name=row.get('telescope'),
+                freq=row.get('freq').to('MHz').value,
+                fluence_Jy_s=row.get('fluence').to('Jy s').value if row.get('fluence') is not None else None,
+                peak_flux_Jy=row.get('fitted_peak_flux_density').to('Jy').value if row.get('fitted_peak_flux_density') is not None else None,
+                barycentred=False,
+                dedispersed=False,
+            ) for row in table
+        ]
 
     else:
         raise rest_exceptions.ParseError(f"Format '{fmt}' not yet implemented. Working on it!")
+
+    for toa in toas:
+        matching_toa = permitted_to_edit_filter(models.TimeOfArrival.objects.filter(
+            ulp=ulp,
+            freq__ge=toa.freq*0.95,
+            freq__le=toa.freq*1.05,
+            raw_mjd__ge=toa.raw_mjd - we.p0/2/86400,
+            raw_mjd__le=toa.raw_mjd + we.p0/2/86400,
+            telescope_name=toa.telescope_name,
+        ), request.user).first()
+
+        if matching_toa is not None: # i.e. there is an existing ToA with same Telescope at same frequency catching the same pulse
+            if mode == 'ignore':
+                continue
+            elif mode == 'add':
+                toa.save()
+            elif mode == 'overwrite':
+                matching_toa.raw_mjd = toa.raw_mjd
+                matching_toa.mjd = toa.mjd
+                matching_toa.mjd_err = toa.mjd_err
+                matching_toa.freq = toa.freq
+                matching_toa.fluence_Jy_s = toa.fluence_Jy_s
+                matching_toa.peak_flux_Jy = toa.peak_flux_Jy
+                matching_toa.barycentred = toa.barycentred
+                matching_toa.dedispersed = toa.dedispersed
+                matching_toa.save()
+            else:
+                # Should never get here
+                raise rest_exceptions.ParseError(f"Mode {mode} not supported. Must be one of {supported_modes}.")
+        else:
+            toa.save()
 
     return JsonResponse('Success', safe=False, status=200)
