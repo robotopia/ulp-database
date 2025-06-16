@@ -1726,14 +1726,15 @@ def write_toas(request):
     for toa in toas:
         matching_toa = permitted_to_edit_filter(models.TimeOfArrival.objects.filter(
             ulp=ulp,
-            freq__ge=toa.freq*0.95,
-            freq__le=toa.freq*1.05,
-            raw_mjd__ge=toa.raw_mjd - we.p0/2/86400,
-            raw_mjd__le=toa.raw_mjd + we.p0/2/86400,
+            freq__gte=toa.freq*0.98,
+            freq__lte=toa.freq*1.02,
+            raw_mjd__gte=toa.raw_mjd - we.p0/2/86400,
+            raw_mjd__lte=toa.raw_mjd + we.p0/2/86400,
             telescope_name=toa.telescope_name,
         ), request.user).first()
 
         if matching_toa is not None: # i.e. there is an existing ToA with same Telescope at same frequency catching the same pulse
+            print(f"Found matching ToA: {matching_toa}")
             if mode == 'ignore':
                 continue
             elif mode == 'add':
@@ -1749,7 +1750,7 @@ def write_toas(request):
                 matching_toa.dedispersed = toa.dedispersed
                 matching_toa.save()
             else:
-                # Should never get here
+                # Should never get here: This check is done earlier in this function.
                 raise rest_exceptions.ParseError(f"Mode {mode} not supported. Must be one of {supported_modes}.")
         else:
             toa.save()
