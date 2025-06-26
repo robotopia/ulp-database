@@ -27,9 +27,11 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'parameter_set_table_view' pk=1 %}">Tables</a>
                         </li>
+			<!--
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'ppdot_view' %}">P-Ṗ diagram</a>
                         </li>
+			-->
                         {% if user.is_authenticated %}
                         <li class="nav-item">
                           <a class="nav-link" href="{% url 'timing_choose_ulp' %}">Timing</a>
