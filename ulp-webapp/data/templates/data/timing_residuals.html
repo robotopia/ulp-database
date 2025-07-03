@@ -437,11 +437,14 @@
       // Also update the corresponding ephemeris in the list of all ephemerides
       // loaded on the page
       {% for param in ephemeris.keys %}
-      selected_working_ephemeris.{{ param }} = updated_data.{{ param }};
-      working_ephemerides[updated_data.pk].{{ param }} = updated_data.{{ param }};
+      if (select_{{ param }}_element.checked) {
+        selected_working_ephemeris.{{ param }} = updated_data.{{ param }};
+        working_ephemerides[updated_data.pk].{{ param }} = updated_data.{{ param }};
+        {{ param }}_element.style.backgroundColor = "field";
+      }
       {% endfor %}
 
-      reset_ephemeris_fields();
+      //reset_ephemeris_fields();
     }
 
     xhr.send(JSON.stringify(data));

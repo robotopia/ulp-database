@@ -1284,6 +1284,12 @@ def update_selected_working_ephemeris(request):
 
         for field in ['ra', 'dec', 'pepoch', 'p0', 'dm']:
             try:
+                if data[f'select_{field}'] == False:
+                    continue
+            except:
+                continue
+
+            try:
                 value = float(data[field])
             except:
                 value = data[field]
@@ -1291,12 +1297,6 @@ def update_selected_working_ephemeris(request):
             new_ephemeris_values[field] = value
             # This ^^^ makes sure the page gets populated with the original value,
             # even if the corresponding model isn't updated
-
-            try:
-                if data[f'select_{field}'] == False:
-                    continue
-            except:
-                pass
 
             try:
                 setattr(working_ephemeris, field, value)
