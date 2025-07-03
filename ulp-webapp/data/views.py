@@ -427,15 +427,17 @@ def timing_residual_view(request, pk):
         # If they've also provided other form values, make a table of predicted values
         if mjd_start is not None and mjd_end is not None and mjd_dispersion_frequency is not None and pepoch is not None and p0 is not None and telescope is not None:
             context['predicted_toas'] = get_toa_predictions(
-                mjd_range[0],                       # Start of time range
-                mjd_range[-1],                      # End of time range
-                mjd_dispersion_frequency*u.MHz,     # Observing frequency
-                pepoch,                             # PEPOCH (MJD)
-                p0,                                 # Period
-                ephemeris['dm']*u.pc/u.cm**3,       # DM
-                telescope,                          # Telescope string
-                coord,                              # Target source coordinates
-                output_toa_format=output_toa_format # Desired output ToA format
+                mjd_range[0],                        # Start of time range
+                mjd_range[-1],                       # End of time range
+                mjd_dispersion_frequency*u.MHz,      # Observing frequency
+                pepoch,                              # PEPOCH (MJD)
+                p0,                                  # Period
+                ephemeris['dm']*u.pc/u.cm**3,        # DM
+                telescope,                           # Telescope string
+                coord,                               # Target source coordinates
+                output_toa_format=output_toa_format, # Desired output ToA format
+                min_el=min_el,
+                max_sun_el=max_sun_el,
             )
 
         context['mjd_dispersion_frequency'] = mjd_dispersion_frequency
