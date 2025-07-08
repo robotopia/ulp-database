@@ -1753,6 +1753,27 @@ def write_toas(request):
             ) for row in table
         ]
 
+    elif fmt.lower() == 'tim_format_1']:
+        with open(toa_file, 'r') as ftoa:
+            lines = ftoa.readlines()
+
+        # Assume the first two lines ("FORMAT 1\nMODE 1") are required by the format.
+        # Also, ignore any line starting with "C", which indicates a comment.
+        good_lines = [line.split() for line in lines[2:] if line[0] != "C" and len(line) > 0]
+
+        # Build ToAs out of the good lines
+        toas = [
+            models.TimeOfArrival(
+                owner=request.user,
+                ulp=ulp,
+                raw_mjd=float(line[2]),
+                mjd=float(line[2]),
+                mjd_err=(float(line[3])*u.us).to('d').value,
+                telescope_name=line[4],
+                freq=float(line[1]),
+            ) for line in good_lines
+        ]
+
     else:
         raise rest_exceptions.ParseError(f"Format '{fmt}' not yet implemented. Working on it!")
 
