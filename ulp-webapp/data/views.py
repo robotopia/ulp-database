@@ -1753,9 +1753,8 @@ def write_toas(request):
             ) for row in table
         ]
 
-    elif fmt.lower() == 'tim_format_1']:
-        with open(toa_file, 'r') as ftoa:
-            lines = ftoa.readlines()
+    elif fmt.lower() == 'tim_format_1':
+        lines = toa_file.readlines()
 
         # Assume the first two lines ("FORMAT 1\nMODE 1") are required by the format.
         # Also, ignore any line starting with "C", which indicates a comment.
