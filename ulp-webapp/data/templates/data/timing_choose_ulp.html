@@ -11,4 +11,10 @@ Choose LPT:
   {% endfor %}
 </ul>
 
+{% if error %}
+<script>
+	alert("{{ error }}");
+</script>
+{% endif %}
+
 {% endblock %}

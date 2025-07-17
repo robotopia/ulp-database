@@ -185,6 +185,7 @@ def timing_choose_ulp_view(request):
 
     context = {
         'ulps': ulps,
+        'error': request.session.pop('error', None),
     }
 
     return render(request, 'data/timing_choose_ulp.html', context)
@@ -327,6 +328,10 @@ def timing_residual_view(request, pk):
 
     # Now limit only to those that this user has view access to
     toas = permitted_to_view_filter(toas, request.user)
+
+    if not toas.exists():
+        request.session['error'] = f"No ToAs are available for {ulp}, or you do not have permission to see them."
+        return redirect('timing_choose_ulp')
 
     # Get the working ephemerides that are available to this user
     working_ephemerides = permitted_to_view_filter(models.WorkingEphemeris.objects.filter(ulp=ulp), request.user).order_by('owner')
