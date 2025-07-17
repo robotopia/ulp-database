@@ -338,7 +338,13 @@ def timing_residual_view(request, pk):
 
     # If there aren't any, make a default one for the user!
     if not working_ephemerides.filter(owner=request.user).exists():
-        we = models.WorkingEphemeris(owner=request.user, ulp=ulp)
+        we = models.WorkingEphemeris.objects.filter(owner__isnull=True, ulp=ulp).first()
+        if we is None:
+            # No default, just create an empty one
+            we = models.WorkingEphemeris(owner=request.user, ulp=ulp)
+        else:
+            we.pk = None # When save(), will now create a new object
+            we.owner = request.user
         we.save()
         working_ephemerides = permitted_to_view_filter(models.WorkingEphemeris.objects.filter(ulp=ulp), request.user)
 
