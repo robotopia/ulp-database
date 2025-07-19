@@ -23,7 +23,7 @@
 <h2>Link(s) to published ToAs and ephemerides</h2>
 <ul>
   {% for article in articles %}
-  {% if not article.toa_url or article.eph_url %}
+  {% if article.toa_url or article.eph_url %}
   <li>
     <a href="{{ article.doi_url }}" target="_blank">{{ article.citet_text }}</a>:
     {% if article.toa_url == article.eph_url %}
