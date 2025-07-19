@@ -6,8 +6,8 @@ from common.admin import PermissionFieldset
 
 @admin.register(TimeOfArrival)
 class TimeOfArrivalAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'ulp', 'raw_mjd', 'mjd_err', 'freq', 'fluence_Jy_s', 'barycentred', 'dedispersed']
-    list_editable = ['raw_mjd', 'mjd_err', 'freq', 'fluence_Jy_s']
+    list_display = ['pk', 'ulp', 'raw_mjd', 'mjd_err', 'freq', 'published_in', 'fluence_Jy_s']
+    list_editable = ['raw_mjd', 'mjd_err', 'freq', 'published_in', 'fluence_Jy_s']
     list_filter = ['ulp', 'owner', 'telescope_name']
     fieldsets = [
         PermissionFieldset,

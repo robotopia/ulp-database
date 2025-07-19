@@ -5,6 +5,20 @@
 {% block body %}
 
 <h1>{{ ulp }}</h1>
+
+{% if published_toas_exist %}
+<div>
+  <form action="{% url 'download_times_of_arrival' pk=ulp.pk %}">
+    {% csrf_token %}
+    <select id="tim_format" name="tim_format">
+      <option value="1" selected required>FORMAT 1</option>
+    </select>
+    <input hidden name="only_published" value="1"/>
+    <input type="submit" value="Download published ToAs">
+  </form>
+</div>
+{% endif %}
+
 <table class="table">
     <tr>
         <th>Parameter</th>
@@ -17,7 +31,7 @@
         <td>{{ measurement.parameter }}</td>
         <td>{{ measurement.formatted_quantity_with_units }}</td>
         <td>{% if measurement.freq_ctr != None %}{{ measurement.freq_ctr }} {{ measurement.freq_astropy_units }}{% endif %}</td>
-        <td><a href="https://doi.org/{{ measurement.article.doi }}">{{ measurement.article }}</a></td>
+	<td>{% if measurement.article.doi %}<a href="https://doi.org/{{ measurement.article.doi }}">{{ measurement.article }}</a></td>{% else %}{{ measurement.article }}{% endif %}
     </tr>
     {% endfor %}
 </table>

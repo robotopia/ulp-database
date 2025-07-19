@@ -2,7 +2,8 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.apps import apps
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, AnonymousUser
+from django.contrib.auth.decorators import login_required
 import json
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
@@ -13,8 +14,12 @@ from scipy.optimize import curve_fit
 
 def permitted_to_view_filter(queryset, user):
 
+    if user is None or user.is_anonymous:
+        return queryset.none()
+
     return queryset.filter(
         Q(owner=user) |
+        Q(published_in__isnull=False) |
         Q(can_edit_groups__user=user) |
         Q(can_edit_users=user) |
         Q(can_view_groups__user=user) |
@@ -36,11 +41,8 @@ def permitted_to_delete_filter(queryset, user):
     return queryset.filter(Q(owner=user)).distinct()
 
 
+@login_required
 def update_permissions(request):
-
-    # First of all, they have to be logged in
-    if not request.user.is_authenticated:
-        return HttpResponse(status=404)
 
     # Turn the data into a dictionary
     try:

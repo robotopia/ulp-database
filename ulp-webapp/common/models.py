@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
+from published.models import Article
 
 class AbstractPermission(models.Model):
 
@@ -40,8 +41,20 @@ class AbstractPermission(models.Model):
         related_name="%(app_label)s_%(class)s_as_editor",
     )
 
+    published_in = models.ForeignKey(
+        Article,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text="The article this object is published in",
+        related_name="%(app_label)s_%(class)s_as_published_in",
+    )
+
     def can_view(self, user):
         if user == self.owner:
+            return True
+
+        if self.published_in is not None:
             return True
 
         if self.can_view_groups.filter(user=user).exists():

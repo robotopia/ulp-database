@@ -92,6 +92,7 @@ def ulp_view(request, pk):
     context = {
         'ulp': ulp,
         'measurements': measurements,
+        'published_toas_exist': ulp.times_of_arrival.filter(published_in__isnull=False).exists(),
     }
 
     return render(request, 'published/ulp.html', context)

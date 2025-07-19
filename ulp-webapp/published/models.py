@@ -79,6 +79,22 @@ class Article(models.Model):
         verbose_name="DOI",
     )
 
+    toa_url = models.CharField(
+        max_length=1023,
+        blank=True,
+        null=True,
+        help_text="URL for where ToAs in this paper are published.",
+        verbose_name="URL for ToAs",
+    )
+
+    eph_url = models.CharField(
+        max_length=1023,
+        blank=True,
+        null=True,
+        help_text="URL for where the ephemeris in this paper are published.",
+        verbose_name="URL for ephemeris",
+    )
+
     @property
     def doi_url(self):
         return "https://doi.org/" + self.doi
