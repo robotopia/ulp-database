@@ -14,9 +14,40 @@
       <option value="1" selected required>FORMAT 1</option>
     </select>
     <input hidden name="only_published" value="1"/>
-    <input type="submit" value="Download published ToAs">
+    <input type="submit" value="Download published ToAs from this website">
   </form>
 </div>
+{% endif %}
+
+{% if articles %}
+<h2>Link(s) to published ToAs and ephemerides</h2>
+<ul>
+  {% for article in articles %}
+  {% if not article.toa_url or article.eph_url %}
+  <li>
+    <a href="{{ article.doi_url }}" target="_blank">{{ article.citet_text }}</a>:
+    {% if article.toa_url == article.eph_url %}
+    <a href="{{ article.toa_url }}" target="_blank">ToAs and ephemeris</a>
+    {% elif not article.eph_url %}
+    <a href="{{ article.toa_url }}" target="_blank">ToAs</a>
+    {% elif not article.toa_url %}
+    <a href="{{ article.eph_url }}" target="_blank">Ephemeris</a>
+    {% else %}
+    <a href="{{ article.toa_url }}" target="_blank">ToAs</a>, <a href="{{ article.eph_url }}" target="_blank">ephemeris</a>
+    {% endif %}
+  </li>
+  {% endif %}
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if eph_articles %}
+<h2>Link(s) to original ephemerides</h2>
+<ul>
+  {% for eph_article in eph_articles %}
+  <li><a href="{{ eph_article.eph_url }}">{{ eph_article.citet_text }}</a></li>
+  {% endfor %}
+</ul>
 {% endif %}
 
 <table class="table">

@@ -61,7 +61,7 @@ class Article(models.Model):
         max_length=127,
         blank=True,
         null=True,
-        help_text="The display text when this is cited inline, e.g., Smith et. al (1900)",
+        help_text="The display text when this is cited inline, e.g., Smith et al. (1900)",
     )
 
     title = models.CharField(

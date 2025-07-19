@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.db.models import Q, Max
 import requests
 from . import models
+from published import models as pm
 from decimal import Decimal
 import csv
 import io
@@ -89,10 +90,12 @@ def ulp_view(request, pk):
     if not measurements.exists():
         return HttpResponse(status=404)
 
+
     context = {
         'ulp': ulp,
         'measurements': measurements,
         'published_toas_exist': ulp.times_of_arrival.filter(published_in__isnull=False).exists(),
+        'articles': pm.Article.objects.filter(data_timeofarrival_as_published_in__ulp=ulp).distinct(),
     }
 
     return render(request, 'published/ulp.html', context)
