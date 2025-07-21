@@ -343,6 +343,7 @@ class Measurement(models.Model):
 
     ANGLE_DDMMSS = 'D'
     ANGLE_HHMMSS = 'H'
+    SPECTRAL_TYPE = 'S'
 
     angle_display = models.CharField(
         max_length=1,
@@ -351,8 +352,10 @@ class Measurement(models.Model):
         choices=[
             [ANGLE_DDMMSS, 'DDMMSS'],
             [ANGLE_HHMMSS, 'HHMMSS'],
+            [SPECTRAL_TYPE, 'Harvard spectral classification'],
         ],
-        help_text="If an angle, display in the chosen sexagesimal format.",
+        help_text="Display in the chosen format.",
+        verbose_name="Display format",
     )
 
     stokes = models.CharField(
@@ -418,9 +421,18 @@ class Measurement(models.Model):
             elif self.lower_limit:
                 retstr += "> "
 
+        # Now that the prefix is taken care of, consider the special case
+        # of spectral type. Must be dimensionless
+        if self.parameter.astropy_unit is None:
+            if self.angle_display == self.SPECTRAL_TYPE:
+                spectral_class = "OBAFGKM"[int(self.quantity/10)]
+                spectral_subclass = self.quantity % 10
+                retstr += spectral_class
+                quantity = spectral_subclass.quantize(precision)
+
         if self.error_is_range == True and self.err is not None:
-            lower_limit = (self.quantity - self.err).quantize(precision)
-            upper_limit = (self.quantity + self.err).quantize(precision)
+            lower_limit = (quantity - self.err).quantize(precision)
+            upper_limit = (quantity + self.err).quantize(precision)
 
             quantity_str = f"{lower_limit} - {upper_limit}"
 
