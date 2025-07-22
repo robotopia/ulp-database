@@ -77,7 +77,7 @@
     <option value=""></option>
     {% with published_ephemeris_values|get_item:param as published_values %}
     {% for published_value in published_values %}
-    <option value="{{ published_value.formatted_quantity }}">{{ published_value.formatted_quantity }} from {{ published_value.article }}</option>
+    <option value="{{ published_value.quantity }}e{{ published_value.power_of_10|default:0 }}">{{ published_value.formatted_quantity }} from {{ published_value.article }}</option>
     {% endfor %}
     {% endwith %}
   </select>

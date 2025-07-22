@@ -127,20 +127,3 @@ def scale_to_frequency(freq_MHz, S_freq, freq_target_MHz, alpha, q=0):
 
     return S_target
 
-
-# Collection of fitting functions, designed to work with curve_fit, that have
-# different combinations of parameters to fit for.
-#
-
-def fit_ephemeris_pepoch_p0(barycentred_and_dedispersed_toa_mjds, pepoch_mjd, p0_s):
-    p0_d = p0_s/86400.0
-    pulse_phases = (barycentred_and_dedispersed_toa_mjds - pepoch_mjd)/p0_d
-    nearest_pulse_phases = np.round(pulse_phases)
-    return nearest_pulse_phases*p0_d + pepoch_mjd
-
-def fit_ephemeris_pepoch_p0_p1(barycentred_and_dedispersed_toa_mjds, pepoch_mjd, p0_s, p1):
-    p0_d = p0_s/86400.0
-    t_d = barycentred_and_dedispersed_toa_mjds - pepoch_mjd
-    pulse_phases = t_d/p0_d - 0.5*p1*(t_d/p0_d)**2
-    nearest_pulse_phases = np.round(pulse_phases)
-    return 2*nearest_pulse_phases*p0_d/(1 + np.sqrt(1 - 4*p1*nearest_pulse_phases)) + pepoch_mjd

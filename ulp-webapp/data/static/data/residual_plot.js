@@ -24,7 +24,7 @@ function calc_mjd(pulse_phase, ephemeris) {
   var p0 = ephemeris.p0;
   var p1 = ephemeris.p1
   var pepoch = ephemeris.pepoch;
-  var retval = (2*pulse_phase*p0 / (1 + Math.sqrt(1 - 4*p1*pulse_phase)))/86400 + pepoch;
+  var retval = (2*pulse_phase*p0 / (1 + Math.sqrt(1 - 2*p1*pulse_phase)))/86400 + pepoch;
   return retval;
 }
 

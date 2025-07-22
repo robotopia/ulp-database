@@ -93,7 +93,7 @@ def calc_pulse_phase(time, ephemeris):
     try:
         pepoch = Time(ephemeris['pepoch'], format='mjd')
         p0 = ephemeris['p0']*u.s
-        p1 = ephemeris['p1']
+        p1 = u.Quantity(ephemeris['p1'])
         t = time - pepoch
         #return (t/p0).decompose()  # This is only good when p1 = 0
         return (t/p0 - 0.5*p1*(t/p0)**2).decompose()
@@ -107,11 +107,11 @@ def calc_mjd(pulse_phase, ephemeris):
     '''
     pepoch = Time(ephemeris['pepoch'], format='mjd')
     p0 = ephemeris['p0']*u.s
-    p1 = ephemeris['p1']
+    p1 = u.Quantity(ephemeris['p1'])
 
     #return pepoch + pulse_phase*p0  # This is only good when p1 = 0
     # The "other" quadradtic formula, valid for small or zero quadratic term (i.e. p1=0)
-    return 2*pulse_phase*p0 / (1 + np.sqrt(1 - 4*p1*pulse_phase)) + pepoch
+    return 2*pulse_phase*p0 / (1 + np.sqrt(1 - 2*p1*pulse_phase)) + pepoch
 
 
 def generate_toas(time_start, time_end, ephemeris):
@@ -1701,10 +1701,22 @@ def fit_ephemeris(request, ulp_pk):
 
     # RA-No  DEC-No  PEPOCH-Yes  P0-Yes  P1-No  DM-No
     if not data['select_ra'] and not data['select_dec'] and data['select_pepoch'] and data['select_p0'] and not data['select_p1'] and not data['select_dm']:
-        func = fit_ephemeris_pepoch_p0
-        x = [toa['mjd'] - calc_dmdelay(we.dm*u.pc/u.cm**3, toa['freq_MHz']*u.MHz, np.inf*u.MHz).to('d').value + toa['bc_correction'] for toa in toas_data]
+        init_pepoch = Time(data['pepoch'], scale='utc', format='mjd')
+        def func(toas, pepoch, p0_s):
+            # In order to avoid convergence issues, toas and pepoch in this function are relative
+            # to the initial guess pepoch
+            toas_mjd = toas + init_pepoch.mjd
+            pepoch_mjd = pepoch + init_pepoch.mjd
+            ephemeris = {'pepoch': pepoch_mjd, 'p0': p0_s, 'p1': data['p1']}
+            time = Time(toas_mjd, scale='utc', format='mjd')
+            pulse_phases = calc_pulse_phase(time, ephemeris)
+            nearest_pulse_phases = np.round(pulse_phases)
+            predicted_mjds = calc_mjd(nearest_pulse_phases, ephemeris).mjd
+            return predicted_mjds - init_pepoch.mjd
+
+        x = [toa['mjd'] - calc_dmdelay(we.dm*u.pc/u.cm**3, toa['freq_MHz']*u.MHz, np.inf*u.MHz).to('d').value + toa['bc_correction'] - init_pepoch.mjd for toa in toas_data]
         sigma = [toa['mjd_err'] for toa in toas_data]
-        p0 = [data['pepoch'], data['p0']]
+        p0 = [0.0, data['p0']]
         bounds = [
             (bounds_dict['pepoch'][0], bounds_dict['p0'][0]),
             (bounds_dict['pepoch'][1], bounds_dict['p0'][1]),
@@ -1712,7 +1724,7 @@ def fit_ephemeris(request, ulp_pk):
 
         popt, pcov = curve_fit(func, x, x, p0=p0, bounds=bounds, sigma=sigma)
 
-        best_fit_ephemeris['pepoch'] = f"{popt[0]}"
+        best_fit_ephemeris['pepoch'] = f"{popt[0] + init_pepoch.mjd}"
         best_fit_ephemeris['p0'] = f"{popt[1]}"
 
         # Populate a covariance
@@ -1724,30 +1736,37 @@ def fit_ephemeris(request, ulp_pk):
 
     elif not data['select_ra'] and not data['select_dec'] and data['select_pepoch'] and data['select_p0'] and data['select_p1'] and not data['select_dm']:
         # RA-No  DEC-No  PEPOCH-Yes  P0-Yes  P1-Yes  DM-No
-        func = fit_ephemeris_pepoch_p0_p1
+        p1_scale = 1e12
+        def func(toas_mjd, pepoch_mjd, p0_s, p1__scaled):
+            ephemeris = {'pepoch': pepoch_mjd, 'p0': p0_s, 'p1': p1__scaled / p1_scale}
+            time = Time(toas_mjd, scale='utc', format='mjd')
+            pulse_phases = calc_pulse_phase(time, ephemeris)
+            nearest_pulse_phases = np.round(pulse_phases)
+            predicted_mjds = calc_mjd(nearest_pulse_phases, ephemeris).mjd
+            return predicted_mjds
+
         x = [toa['mjd'] - calc_dmdelay(we.dm*u.pc/u.cm**3, toa['freq_MHz']*u.MHz, np.inf*u.MHz).to('d').value + toa['bc_correction'] for toa in toas_data]
         sigma = [toa['mjd_err'] for toa in toas_data]
-        p0 = [data['pepoch'], data['p0'], data['p1']]
+        p0 = [data['pepoch'], data['p0'], u.Quantity(data['p1'])*p1_scale]
         bounds = [
             (bounds_dict['pepoch'][0], bounds_dict['p0'][0], bounds_dict['p1'][0]),
             (bounds_dict['pepoch'][1], bounds_dict['p0'][1], bounds_dict['p1'][1]),
         ]
 
         popt, pcov = curve_fit(func, x, x, p0=p0, bounds=bounds, sigma=sigma)
-        print(popt)
 
         best_fit_ephemeris['pepoch'] = f"{popt[0]}"
         best_fit_ephemeris['p0'] = f"{popt[1]}"
-        best_fit_ephemeris['p1'] = f"{popt[2]}"
+        best_fit_ephemeris['p1'] = f"{popt[2]/p1_scale}"
 
         # Populate a covariance
         cov = {
             'pepoch_pepoch': pcov[0,0],
             'pepoch_p0': pcov[0,1],
-            'pepoch_p1': pcov[0,2],
+            'pepoch_p1': pcov[0,2]/p1_scale,
             'p0_p0': pcov[1,1],
-            'p0_p1': pcov[1,2],
-            'p1_p1': pcov[2,2],
+            'p0_p1': pcov[1,2]/p1_scale,
+            'p1_p1': pcov[2,2]/p1_scale**2,
         }
 
     else:
