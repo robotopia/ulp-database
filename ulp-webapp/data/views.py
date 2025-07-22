@@ -1679,6 +1679,7 @@ def fit_ephemeris(request, ulp_pk):
         dec=data['dec'],
         pepoch=float(data['pepoch']),
         p0=float(data['p0']),
+        p1=float(data['p1']),
         dm=float(data['dm']),
     )
 
@@ -1689,16 +1690,17 @@ def fit_ephemeris(request, ulp_pk):
         'dec': [-90.0, 90.0],
         'pepoch': [-np.inf, np.inf],
         'p0': [0, np.inf],
+        'p1': [-np.inf, np.inf],
         'dm': [0, np.inf],
     }
 
     # Initialise the answer to be the same thing as the input
     best_fit_ephemeris = {}
-    for param in ['ra', 'dec', 'pepoch', 'p0', 'dm']:
+    for param in ['ra', 'dec', 'pepoch', 'p0', 'p1', 'dm']:
         best_fit_ephemeris[param] = data[param]
 
-    # RA-No  DEC-No  PEPOCH-Yes  P0-Yes  DM-No
-    if not data['select_ra'] and not data['select_dec'] and data['select_pepoch'] and data['select_p0'] and not data['select_dm']:
+    # RA-No  DEC-No  PEPOCH-Yes  P0-Yes  P1-No  DM-No
+    if not data['select_ra'] and not data['select_dec'] and data['select_pepoch'] and data['select_p0'] and not data['select_p1'] and not data['select_dm']:
         func = fit_ephemeris_pepoch_p0
         x = [toa['mjd'] - calc_dmdelay(we.dm*u.pc/u.cm**3, toa['freq_MHz']*u.MHz, np.inf*u.MHz).to('d').value + toa['bc_correction'] for toa in toas_data]
         sigma = [toa['mjd_err'] for toa in toas_data]
@@ -1718,6 +1720,34 @@ def fit_ephemeris(request, ulp_pk):
             'pepoch_pepoch': pcov[0,0],
             'pepoch_p0': pcov[0,1],
             'p0_p0': pcov[1,1],
+        }
+
+    elif not data['select_ra'] and not data['select_dec'] and data['select_pepoch'] and data['select_p0'] and data['select_p1'] and not data['select_dm']:
+        # RA-No  DEC-No  PEPOCH-Yes  P0-Yes  P1-Yes  DM-No
+        func = fit_ephemeris_pepoch_p0_p1
+        x = [toa['mjd'] - calc_dmdelay(we.dm*u.pc/u.cm**3, toa['freq_MHz']*u.MHz, np.inf*u.MHz).to('d').value + toa['bc_correction'] for toa in toas_data]
+        sigma = [toa['mjd_err'] for toa in toas_data]
+        p0 = [data['pepoch'], data['p0'], data['p1']]
+        bounds = [
+            (bounds_dict['pepoch'][0], bounds_dict['p0'][0], bounds_dict['p1'][0]),
+            (bounds_dict['pepoch'][1], bounds_dict['p0'][1], bounds_dict['p1'][1]),
+        ]
+
+        popt, pcov = curve_fit(func, x, x, p0=p0, bounds=bounds, sigma=sigma)
+        print(popt)
+
+        best_fit_ephemeris['pepoch'] = f"{popt[0]}"
+        best_fit_ephemeris['p0'] = f"{popt[1]}"
+        best_fit_ephemeris['p1'] = f"{popt[2]}"
+
+        # Populate a covariance
+        cov = {
+            'pepoch_pepoch': pcov[0,0],
+            'pepoch_p0': pcov[0,1],
+            'pepoch_p1': pcov[0,2],
+            'p0_p0': pcov[1,1],
+            'p0_p1': pcov[1,2],
+            'p1_p1': pcov[2,2],
         }
 
     else:

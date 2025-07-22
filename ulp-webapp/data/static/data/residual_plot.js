@@ -10,7 +10,10 @@ Number.prototype.mod = function (n) {
 function calc_pulse_phase(mjd, ephemeris) {
   // mjd and pepoch should be in days,
   // P (the p0) in seconds
-  var pulse_phase = 86400*(mjd - ephemeris.pepoch)/ephemeris.p0; // Dimensionless
+  // Pdot (the p1) is dimensionless
+  var t = 86400*(mjd - ephemeris.pepoch); // in seconds
+  var t_p0 = t/ephemeris.p0;
+  var pulse_phase = t_p0 - 0.5*ephemeris.p1*t_p0*t_p0; // Dimensionless
   var pulse = Math.round(pulse_phase)
   var phase = (pulse_phase + 0.5).mod(1) - 0.5;
   return {pulse: pulse, phase: phase, pulse_phase: pulse_phase};
@@ -18,7 +21,11 @@ function calc_pulse_phase(mjd, ephemeris) {
 
 function calc_mjd(pulse_phase, ephemeris) {
   // This is the inverse of calc_pulse_phase
-  return ephemeris.pepoch + pulse_phase*ephemeris.p0/86400;
+  var p0 = ephemeris.p0;
+  var p1 = ephemeris.p1
+  var pepoch = ephemeris.pepoch;
+  var retval = (2*pulse_phase*p0 / (1 + Math.sqrt(1 - 4*p1*pulse_phase)))/86400 + pepoch;
+  return retval;
 }
 
 function generate_toas(mjd_start, mjd_end, ephemeris) {

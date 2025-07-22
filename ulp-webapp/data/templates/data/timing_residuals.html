@@ -259,10 +259,12 @@
   // "g" is the main group containing all plotted elements
   var margin = {top: 50, right: 80, bottom: 50, left: 80};
   var p0 = p0_element.value;
+  var p1 = p1_element.value;
   var pepoch = pepoch_element.value;
   var dm = dm_element.value;
   var ephemeris = {
     p0: p0_element.value,
+    p1: p1_element.value,
     pepoch: pepoch_element.value,
     dm: dm_element.value,
   };
@@ -275,6 +277,7 @@
   function replot() {
     ephemeris = {
       p0: p0_element.value,
+      p1: p1_element.value,
       pepoch: pepoch_element.value,
       dm: dm_element.value,
     };
@@ -309,6 +312,7 @@
 
     var ephemeris = {
       p0: p0_element.value,
+      p1: p1_element.value,
       pepoch: pepoch_element.value,
       dm: dm_element.value,
     };
@@ -333,6 +337,7 @@
 
       var ephemeris = {
         p0: p0_element.value,
+        p1: p1_element.value,
         pepoch: pepoch_element.value,
         dm: dm_element.value,
       };
