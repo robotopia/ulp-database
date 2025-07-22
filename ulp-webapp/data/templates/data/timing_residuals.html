@@ -195,10 +195,10 @@
     "{{ we.pk }}": {
       ra: "{{ we.ra }}",
       dec: "{{ we.dec }}",
-      pepoch: {{ we.pepoch }},
-      p0: {{ we.p0 }},
-      p1: {{ we.p1 }},
-      dm: {{ we.dm }},
+      pepoch: {{ we.pepoch|default:60000.0 }},
+      p0: {{ we.p0|default:3600.0 }},
+      p1: {{ we.p1|default:0.0 }},
+      dm: {{ we.dm|default:0.0 }},
     },
     {% endfor %}
   }; // TODO: Can this ^^^ be looped over ephemeris parameters??
