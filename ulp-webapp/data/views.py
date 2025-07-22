@@ -88,11 +88,15 @@ def calc_pulse_phase(time, ephemeris):
     time is an astropy Time object
     ephemeris['pepoch'] should be in days
     ephemeris['p0'] should be in seconds
+    ephemeris['p1'] should be dimensionless
     '''
     try:
         pepoch = Time(ephemeris['pepoch'], format='mjd')
         p0 = ephemeris['p0']*u.s
-        return ((time - pepoch)/p0).decompose()
+        p1 = ephemeris['p1']
+        t = time - pepoch
+        #return (t/p0).decompose()  # This is only good when p1 = 0
+        return (t/p0 - 0.5*p1*(t/p0)**2).decompose()
     except:
         return 0.0
 
@@ -103,7 +107,11 @@ def calc_mjd(pulse_phase, ephemeris):
     '''
     pepoch = Time(ephemeris['pepoch'], format='mjd')
     p0 = ephemeris['p0']*u.s
-    return pepoch + pulse_phase*p0
+    p1 = ephemeris['p1']
+
+    #return pepoch + pulse_phase*p0  # This is only good when p1 = 0
+    # The "other" quadradtic formula, valid for small or zero quadratic term (i.e. p1=0)
+    return 2*pulse_phase*p0 / (1 + np.sqrt(1 - 4*p1*pulse_phase)) + pepoch
 
 
 def generate_toas(time_start, time_end, ephemeris):
@@ -192,7 +200,7 @@ def timing_choose_ulp_view(request):
     return render(request, 'data/timing_choose_ulp.html', context)
 
 
-def get_toa_predictions(start, end, freq, pepoch, p0, dm, telescope, coord, output_toa_format='mjd', min_el=0, max_sun_el=90):
+def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, output_toa_format='mjd', min_el=0, max_sun_el=90):
 
     # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
     # so to get the right range, convert them to dedispersed, barycentric
@@ -206,6 +214,7 @@ def get_toa_predictions(start, end, freq, pepoch, p0, dm, telescope, coord, outp
         'dec': coord.dec.deg,
         'pepoch': pepoch,
         'p0': p0,
+        'p1': p1,
         'dm': dm.to('pc cm-3').value,
     }
 
@@ -285,6 +294,7 @@ def get_toa_predictions_json(request):
     coord = working_ephemeris.coord
     pepoch = working_ephemeris.pepoch
     p0 = working_ephemeris.p0
+    p1 = working_ephemeris.p1 or 0.0
     dm = working_ephemeris.dm * u.pc / u.cm**3
 
     predictions = get_toa_predictions(
@@ -293,6 +303,7 @@ def get_toa_predictions_json(request):
         freq,
         pepoch,
         p0,
+        p1,
         dm,
         telescope,
         coord,
@@ -367,6 +378,7 @@ def timing_residual_view(request, pk):
         'dec': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Declination", article__isnull=False),
         'pepoch': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="PEPOCH", article__isnull=False),
         'p0': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Period", article__isnull=False),
+        'p1': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Period derivative", article__isnull=False),
         'dm': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Dispersion measure", article__isnull=False),
     }
 
@@ -376,6 +388,7 @@ def timing_residual_view(request, pk):
         'dec': selected_working_ephemeris.dec,
         'pepoch': selected_working_ephemeris.pepoch,
         'p0': selected_working_ephemeris.p0,
+        'p1': selected_working_ephemeris.p1 or 0.0,
         'dm': selected_working_ephemeris.dm,
     }
     coord = selected_working_ephemeris.coord
@@ -401,6 +414,7 @@ def timing_residual_view(request, pk):
         # Get form values
         pepoch = float(request.POST.get('pepoch', '0.0'))
         p0 = float(request.POST.get('p0', '0.0'))
+        p1 = float(request.POST.get('p1', '0.0'))
         dm = float(request.POST.get('dm', '0.0'))
         ra = request.POST.get('ra', '00:00:00')
         dec = request.POST.get('dec', '00:00:00')
@@ -432,6 +446,7 @@ def timing_residual_view(request, pk):
         # Populate the ephemeris from the form values
         ephemeris['pepoch'] = pepoch
         ephemeris['p0'] = p0
+        ephemeris['p1'] = p1
         ephemeris['dm'] = dm
         ephemeris['ra'] = ra
         ephemeris['dec'] = dec
@@ -444,6 +459,7 @@ def timing_residual_view(request, pk):
                 mjd_dispersion_frequency*u.MHz,      # Observing frequency
                 pepoch,                              # PEPOCH (MJD)
                 p0,                                  # Period
+                p1,                                  # Period derivative
                 ephemeris['dm']*u.pc/u.cm**3,        # DM
                 telescope,                           # Telescope string
                 coord,                               # Target source coordinates
@@ -1570,7 +1586,7 @@ def download_working_ephemeris(request, pk):
     ascii_content += f"\nPOSEPOCH        {working_ephemeris.pepoch}"
     ascii_content += f"\nDMEPOCH         {working_ephemeris.pepoch}"
     ascii_content += f"\nF0              {1/working_ephemeris.p0}"
-    ascii_content += f"\nF1              {working_ephemeris.p1/working_ephemeris.p0**2}"
+    ascii_content += f"\nF1              {-working_ephemeris.p1/working_ephemeris.p0**2}"
     ascii_content += f"\nEPHVER          TEMPO2"
     ascii_content += f"\nUNITS           TCB"
 
