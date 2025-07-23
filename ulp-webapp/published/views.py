@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Q, Max
+from django.contrib.auth.decorators import login_required
 
 from rest_framework.authtoken.models import Token
 
@@ -277,6 +278,7 @@ def galactic_view(request):
     return render(request, 'published/galactic_view.html', context)
 
 
+@login_required
 def user_settings(request):
 
     # Create a UserSetting for this user if needed
@@ -298,3 +300,8 @@ def user_settings(request):
     token = Token.objects.filter(user=request.user).first()
 
     return render(request, 'published/user_settings.html', {'token': token})
+
+
+def doc_view(request):
+
+    return render(request, 'published/doc.html')

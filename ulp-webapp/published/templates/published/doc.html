@@ -1,0 +1,60 @@
+{% extends 'published/main.html' %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>Documentation</h1>
+
+<h2>Uploading ToAs from the command line</h2>
+
+Here is an example Python script for uploading ToAs to the website en masse:
+
+<details style="border: 1px solid black; padding: 3px;">
+  <summary>Example script for uploading ToAs</summary>
+  <pre style="border: 1px solid black; padding: 3px;"><code>import argparse
+import requests
+
+url = "https://lpt.mwa-image-plane.cloud.edu.au/data/api/write_toas"
+
+def main():
+    parser = argparse.ArgumentParser(description="Upload ToAs to the LPT website")
+    parser.add_argument('LPT', help="The LPT to associate these ToAs with. Must be the exact name as given on the website.")
+    parser.add_argument('ToAs_file', help="The file of ToAs to upload")
+    parser.add_argument('token', help="The user's token for the website (go to Settings)")
+    parser.add_argument('--mode', choices=['overwrite', 'add', 'ignore'], default='ignore', help="How to handle ToAs for the same pulse at the same telescope and frequency (default=ignore)")
+    parser.add_argument('--format', choices=['astropy_qtable', 'tim_format_1'], default='astropy_qtable', help="The format of the file containing the ToAs. Default = 'astropy_qtable'")
+
+    args = parser.parse_args()
+
+    headers = {
+        "Authorization": f"Token {args.token}",
+        "Accept": "application/json",
+    }
+
+    data = {
+        'mode': args.mode,
+        'format': args.format,
+        'lpt': args.LPT,
+    }
+
+    with open(args.ToAs_file, 'rb') as f:
+        files = {'toa_file': (args.ToAs_file, f)}
+        try:
+            response = requests.post(url, headers=headers, data=data, files=files, stream=True)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            try:
+                error = response.json()
+                print("Error:", error.get("detail", error))
+            except ValueError:
+                print("Non-JSON error:", response.text)
+            raise
+
+
+if __name__ == '__main__':
+    main()
+  </code></pre>
+</details>
+
+{% endblock %}
