@@ -3,6 +3,9 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Q, Max
+
+from rest_framework.authtoken.models import Token
+
 import requests
 from . import models
 from published import models as pm
@@ -285,4 +288,13 @@ def user_settings(request):
         request.user.setting.site_theme = request.POST.get('site_theme')
         request.user.setting.save()
 
-    return render(request, 'published/user_settings.html')
+        if request.POST.get('action') == 'Generate new API token':
+            try:
+                Token.objects.filter(user=request.user).delete()
+            except:
+                pass
+            Token.objects.create(user=request.user)
+
+    token = Token.objects.filter(user=request.user).first()
+
+    return render(request, 'published/user_settings.html', {'token': token})

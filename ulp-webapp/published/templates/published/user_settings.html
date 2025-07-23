@@ -8,7 +8,7 @@
 
 <form method="post">
   {% csrf_token %}
-  <div>
+  <div style="padding: 10px;">
     <label for="site-theme">Theme:</label>
     <select id="site_theme" name='site_theme'>
       {% for site_theme in request.user.setting.SITE_THEMES %}
@@ -17,7 +17,12 @@
     </select>
   </div>
 
-  <input type="submit" class="btn btn-primary" value="Save"/>
+  <div style="padding: 10px;">
+    <input type="submit" style="padding: 3px;" name="action" value="Generate new API token"/>
+    <span style="padding: 5px; border: 1px solid black;">{{ token }}</span>
+  </div>
+
+  <input type="submit" class="btn btn-primary" name="action" value="Save"/>
 </form>
 
 {% endblock %}
