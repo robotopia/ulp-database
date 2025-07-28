@@ -103,19 +103,20 @@ class Observation(AbstractPermission):
             # Have to do this here (instead of as a unique constraint) because we're allowing
             # these fields to be NULL, in which case the constraint doesn't apply
             if self.telescope_name and self.obsid:
-                qs = Observations.objects.filter(telescope_name=self.telescope_name, obsid=self.obsid)
+                qs = Observation.objects.filter(telescope_name=self.telescope_name, obsid=self.obsid)
                 if qs.exists():
                     raise ValidationError(f"An observation for {self.telescope} already exists with the ObsID {self.obsid}")
 
             # Check for observations with the same telescope that overlap in time with this one
             if self.telescope_name and self.duration:
-                qs = Observations.objects.filter(
-                         telescope=self.telescope,
-                         start_mjd__gte=this.start_mjd,
-                         start_mjd__lte=this.start_mjd + Decimal(this.duration/86400.0),
+                qs = Observation.objects.filter(
+                         telescope_name=self.telescope_name,
+                         start_mjd__gte=self.start_mjd,
+                         start_mjd__lte=self.start_mjd + Decimal(self.duration/86400.0),
                      )
                 if qs.exists():
                     raise ValidationError(f"At least once observation already exists at this time ({qs.first().start_mjd})")
+            print("here4")
 
     class Meta:
         ordering = ['start_mjd', 'freq', 'telescope_name']
