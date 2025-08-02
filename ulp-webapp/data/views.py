@@ -202,6 +202,9 @@ def timing_choose_ulp_view(request):
 
 def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, output_toa_format='mjd', min_el=0, max_sun_el=90):
 
+    if start >= end:
+        return []
+
     # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
     # so to get the right range, convert them to dedispersed, barycentric
     time_range = Time([start, end])
@@ -1802,7 +1805,7 @@ def write_toas(request):
     # Get user's working ephemeris (required)
     we = models.WorkingEphemeris.objects.filter(owner=request.user, ulp=ulp).first()
     if we is None:
-        raise rest_exceptions.ParseError(f"User {request.user} has no working ephemeris for {ulp}'")
+        raise rest_exceptions.ParseError(f"User {request.user} has no working ephemeris for {ulp}")
 
     supported_formats = ['astropy_qtable', 'tim_format_1']
     if fmt not in supported_formats:
