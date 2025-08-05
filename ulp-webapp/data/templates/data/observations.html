@@ -140,10 +140,10 @@
     <option value="{{ telescope }}">{{ telescope }}</option>
     {% endfor %}
   </select>
-  <input type="number" class="freq-unit" id="new_freq" name="freq" form="add_observation" required/>
-  <input type="number" class="bw-unit" id="new_bw" name="bw" form="add_observation" required/>
-  <input type="number" id="new_start_mjd" name="start_mjd" form="add_observation" required/>
-  <input type="number" class="time-unit" id="new_duration" name="duration" form="add_observation" required/>
+  <input type="number" class="freq-unit" id="new_freq" name="freq" form="add_observation" required step="any"/>
+  <input type="number" class="bw-unit" id="new_bw" name="bw" form="add_observation" required step="any"/>
+  <input type="number" id="new_start_mjd" name="start_mjd" form="add_observation" required step="any"/>
+  <input type="number" class="time-unit" id="new_duration" name="duration" form="add_observation" required step="any"/>
 </div>
 
 <form id="add_observation" method="post" action="{% url 'add_observation' pk=ulp.pk %}">
