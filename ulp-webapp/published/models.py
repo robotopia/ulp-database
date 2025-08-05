@@ -46,6 +46,10 @@ class Ulp(models.Model):
         related_name="data_accessible_ulps",
     )
 
+    @property
+    def best_progenitor_claim(self):
+        return self.progenitor_claims.all().order_by('tentative').first()
+
     class Meta:
         verbose_name = "ULP"
         verbose_name_plural = "ULPs"
@@ -506,7 +510,7 @@ class Measurement(models.Model):
         return self.formatted_quantity_with_units
 
     class Meta:
-        ordering = ['ulp', 'article', 'parameter']
+        ordering = ['ulp', 'parameter', 'article']
 
 
 class ParameterSet(models.Model):
@@ -584,5 +588,34 @@ class UserSetting(models.Model):
 
     def __str__(self) -> str:
         return f"Settings for {self.user}"
+
+
+class Progenitor(models.Model):
+
+    name = models.CharField(max_length=127, unique=True)
+    abbr = models.CharField(max_length=31, verbose_name="Abbreviation", null=True, blank=True)
+
+    def __str__(self) -> str:
+        return self.abbr or self.name
+
+    class Meta:
+        ordering = ['name']
+
+
+class ProgenitorClaim(models.Model):
+
+    ulp = models.ForeignKey('Ulp', models.CASCADE, related_name='progenitor_claims')
+    progenitor = models.ForeignKey('Progenitor', models.CASCADE, related_name='claims')
+    article = models.ForeignKey('Article', models.CASCADE, related_name='progenitor_claims')
+    tentative = models.IntegerField(default=0) # 0 = not tenatative, 1 = tentative (?), 2 = really tentative (??), etc.
+
+    def __str__(self) -> str:
+        return f"{self.progenitor}{'?'*self.tentative}"
+
+    class Meta:
+        ordering = ['ulp', 'progenitor']
+        constraints = [
+            models.UniqueConstraint(fields=['ulp', 'progenitor', 'article'], name='unique_ulp_progenitor_article')
+        ]
 
 

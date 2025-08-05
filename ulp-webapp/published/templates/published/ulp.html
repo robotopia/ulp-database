@@ -57,12 +57,20 @@
         <th>Frequency</th>
         <th>Reference</th>
     </tr>
+    {% for progenitor_claim in ulp.progenitor_claims.all %}
+    <tr>
+        <td>Progenitor</td>
+        <td>{{ progenitor_claim }}</td>
+        <td>-</td>
+        <td>{% if progenitor_claim.article.doi %}<a href="https://doi.org/{{ progenitor_claim.article.doi }}">{{ progenitor_claim.article }}</a>{% else %}{{ progenitor_claim.article }}{% endif %}</td>
+    </tr>
+    {% endfor %}
     {% for measurement in measurements.all %}
     <tr>
         <td>{{ measurement.parameter }}</td>
         <td>{{ measurement.formatted_quantity_with_units }}</td>
         <td>{% if measurement.freq_ctr != None %}{{ measurement.freq_ctr }} {{ measurement.freq_astropy_units }}{% endif %}</td>
-	<td>{% if measurement.article.doi %}<a href="https://doi.org/{{ measurement.article.doi }}">{{ measurement.article }}</a></td>{% else %}{{ measurement.article }}{% endif %}
+	<td>{% if measurement.article.doi %}<a href="https://doi.org/{{ measurement.article.doi }}">{{ measurement.article }}</a>{% else %}{{ measurement.article }}{% endif %}</td>
     </tr>
     {% endfor %}
 </table>

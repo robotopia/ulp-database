@@ -34,6 +34,15 @@ class ParameterAdmin(admin.ModelAdmin):
 class ParameterSetAdmin(admin.ModelAdmin):
     list_display = ['name']
 
+@admin.register(Progenitor)
+class ProgenitorAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'name', 'abbr']
+
+@admin.register(ProgenitorClaim)
+class ProgenitorClaimAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'ulp', '__str__', 'article']
+    list_filter = ['ulp']
+
 @admin.register(Ulp)
 class UlpAdmin(admin.ModelAdmin):
     list_display = ['pk', 'name', 'abbr']
