@@ -47,8 +47,13 @@ class Ulp(models.Model):
     )
 
     @property
-    def best_progenitor_claim(self):
-        return self.progenitor_claims.all().order_by('tentative').first()
+    def best_progenitor_claims(self):
+        claims = self.progenitor_claims.all().order_by('tentative')
+        if not claims.exists():
+            return None
+        least_tentative = claims.first().tentative
+        least_tentative_claims = claims.filter(tentative=least_tentative)
+        return ', '.join([f'{claim}' for claim in least_tentative_claims])
 
     class Meta:
         verbose_name = "ULP"

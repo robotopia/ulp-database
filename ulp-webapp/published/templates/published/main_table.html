@@ -32,7 +32,7 @@
     {% for ulp, parameters in rows.items %}
     <tr>
         <td><a href="{% url 'ulp' pk=ulp.pk %}">{{ ulp }}</a></td>
-        <td>{{ ulp.best_progenitor_claim|default:'' }}</td>
+        <td>{{ ulp.best_progenitor_claims|default:'' }}</td>
         {% for parameter, measurement in parameters.items %}
         <td>{{ measurement.formatted_quantity }}</td>
         {% endfor %}

@@ -45,7 +45,7 @@ class ProgenitorClaimAdmin(admin.ModelAdmin):
 
 @admin.register(Ulp)
 class UlpAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'name', 'abbr']
+    list_display = ['pk', 'name', 'abbr', 'best_progenitor_claims']
 
 @admin.register(UserSetting)
 class UserSettingAdmin(admin.ModelAdmin):
