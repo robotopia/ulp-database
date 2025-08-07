@@ -75,7 +75,7 @@
   <input type="checkbox" id="cb_{{ toa.id }}" name="cb_{{ toa.id }}" class="toa-cbs" form="act_on_toas"/>
   {% endif %}
   <!--<span><a href="{% url 'toa_detail_view' pk=toa.pk %}">{{ toa.pk }}</a></span>-->
-  <span>{{ toa.owner }}</span>
+  <span>{% if toa.published_in %}<a href="{{ toa.published_in.doi_url }}">{{ toa.published_in.citet_text }}</a>{% else %}{{ toa.owner }}{% endif %}</span>
   <input type="number" class="freq-unit" id="freq_{{ toa.id }}" name="freq" value="{{ toa.freq|default_if_none:"" }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'freq', this, 'freq');" required/>
   <input type="number" id="raw_mjd_{{ toa.id }}" name="raw_mjd" value="{{ toa.raw_mjd|default_if_none:"" }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'raw_mjd', this, '');"/>
   <input type="number" class="time-unit" id="mjd_err_{{ toa.id }}" name="mjd_err" value="{{ toa.mjd_err|default_if_none:"" }}" {% if toa.editable is False %}disabled{% endif %} onchange="update_toa({{ toa.pk }}, 'mjd_err', this, 'time');"/>
