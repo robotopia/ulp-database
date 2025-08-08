@@ -807,215 +807,40 @@ class WorkingEphemeris(AbstractPermission):
 
 class WorkingEphemerisCovariance(models.Model):
 
-    pepoch_pepoch = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    pepoch_p0 = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    pepoch_p1 = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    pepoch_pb = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    pepoch_dm = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    pepoch_spec_alpha = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    pepoch_spec_q = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    p0_p0 = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    p0_p1 = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    p0_pb = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    p0_dm = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    p0_spec_alpha = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    p0_spec_q = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    p1_p1 = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    p1_pb = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    p1_dm = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    p1_spec_alpha = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    p1_spec_q = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    pb_pb = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    pb_dm = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    pb_spec_alpha = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    pb_spec_q = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    dm_dm = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    dm_spec_alpha = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    dm_spec_q = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    spec_alpha_spec_alpha = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    spec_alpha_spec_q = models.FloatField(
-        null=True,
-        blank=True,
-    )
-
-    spec_q_spec_q = models.FloatField(
-        null=True,
-        blank=True,
-    )
+    pepoch_pepoch         = models.FloatField(null=True, blank=True)
+    pepoch_p0             = models.FloatField(null=True, blank=True)
+    pepoch_p1             = models.FloatField(null=True, blank=True)
+    pepoch_pb             = models.FloatField(null=True, blank=True)
+    pepoch_dm             = models.FloatField(null=True, blank=True)
+    pepoch_spec_alpha     = models.FloatField(null=True, blank=True)
+    pepoch_spec_q         = models.FloatField(null=True, blank=True)
+    p0_p0                 = models.FloatField(null=True, blank=True)
+    p0_p1                 = models.FloatField(null=True, blank=True)
+    p0_pb                 = models.FloatField(null=True, blank=True)
+    p0_dm                 = models.FloatField(null=True, blank=True)
+    p0_spec_alpha         = models.FloatField(null=True, blank=True)
+    p0_spec_q             = models.FloatField(null=True, blank=True)
+    p1_p1                 = models.FloatField(null=True, blank=True)
+    p1_pb                 = models.FloatField(null=True, blank=True)
+    p1_dm                 = models.FloatField(null=True, blank=True)
+    p1_spec_alpha         = models.FloatField(null=True, blank=True)
+    p1_spec_q             = models.FloatField(null=True, blank=True)
+    pb_pb                 = models.FloatField(null=True, blank=True)
+    pb_dm                 = models.FloatField(null=True, blank=True)
+    pb_spec_alpha         = models.FloatField(null=True, blank=True)
+    pb_spec_q             = models.FloatField(null=True, blank=True)
+    dm_dm                 = models.FloatField(null=True, blank=True)
+    dm_spec_alpha         = models.FloatField(null=True, blank=True)
+    dm_spec_q             = models.FloatField(null=True, blank=True)
+    spec_alpha_spec_alpha = models.FloatField(null=True, blank=True)
+    spec_alpha_spec_q     = models.FloatField(null=True, blank=True)
+    spec_q_spec_q         = models.FloatField(null=True, blank=True)
 
     def err(self, param):
         try:
             return np.sqrt(getattr(self, f'{param}_{param}'))
         except:
             return None
-
-    # A helper function to create a WorkingEphemerisCovariance instance from an array
-    def from_array(array):
-        # 'array' is expected to be in the format output by as_array()
-        return WorkingEphemerisCovariance(
-            pepoch_pepoch=array[0] if not np.isnan(array[0]) else None,
-            pepoch_p0=array[1] if not np.isnan(array[1]) else None,
-            pepoch_p1=array[2] if not np.isnan(array[2]) else None,
-            pepoch_pb=array[3] if not np.isnan(array[3]) else None,
-            pepoch_dm=array[4] if not np.isnan(array[4]) else None,
-            pepoch_spec_alpha=array[5] if not np.isnan(array[5]) else None,
-            pepoch_spec_q=array[6] if not np.isnan(array[6]) else None,
-            p0_p0=array[7] if not np.isnan(array[7]) else None,
-            p0_p1=array[8] if not np.isnan(array[8]) else None,
-            p0_pb=array[9] if not np.isnan(array[9]) else None,
-            p0_dm=array[10] if not np.isnan(array[10]) else None,
-            p0_spec_alpha=array[11] if not np.isnan(array[11]) else None,
-            p0_spec_q=array[12] if not np.isnan(array[12]) else None,
-            p1_p1=array[13] if not np.isnan(array[13]) else None,
-            p1_pb=array[14] if not np.isnan(array[14]) else None,
-            p1_dm=array[15] if not np.isnan(array[15]) else None,
-            p1_spec_alpha=array[16] if not np.isnan(array[16]) else None,
-            p1_spec_q=array[17] if not np.isnan(array[17]) else None,
-            pb_pb=array[18] if not np.isnan(array[18]) else None,
-            pb_dm=array[19] if not np.isnan(array[19]) else None,
-            pb_spec_alpha=array[20] if not np.isnan(array[20]) else None,
-            pb_spec_q=array[21] if not np.isnan(array[21]) else None,
-            dm_dm=array[22] if not np.isnan(array[22]) else None,
-            dm_spec_alpha=array[23] if not np.isnan(array[23]) else None,
-            dm_spec_q=array[24] if not np.isnan(array[24]) else None,
-            spec_alpha_spec_alpha=array[25] if not np.isnan(array[25]) else None,
-            spec_alpha_spec_q=array[26] if not np.isnan(array[26]) else None,
-            spec_q_spec_q=array[27] if not np.isnan(array[27]) else None,
-        )
-
-    def from_str(string):
-        if len(string) > 0:
-            array = np.fromstring(string, sep=',')
-            return WorkingEphemerisCovariance.from_array(array)
-        return
-
-    def as_matrix(self):
-        return np.array(
-            [
-                self.pepoch_pepoch, self.pepoch_p0, self.pepoch_p1, self.pepoch_pb, self.pepoch_dm, self.pepoch_spec_alpha, self.pepoch_spec_q,
-                self.pepoch_p0, self.p0_p0, self.p0_p1, self.p0_pb, self.p0_dm, self.p0_spec_alpha, self.p0_spec_q,
-                self.pepoch_p1, self.p0_p1, self.p1_p1, self.p1_pb, self.p1_dm, self.p1_spec_alpha, self.p1_spec_q,
-                self.pepoch_pb, self.p0_pb, self.p1_pb, self.pb_pb, self.pb_dm, self.pb_spec_alpha, self.pb_spec_q,
-                self.pepoch_dm, self.p0_dm, self.p1_dm, self.pb_dm, self.dm_dm, self.dm_spec_alpha, self.dm_spec_q,
-                self.pepoch_spec_alpha, self.p0_spec_alpha, self.p1_spec_alpha, self.pb_spec_alpha, self.dm_spec_alpha, self.spec_alpha_spec_alpha, self.spec_alpha_spec_q,
-                self.pepoch_spec_q, self.p0_spec_q, self.p1_spec_q, self.pb_spec_q, self.dm_spec_q, self.spec_alpha_spec_q, self.spec_q_spec_q,
-            ]
-        )
-
-    def as_array(self):
-        # If this function is changed, from_array() must also be updated
-        return np.array(
-            [
-                self.pepoch_pepoch, self.pepoch_p0, self.pepoch_p1, self.pepoch_pb, self.pepoch_dm, self.pepoch_spec_alpha, self.pepoch_spec_q, self.p0_p0, self.p0_p1, self.p0_pb, self.p0_dm, self.p0_spec_alpha, self.p0_spec_q, self.p1_p1, self.p1_pb, self.p1_dm, self.p1_spec_alpha, self.p1_spec_q, self.pb_pb, self.pb_dm, self.pb_spec_alpha, self.pb_spec_q, self.dm_dm, self.dm_spec_alpha, self.dm_spec_q, self.spec_alpha_spec_alpha, self.spec_alpha_spec_q, self.spec_q_spec_q,
-            ]
-        )
-
-    def __str__(self):
-        return ",".join([str(x) if x else 'nan' for x in self.as_array()])
 
 
 class Pulse(models.Model):

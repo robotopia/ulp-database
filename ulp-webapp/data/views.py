@@ -5,6 +5,7 @@ from django.db.models import Q, Value, BooleanField
 from django.urls import reverse
 from django.core.exceptions import ValidationError
 from . import models
+from . import serializers
 from common.utils import *
 from django.utils.timezone import now
 from urllib.parse import urlencode
@@ -1202,54 +1203,6 @@ def folding_toa_view(request, pk):
         ]
     data = pack_data(toas)
 
-    # How to get residuals for an arbitrary working ephemeris + toas:
-    #residuals_for_toa_qs(self, toa_qs)
-    '''
-    # Make a new working ephemeris to hold the best fitting solution
-    def fold_for_curve_fit(pulses, pepoch, period):
-        # Use the folding function defined in the WorkingEphemeris model
-        # to produce the predicted phases
-        we = models.WorkingEphemeris(
-            ulp=ulp,
-            pepoch=pepoch,
-            p0=period,
-        )
-        mjds = we.unfold(pulse_numbers, np.zeros(pulse_numbers.shape))
-
-        return mjds
-
-    x = np.array([toa.pulse_number for toa in toas if toa.include_in_fit])
-    y = np.array([toa.toa_mjd for toa in toas if toa.include_in_fit])
-    p0 = [working_ephemeris.pepoch, working_ephemeris.p0] # 1st "p0" means "initial parameters for curve_fit"; 2nd "p0" means "period"
-    popt, pcov = curve_fit(fold_for_curve_fit, x, y, p0=p0)
-    covariance = models.WorkingEphemerisCovariance(
-        pepoch_pepoch=pcov[0,0],
-        pepoch_p0=pcov[0,1],
-        p0_p0=pcov[1,1],
-    )
-    predicted_y = fold_for_curve_fit(x, *popt)
-    fitted_working_ephemeris = models.WorkingEphemeris(
-        ulp=ulp,
-        pepoch=popt[0],
-        p0=popt[1],
-        covariance=covariance,
-    )
-
-    # Create predicted ToAs based on fit
-    predicted_toas = [
-        models.Toa(
-            pulse_number=x[i],
-            template=toas[i].template,
-            toa_mjd=Decimal(predicted_y[i]),
-            toa_err_s=0.0,
-            ampl=0.0,
-            ampl_err=0.0,
-            ampl_ref_freq=0.0,
-        ) for i in range(len(x))
-    ]
-    predicted_data = pack_data(predicted_toas, include_pk=False)
-    '''
-
     # Throw it all together into a context
     context = {
         'toas': toas,
@@ -1284,13 +1237,12 @@ def update_working_ephemeris(request, pk):
 
         # Now update the covariance, if there is anything to update
         # First, drop the old one, if it exists
-        covariance = models.WorkingEphemerisCovariance.from_str(request.POST['covariance_list'])
-
-        if covariance is not None:
-            if working_ephemeris.covariance is not None:
-                working_ephemeris.covariance.delete()
+        if request.POST.get('covariance'):
+            json_str = ["'" + request.POST['covariance'] + "'"]
+            covariance = serializers.WorkingEphemerisCovarianceDeserializer(json_str)[0].object
             covariance.save()
-            working_ephemeris.covariance = covariance
+            if not working_ephemeris.covariance:
+                working_ephemeris.covariance = covariance
 
         working_ephemeris.save()
 
