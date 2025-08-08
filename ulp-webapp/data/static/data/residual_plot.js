@@ -6,6 +6,10 @@ Number.prototype.mod = function (n) {
   return ((this % n) + n) % n;
 };
 
+function calc_tspin(pulse_phase, ephemeris) {
+  return (2*pulse_phase*ephemeris.p0 / (1 + Math.sqrt(1 - 2*ephemeris.p1*pulse_phase)))
+}
+
 // Function to calculate the pulse numbers and phases of TOAs
 function calc_pulse_phase(mjd, ephemeris) {
   // mjd and pepoch should be in days,
@@ -21,11 +25,34 @@ function calc_pulse_phase(mjd, ephemeris) {
 
 function calc_mjd(pulse_phase, ephemeris) {
   // This is the inverse of calc_pulse_phase
-  var p0 = ephemeris.p0;
-  var p1 = ephemeris.p1
-  var pepoch = ephemeris.pepoch;
-  var retval = (2*pulse_phase*p0 / (1 + Math.sqrt(1 - 2*p1*pulse_phase)))/86400 + pepoch;
+  const p0 = ephemeris.p0;
+  const p1 = ephemeris.p1
+  const pepoch = ephemeris.pepoch;
+  const retval = calc_tspin(pulse_phase, ephemeris)/86400 + pepoch;
   return retval;
+}
+
+function calc_jacobian(pulse_phase, ephemeris) {
+  const p0 = ephemeris.p0;
+  const p1 = ephemeris.p1;
+  const pepoch = ephemeris.pepoch;
+  const tspin = calc_tspin(pulse_phase, ephemeris);
+
+  // The elements of the Jacobian
+  const dt_dpepoch = 86400;  // Because of units
+  const dt_dp0 = tspin/p0;
+  const dt_dp1 = tspin*tspin*tspin/(2*p0*(2*pulse_phase*p0 - tspin));
+  const dt_dm = 0; // TODO: add DM into the mix
+
+  // Return the Jacobian as an array
+  return [dt_dpepoch, dt_dp0, dt_dp1, dt_dm];
+}
+
+function residual_err(pulse_phase, ephemeris, covariance_matrix) {
+  const J = math.matrix(calc_jacobian(pulse_phase, ephemeris));
+  const S = math.matrix(covariance_matrix);
+  const JSJ = math.multiply(math.transpose(J), S, J);
+  return math.sqrt(math.squeeze(JSJ));
 }
 
 function generate_toas(mjd_start, mjd_end, ephemeris) {
@@ -215,7 +242,7 @@ function add_residual_data(plot, json_url, appearance, ephemeris, barycentre, la
   //     [{mjd: 60001.0, mjd_err: 1e-4, bc_correction: 0.001, freq_MHz: 200.0}, ... ]
   // appearance should be ... TODO
   // ephemeris should be an object of the form:
-  //     {p0: 1000.0, pepoch: 60000.0, dm: 100.0}
+  //     {p0: 1000.0, pepoch: 60000.0, dm: 100.0, p1: 1e-12}
 
   d3.json(json_url, function(data) {
 
@@ -248,6 +275,37 @@ function add_residual_data(plot, json_url, appearance, ephemeris, barycentre, la
   });
 }
 
+function add_covariance_err_data(plot, ephemeris, covariance) {
+  // plot should be an object returned by create_residual_plot_elements()
+  // ephemeris should be an object of the form:
+  //     {p0: 1000.0, pepoch: 60000.0, dm: 100.0, p1: 1e-12}
+  // Result goes into plot.covariance_err_data
+
+  [xmin, xmax] = plot.xlim;
+  dx = (xmax - xmin)/1000.0;
+  plot['covariance_err_data'] = Array.from(Array(1000), (_,i) => {
+    pulse_phase = calc_pulse_phase(i*dx + xmin, ephemeris).pulse_phase;
+    residual = residual_err(pulse_phase, ephemeris, covariance);
+    return {
+      pulse_phase: pulse_phase,
+      residual: residual
+    }
+  });
+
+  plot['covariance_err'] = plot.g.append("path");
+}
+
+function position_covariance_err(plot) {
+  const covariance_err_func = d3.area()
+    .x(function(d) { return plot.x2(d.pulse_phase) })
+    .y1(function(d) { return plot.y2(d.residual) })
+    .y0(function(d) { return plot.y2(-d.residual) });
+
+  plot.covariance_err
+    .attr('d', covariance_err_func(plot.covariance_err_data))
+    .attr('fill', '#f008');
+}
+
 function calc_dmdelay(dm, freq_MHz) {
   // Returns answer in units of days
   dmdelay = (4.148808e3 / 86400.0) * dm / (freq_MHz*freq_MHz);
@@ -267,7 +325,7 @@ function apply_corrections(toa, ephemeris, barycentre) {
 function position_residual_data(plot, ephemeris, barycentre, label) {
   // plot should be an object returned by create_residual_plot_elements()
   // ephemeris should be an object of the form:
-  //     {p0: 1000.0, pepoch: 60000.0, dm: 100.0}
+  //     {p0: 1000.0, pepoch: 60000.0, dm: 100.0, p1: 1e-12}
 
   if (plot[label].appearance.display_points === true) {
     plot[label].points.attr("cx", function (toa) {

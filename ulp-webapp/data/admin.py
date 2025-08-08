@@ -69,6 +69,11 @@ class WorkingEphemerisAdmin(admin.ModelAdmin):
         ),
     ]
 
+@admin.register(WorkingEphemerisCovariance)
+class WorkingEphemerisCovarianceAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'pepoch_pepoch', 'p0_p0']
+    list_filter = ['working_ephemeris__ulp']
+
 @admin.register(Pulse)
 class PulseAdmin(admin.ModelAdmin):
     list_display = ['pk', 'lightcurve', 'mjd_start', 'mjd_end', 'tags']

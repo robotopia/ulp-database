@@ -374,6 +374,7 @@ def timing_residual_view(request, pk):
     if selected_working_ephemeris.covariance is None:
         selected_working_ephemeris.covariance = models.WorkingEphemerisCovariance()
         selected_working_ephemeris.covariance.save()
+        selected_working_ephemeris.save()
     context['selected_working_ephemeris'] = selected_working_ephemeris
 
     # Pool together lists of published values to offer as options to the user
@@ -513,6 +514,10 @@ def timing_residual_view(request, pk):
     context['max_sun_el'] = max_sun_el
     context['mjd_start_format'] = mjd_start_format
     context['mjd_end_format'] = mjd_start_format
+
+    context['covariance'] = serializers.WorkingEphemerisCovarianceSerializer().serialize(
+        models.WorkingEphemerisCovariance.objects.filter(pk=selected_working_ephemeris.covariance.pk)
+    )
 
     return render(request, 'data/timing_residuals.html', context)
 

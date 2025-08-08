@@ -684,6 +684,7 @@ class WorkingEphemeris(AbstractPermission):
         null=True,
         blank=True,
         help_text="The covariance matrix for the ephemeris parameters",
+        related_name='working_ephemeris',
     )
 
     @property

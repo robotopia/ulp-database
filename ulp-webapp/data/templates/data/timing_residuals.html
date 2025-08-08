@@ -93,6 +93,7 @@
   <button type="button" class="btn btn-primary" onclick="reset_ephemeris_fields();">Reset all</button>
   <button type="button" class="btn btn-primary" onclick="update_selected_working_ephemeris();">Save selected</button>
   <button type="button" class="btn btn-primary" onclick="fit_to_toas();">Fit selected to ToAs</button>
+  <button type="button" class="btn btn-primary" onclick="update_covariance_err();">Update error region</button>
 </div>
 
 <h2>Predictions</h2>
@@ -202,6 +203,8 @@
     },
     {% endfor %}
   }; // TODO: Can this ^^^ be looped over ephemeris parameters??
+  var covariance = {{ covariance|safe }};
+  covariance = covariance[0];
 
   Array.prototype.forEach.call(copy_links, function (copy_link) {
     copy_link.addEventListener('click', function (e) {
@@ -286,6 +289,7 @@
     set_residual_plot_dimensions(plot, plot.xlim, plot.ylim, margin, ephemeris);
     position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
     position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
+    position_covariance_err(plot);
 
     localStorage.setItem("barycentre_toas", barycentre_element.checked);
     localStorage.setItem("display_observations", display_obs_element.checked);
@@ -304,6 +308,12 @@
     localStorage.setItem("observation_color", observation_color_element.value);
   }
 
+  function update_covariance_err() {
+    plot.covariance_err.remove();
+    add_covariance_err_data(plot, ephemeris, covariance.matrix);
+    position_covariance_err(plot);
+  }
+
   // Zoom on mouse wheel
   plot.svg.on("wheel", function(d) {
 
@@ -320,6 +330,7 @@
     plot_zoom(plot, scrollpos, ephemeris, barycentre_element.checked);
     position_residual_data(plot, ephemeris, barycentre_element.checked, "ToAs");
     position_residual_data(plot, ephemeris, barycentre_element.checked, "Observations");
+    position_covariance_err(plot);
   });
 
   // Change period on mouse drag
@@ -386,6 +397,8 @@
     barycentre_element.checked,
     "Observations"
   );
+  add_covariance_err_data(plot, ephemeris, covariance.matrix);
+  position_covariance_err(plot);
 
   // When an ephemeris value changes, compare it to the selected working ephemeris value
   // and color the cell differently if the values are different

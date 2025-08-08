@@ -18,7 +18,7 @@ class WorkingEphemerisCovarianceSerializer(JSONSerializer):
             row = []
             for j in range(N):
                 field = f'{model_fields[i]}_{model_fields[j]}' if i <= j else f'{model_fields[j]}_{model_fields[i]}'
-                row.append(dumped_object["fields"][field])
+                row.append(dumped_object["fields"][field] or 0)
             matrix.append(row)
 
         dumped_object['fields'] = model_fields
