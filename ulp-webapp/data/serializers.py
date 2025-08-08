@@ -36,7 +36,6 @@ def WorkingEphemerisCovarianceDeserializer(stream_or_string, **options):
 
     def transform_object(obj):
 
-        print(f'{obj = }')
         model_fields  = obj.pop('fields')
         matrix        = obj.pop('matrix')
 

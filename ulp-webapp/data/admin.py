@@ -6,8 +6,8 @@ from common.admin import PermissionFieldset
 
 @admin.register(TimeOfArrival)
 class TimeOfArrivalAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'ulp', 'raw_mjd', 'mjd_err', 'freq', 'published_in', 'fluence_Jy_s']
-    list_editable = ['raw_mjd', 'mjd_err', 'freq', 'published_in', 'fluence_Jy_s']
+    list_display = ['pk', 'ulp', 'telescope_name', 'raw_mjd', 'mjd_err', 'freq', 'published_in', 'fluence_Jy_s']
+    list_editable = ['telescope_name', 'raw_mjd', 'mjd_err', 'freq', 'published_in', 'fluence_Jy_s']
     list_filter = ['ulp', 'owner', 'telescope_name']
     fieldsets = [
         PermissionFieldset,
@@ -71,8 +71,8 @@ class WorkingEphemerisAdmin(admin.ModelAdmin):
 
 @admin.register(WorkingEphemerisCovariance)
 class WorkingEphemerisCovarianceAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'pepoch_pepoch', 'p0_p0']
-    list_filter = ['working_ephemeris__ulp']
+    list_display = ['pk', 'working_ephemeris__owner', 'working_ephemeris__ulp', 'pepoch_pepoch', 'p0_p0']
+    list_filter = ['working_ephemeris__ulp', 'working_ephemeris__owner']
 
 @admin.register(Pulse)
 class PulseAdmin(admin.ModelAdmin):

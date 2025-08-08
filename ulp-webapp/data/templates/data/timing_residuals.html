@@ -93,7 +93,7 @@
   <button type="button" class="btn btn-primary" onclick="reset_ephemeris_fields();">Reset all</button>
   <button type="button" class="btn btn-primary" onclick="update_selected_working_ephemeris();">Save selected</button>
   <button type="button" class="btn btn-primary" onclick="fit_to_toas();">Fit selected to ToAs</button>
-  <button type="button" class="btn btn-primary" onclick="update_covariance_err();">Update error region</button>
+  <button type="button" class="btn btn-primary" onclick="update_covariance_err();">Update (1σ) error region</button>
 </div>
 
 <h2>Predictions</h2>
@@ -443,6 +443,7 @@
     data.select_{{ param }} = select_{{ param }}_element.checked;
     data.{{ param }} = {{ param }}_element.value;
     {% endfor %}
+    data.covariance = JSON.stringify([covariance]);
 
     xhr.onload = () => {
       if (xhr.status != 200) {
@@ -491,13 +492,16 @@
       // Update the elements
       updated_data = JSON.parse(xhr.responseText);
       let [best_fit_ephemeris, cov] = updated_data;
+      cov = JSON.parse(cov)[0];
+      covariance.matrix = cov.matrix;
 
       // Update the current selected working ephemeris
       {% for param in ephemeris.keys %}
       if (data.select_{{ param }}) {
         {{ param }}_element.value = best_fit_ephemeris.{{ param }};
         update_ephemeris_field({{ param }}_element, '{{ param }}');
-        document.getElementById('{{ param }}_err').innerHTML = Math.sqrt(cov.{{ param }}_{{ param }}) || "";
+        cov_idx = cov.fields.indexOf('{{ param }}');
+        document.getElementById('{{ param }}_err').innerHTML = Math.sqrt(cov.matrix[cov_idx][cov_idx]) || "";
       }
       {% endfor %}
 

@@ -1272,7 +1272,7 @@ def update_selected_working_ephemeris(request):
 
         new_ephemeris_values = {} # This is for returning to the client so that webpage values can be updated
 
-        for field in ['ra', 'dec', 'pepoch', 'p0', 'dm']:
+        for field in ['ra', 'dec', 'pepoch', 'p0', 'p1', 'dm']:
             try:
                 if data[f'select_{field}'] == False:
                     continue
@@ -1296,6 +1296,20 @@ def update_selected_working_ephemeris(request):
         working_ephemeris.save()
 
         new_ephemeris_values['pk'] = data['pk']
+
+        # Now update the (whole) covariance matrix.
+        # First, deserialize it
+        covariance = list(serializers.WorkingEphemerisCovarianceDeserializer(data['covariance']))[0].object
+
+        # Ensure that this covariance is being applied to the correct working ephemeris
+        # by forcing
+        if working_ephemeris.covariance:
+            working_ephemeris.covariance.delete()
+
+        working_ephemeris.covariance = covariance
+        covariance.save()
+        working_ephemeris.save()
+
         return JsonResponse(new_ephemeris_values, status=200)
 
     return JsonResponse({'message': f"User does not have edit privileges for this ephemeris"}, status=400)
@@ -1688,11 +1702,11 @@ def fit_ephemeris(request, ulp_pk):
         best_fit_ephemeris['p0'] = f"{popt[1]}"
 
         # Populate a covariance
-        cov = {
-            'pepoch_pepoch': pcov[0,0],
-            'pepoch_p0': pcov[0,1],
-            'p0_p0': pcov[1,1],
-        }
+        covariance = models.WorkingEphemerisCovariance(
+            pepoch_pepoch=pcov[0,0],
+            pepoch_p0=pcov[0,1],
+            p0_p0=pcov[1,1],
+        )
 
     elif not data['select_ra'] and not data['select_dec'] and data['select_pepoch'] and data['select_p0'] and data['select_p1'] and not data['select_dm']:
         # RA-No  DEC-No  PEPOCH-Yes  P0-Yes  P1-Yes  DM-No
@@ -1720,17 +1734,20 @@ def fit_ephemeris(request, ulp_pk):
         best_fit_ephemeris['p1'] = f"{popt[2]/p1_scale}"
 
         # Populate a covariance
-        cov = {
-            'pepoch_pepoch': pcov[0,0],
-            'pepoch_p0': pcov[0,1],
-            'pepoch_p1': pcov[0,2]/p1_scale,
-            'p0_p0': pcov[1,1],
-            'p0_p1': pcov[1,2]/p1_scale,
-            'p1_p1': pcov[2,2]/p1_scale**2,
-        }
+        covariance = models.WorkingEphemerisCovariance(
+            pepoch_pepoch=pcov[0,0],
+            pepoch_p0=pcov[0,1],
+            pepoch_p1=pcov[0,2]/p1_scale,
+            p0_p0=pcov[1,1],
+            p0_p1=pcov[1,2]/p1_scale,
+            p1_p1=pcov[2,2]/p1_scale**2,
+        )
 
     else:
         return JsonResponse({'message': 'The chosen combination of fit parameters is not yet supported'}, status=400)
+
+    # Serialize the covariance matrix
+    cov = serializers.WorkingEphemerisCovarianceSerializer().serialize([covariance])
 
     return JsonResponse([best_fit_ephemeris, cov], safe=False, status=200)
 
