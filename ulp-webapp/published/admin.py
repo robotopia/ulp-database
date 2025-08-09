@@ -10,7 +10,10 @@ class ArticleAdmin(admin.ModelAdmin):
 @admin.register(Covariance)
 class CovarianceAdmin(admin.ModelAdmin):
     list_display = ['measurement1', 'measurement2', 'covariance']
-    #list_filter = ['measurement
+
+@admin.register(FrequencyBand)
+class FrequencyBandAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'name', 'symbol', 'range_display']
 
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
@@ -19,7 +22,7 @@ class MeasurementAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Main', {'fields': ('ulp', 'parameter', ('quantity', 'power_of_10'), 'article', 'date',)}),
         ('Uncertainty', {'fields': ('err', ('err_lo', 'err_hi'), 'precision', 'error_sigma', ('chisq', 'reduced_chisq')), 'classes': ('collapse',)}),
-        ('Frequency', {'fields': (('freq_lo', 'freq_ctr', 'freq_hi'), 'freq_astropy_units'), 'classes': ('collapse',)}),
+        ('Frequency', {'fields': ('freq_band', ('freq_lo', 'freq_ctr', 'freq_hi'), 'freq_astropy_units'), 'classes': ('collapse',)}),
         ('Polarisation', {'fields': ('stokes',), 'classes': ('collapse',)}),
         ('Publish', {'fields': ('owner', 'access', 'access_groups'), 'classes': ('collapse',)}),
         ('Display options', {'fields': (('lower_limit', 'upper_limit'), 'error_is_range', 'approximation', 'angle_display',), 'classes': ('collapse',)}),

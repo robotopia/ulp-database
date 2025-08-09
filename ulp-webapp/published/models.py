@@ -5,6 +5,7 @@ from decimal import Decimal
 
 import astropy.units as u
 from astropy.coordinates import Angle, SkyCoord
+from astropy.constants import c
 
 # Create your models here.
 class Ulp(models.Model):
@@ -330,6 +331,15 @@ class Measurement(models.Model):
         help_text="The bottom of the frequency range.",
     )
 
+    freq_band = models.ForeignKey(
+        "FrequencyBand",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The frequency band.",
+        related_name="measurements",
+    )
+
     freq_astropy_units = models.CharField(
         max_length=31,
         default="MHz",
@@ -511,6 +521,17 @@ class Measurement(models.Model):
         # Default case
         return False
 
+    @property
+    def freq_band_display(self):
+        #<td>{% if measurement.freq_ctr != None %}{{ measurement.freq_ctr }} {{ measurement.freq_astropy_units }}{% endif %}</td>
+        if self.freq_band:
+            return f'{self.freq_band.symbol}'
+        if self.freq_lo and self.freq_hi:
+            return f'{self.lo} - {self.hi} {self.freq_astropy_units}'
+        if self.freq_ctr:
+            return f'{self.freq_ctr} {self.freq_astropy_units}'
+        return None
+
     def __str__(self):
         return self.formatted_quantity_with_units
 
@@ -624,3 +645,25 @@ class ProgenitorClaim(models.Model):
         ]
 
 
+class FrequencyBand(models.Model):
+
+    FREQ_UNITS = u.GHz
+
+    name = models.CharField(max_length=63, unique=True)
+    symbol = models.CharField(max_length=15)
+    lo = models.FloatField(help_text="Low end of frequency range (GHz).")
+    hi = models.FloatField(help_text="High end of frequency range (GHz).")
+    unit = models.CharField(max_length=15, help_text="Display unit. AstroPy.unit-conformant unit in units of either length (for wavelength) or inverse time (for frequency).")
+
+    def __str__(self) -> str:
+        return f'{self.name}'
+
+    @property
+    def range_display(self):
+        f1 = (self.lo*self.FREQ_UNITS).to(self.unit, equivalencies=u.spectral())
+        f2 = (self.hi*self.FREQ_UNITS).to(self.unit, equivalencies=u.spectral())
+        lo, hi = (f1, f2) if f1 < f2 else (f2, f1)
+        return f'{lo.value}-{hi}'
+
+    class Meta:
+        ordering = ['lo', 'hi']
