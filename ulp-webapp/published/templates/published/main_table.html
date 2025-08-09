@@ -32,7 +32,7 @@
     {% for ulp, parameters in rows.items %}
     <tr>
         <td><a href="{% url 'ulp' pk=ulp.pk %}">{{ ulp }}</a></td>
-        <td>{{ ulp.best_progenitor_claims|default:'' }}</td>
+        <td>{% for progenitor_claim in ulp.progenitor_claims.all %}{% if not forloop.first %}<br>{% endif %}{{ progenitor_claim|default:'' }}<sup><a href="{% url 'references_view' %}#ref_{{ progenitor_claim.article.pk }}">[ref]</a></sup>{% endfor %}</td>
         {% for parameter, measurements in parameters.items %}
         <td>{% for measurement in measurements %}{% if not forloop.first %}<br>{% endif %}{{ measurement.formatted_quantity }}{% if measurement.article %}<sup><a href="{% url 'references_view' %}#ref_{{ measurement.article.pk }}">[ref]</a></sup>{% endif %}{% endfor %}</td>
         {% endfor %}
