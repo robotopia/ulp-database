@@ -15,7 +15,8 @@
 <script>
   const currentHash = window.location.hash;
   const tagged_item = document.getElementById(currentHash.substring(1));
-  tagged_item.classList.add("tagged");
+  if (tagged_item !== null)
+    tagged_item.classList.add("tagged");
 </script>
 
 <style>
