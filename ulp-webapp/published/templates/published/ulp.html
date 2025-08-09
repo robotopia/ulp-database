@@ -70,7 +70,7 @@
     <tr>
         <td>{{ measurement.parameter }}</td>
         <td>{{ measurement.formatted_quantity_with_units }}</td>
-        <td>{{ measurement.error_sigma|floatformat:"0" }}σ</td>
+        <td>{{ measurement.confidence|default:'' }}</td>
         <td>{{ measurement.freq_band_display|default:'' }}</td>
 	<td>{% if measurement.article.doi %}<a href="https://doi.org/{{ measurement.article.doi }}">{{ measurement.article }}</a>{% else %}{{ measurement.article }}{% endif %}</td>
     </tr>

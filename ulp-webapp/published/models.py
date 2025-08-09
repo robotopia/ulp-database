@@ -236,10 +236,21 @@ class Measurement(models.Model):
     )
 
     error_sigma = models.FloatField(
-        help_text="The sigma of the reported errors.",
-        verbose_name="Error significance, σ",
+        help_text="The confidence of the reported errors.",
+        verbose_name="Error confidence",
         null=True,
         blank=True,
+    )
+
+    error_sigma_type = models.CharField(
+        max_length=2,
+        choices=[
+            ('%', '%'),
+            ('σ', 'σ'),
+        ],
+        default='σ',
+        help_text="The type of the 'error_sigma' field",
+        verbose_name="Error confidence type",
     )
 
     lower_limit = models.BooleanField(
@@ -407,6 +418,20 @@ class Measurement(models.Model):
             return float(self.err) * 10**(self.power_of_10) * u.Unit(self.parameter.astropy_unit)
 
         return None
+
+    @property
+    def confidence(self):
+        if not self.error_sigma:
+            return None
+
+        if self.error_sigma_type == '%':
+            return f'{self.error_sigma:.0f}%'
+
+        if self.error_sigma_type == 'σ':
+            return f'{self.error_sigma:.0f}σ'
+
+        return None
+
 
     @property
     def formatted_quantity(self):

@@ -21,7 +21,7 @@ class MeasurementAdmin(admin.ModelAdmin):
     list_filter = ['ulp', 'parameter', 'access', 'article']
     fieldsets = (
         ('Main', {'fields': ('ulp', 'parameter', ('quantity', 'power_of_10'), 'article', 'date',)}),
-        ('Uncertainty', {'fields': ('err', ('err_lo', 'err_hi'), 'precision', 'error_sigma', ('chisq', 'reduced_chisq')), 'classes': ('collapse',)}),
+        ('Uncertainty', {'fields': ('err', ('err_lo', 'err_hi'), 'precision', ('error_sigma', 'error_sigma_type'), ('chisq', 'reduced_chisq')), 'classes': ('collapse',)}),
         ('Frequency', {'fields': ('freq_band', ('freq_lo', 'freq_ctr', 'freq_hi'), 'freq_astropy_units'), 'classes': ('collapse',)}),
         ('Polarisation', {'fields': ('stokes',), 'classes': ('collapse',)}),
         ('Publish', {'fields': ('owner', 'access', 'access_groups'), 'classes': ('collapse',)}),
