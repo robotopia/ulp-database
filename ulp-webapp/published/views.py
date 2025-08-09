@@ -305,3 +305,10 @@ def user_settings(request):
 def doc_view(request):
 
     return render(request, 'published/doc.html')
+
+
+def references_view(request):
+
+    return render(request, 'published/references.html', {'articles': models.Article.objects.all()})
+
+

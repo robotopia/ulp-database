@@ -1,0 +1,31 @@
+{% extends 'published/main.html' %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>References</h1>
+
+<ul>
+  {% for article in articles %}
+  <li id="ref_{{ article.pk }}"><b>{{ article.citet_text }}</b>, <i>{{ article.title }}</i>, doi:<a href="{{ article.doi_url }}">{{ article.doi }}</a></li>
+  {% endfor %}
+</ul>
+
+<script>
+  const currentHash = window.location.hash;
+  const tagged_item = document.getElementById(currentHash.substring(1));
+  tagged_item.classList.add("tagged");
+</script>
+
+<style>
+.tagged {
+  background-color: #f003;
+}
+
+li {
+  margin: 8px 0;
+}
+</style>
+
+{% endblock %}
