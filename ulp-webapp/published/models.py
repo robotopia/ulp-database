@@ -436,12 +436,6 @@ class Measurement(models.Model):
     @property
     def formatted_quantity(self):
 
-        if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
-            if self.angle_display == self.ANGLE_DDMMSS:
-                return Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.deg, pad=True, sep=':')
-            if self.angle_display == self.ANGLE_HHMMSS:
-                return Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.hourangle, pad=True, sep=':')
-
         retstr = ""
         if self.precision is None:
             precision = Decimal(f"0.00000000000000000001")
@@ -474,6 +468,14 @@ class Measurement(models.Model):
                 spectral_subclass = self.quantity % 10
                 retstr += spectral_class
                 quantity = spectral_subclass.quantize(precision)
+
+        if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
+            if self.angle_display == self.ANGLE_DDMMSS:
+                quantity_str = Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.deg, pad=True, sep=':')
+                return quantity_str
+            if self.angle_display == self.ANGLE_HHMMSS:
+                quantity_str = Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.hourangle, pad=True, sep=':')
+                return quantity_str
 
         if self.error_is_range == True and self.err is not None:
             lower_limit = (quantity - self.err).quantize(precision)

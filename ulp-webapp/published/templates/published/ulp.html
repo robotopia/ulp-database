@@ -72,7 +72,7 @@
         <td>{{ measurement.formatted_quantity_with_units }}</td>
         <td>{{ measurement.confidence|default:'' }}</td>
         <td>{{ measurement.freq_band_display|default:'' }}</td>
-	<td>{% if measurement.article.doi %}<a href="https://doi.org/{{ measurement.article.doi }}">{{ measurement.article }}</a>{% else %}{{ measurement.article }}{% endif %}</td>
+        <td>{% if measurement.article %}<a href="{% url 'references_view' %}#ref_{{ measurement.article.pk }}">{{ measurement.article }}</a>{% endif %}</td>
     </tr>
     {% endfor %}
 </table>
