@@ -285,7 +285,7 @@ function add_covariance_err_data(plot, ephemeris, covariance) {
   dx = (xmax - xmin)/1000.0;
   plot['covariance_err_data'] = Array.from(Array(1000), (_,i) => {
     pulse_phase = calc_pulse_phase(i*dx + xmin, ephemeris).pulse_phase;
-    residual = residual_err(pulse_phase, ephemeris, covariance);
+    residual = 3 * residual_err(pulse_phase, ephemeris, covariance); // 3σ
     return {
       pulse_phase: pulse_phase,
       residual: residual
@@ -303,7 +303,7 @@ function position_covariance_err(plot) {
 
   plot.covariance_err
     .attr('d', covariance_err_func(plot.covariance_err_data))
-    .attr('fill', '#f008');
+    .attr('fill', '#f004');
 }
 
 function calc_dmdelay(dm, freq_MHz) {
