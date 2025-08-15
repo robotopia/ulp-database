@@ -460,6 +460,10 @@ class Measurement(models.Model):
             elif self.lower_limit:
                 retstr += "> "
 
+        err    = self.err
+        err_hi = self.err_hi
+        err_lo = self.err_lo
+
         # Now that the prefix is taken care of, consider the special case
         # of spectral type. Must be dimensionless
         if self.parameter.astropy_unit is None:
@@ -472,49 +476,50 @@ class Measurement(models.Model):
         if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
             if self.angle_display == self.ANGLE_DDMMSS:
                 angle = Angle(f'{self.quantity} {self.parameter.astropy_unit}').signed_dms
-                retstr += f'{angle.d:.0f}:{angle.m:.0f}:'
+                retstr += f'{angle.d:02.0f}:{angle.m:02.0f}:'
+                if round(angle.s) < 10: # zero padding for arcseconds
+                    retstr += "0"
                 quantity = Decimal(angle.s).quantize(precision)
-                if self.err:
-                    self.err *= 3600
-                if self.err_hi:
-                    self.err_hi *= 3600
-                if self.err_lo:
-                    self.err_lo *= 3600
+                if err:
+                    err = (self.err * 3600).quantize(precision)
+                if err_hi:
+                    err_hi = (self.err_hi * 3600).quantize(precision)
+                if err_lo:
+                    err_lo = (self.err_lo * 3600).quantize(precision)
             if self.angle_display == self.ANGLE_HHMMSS:
                 angle = Angle(f'{self.quantity} {self.parameter.astropy_unit}').hms
-                retstr += f'{angle.h:.0f}:{angle.m:.0f}:'
+                retstr += f'{angle.h:02.0f}:{angle.m:02.0f}:'
+                if round(angle.s) < 10: # zero padding for seconds
+                    retstr += "0"
                 quantity = Decimal(angle.s).quantize(precision)
-                if self.err:
-                    self.err *= 240
-                if self.err_hi:
-                    self.err_hi *= 240
-                if self.err_lo:
-                    self.err_lo *= 240
+                if err:
+                    err = (self.err * 240).quantize(precision)
+                if err_hi:
+                    err_hi = (self.err_hi * 240).quantize(precision)
+                if err_lo:
+                    err_lo = (self.err_lo * 240).quantize(precision)
 
-        if self.error_is_range == True and self.err is not None:
-            lower_limit = (quantity - self.err).quantize(precision)
-            upper_limit = (quantity + self.err).quantize(precision)
+        if self.error_is_range == True and err is not None:
+            lower_limit = (quantity - err).quantize(precision)
+            upper_limit = (quantity + err).quantize(precision)
 
             quantity_str = f"{lower_limit} - {upper_limit}"
 
             if self.power_of_10 != 0:
                 quantity_str = f"({quantity_str})"
 
-        elif self.err:
-            err = self.err.quantize(precision)
-            quantity_str = f"{quantity} ± {err}"
+        elif err:
+            quantity_str = f"{quantity} ± {err.quantize(precision)}"
 
         else:
             quantity_str = f"{quantity}"
-            if self.err_hi:
-                err_hi = self.err_hi.quantize(precision)
-                quantity_str += f" (+{err_hi})"
-            if self.err_lo:
-                err_lo = self.err_lo.quantize(precision)
-                quantity_str += f" (-{err_lo})"
+            if err_hi:
+                quantity_str += f" (+{err_hi.quantize(precision)})"
+            if err_lo:
+                quantity_str += f" (-{err_lo.quantize(precision)})"
 
         if self.power_of_10 != 0:
-            if self.err or self.err_hi or self.err_lo:
+            if err or err_hi or err_lo:
                 quantity_str = f"({quantity_str})"
             if quantity != Decimal('1'):
                 quantity_str += f" × 10^{self.power_of_10}"
