@@ -90,7 +90,7 @@ def ulp_view(request, pk):
 
     ulp = get_object_or_404(models.Ulp, pk=pk)
 
-    measurements = get_accessible_measurements(request, ulp=ulp)
+    measurements = get_accessible_measurements(request, ulp=ulp).order_by('parameter')
 
     if not measurements.exists():
         return HttpResponse(status=404)

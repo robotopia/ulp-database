@@ -69,7 +69,7 @@
     {% for measurement in measurements.all %}
     <tr>
         <td>{{ measurement.parameter }}</td>
-        <td>{{ measurement.formatted_quantity_with_units }}</td>
+        <td>{{ measurement.formatted_quantity_with_units|safe }}</td>
         <td>{{ measurement.confidence|default:'' }}</td>
         <td>{{ measurement.freq_band_display|default:'' }}</td>
         <td>{% if measurement.article %}<a href="{% url 'references_view' %}#ref_{{ measurement.article.pk }}">{{ measurement.article }}</a>{% endif %}</td>
