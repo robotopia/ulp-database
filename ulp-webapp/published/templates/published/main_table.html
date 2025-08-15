@@ -6,14 +6,21 @@
 
 <h1 class="visually-hidden">LPT parameters</h1>
 
-<p>
-    Choose a parameter set:
-    <ul>
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <div class="collapse navbar-collapse">
+      <div class="navbar-nav">
         {% for parameter_set in parameter_sets %}
-        <li><a href="{% url 'parameter_set_table_view' pk=parameter_set.pk %}">{{ parameter_set }}</a></li>
+        {% if parameter_set == selected_parameter_set %}
+        <span class="nav-link nav-link-active" style="cursor: default;">{{ parameter_set }}</span>
+        {% else %}
+        <a class="nav-link" href="{% url 'parameter_set_table_view' pk=parameter_set.pk %}">{{ parameter_set }}</a>
+        {% endif %}
         {% endfor %}
-    </ul>
-</p>
+      </div>
+    </div>
+  </div>
+</nav>
 
 <table class="table">
     <tr>

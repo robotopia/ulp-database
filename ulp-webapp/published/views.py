@@ -77,6 +77,7 @@ def parameter_set_table_view(request, pk):
     parameter_sets = models.ParameterSet.objects.all()
 
     context = {
+        'selected_parameter_set': parameter_set,
         'parameters': parameters,
         'parameter_sets': parameter_sets,
         'rows': rows,
