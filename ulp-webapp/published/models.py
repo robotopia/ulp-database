@@ -471,11 +471,25 @@ class Measurement(models.Model):
 
         if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
             if self.angle_display == self.ANGLE_DDMMSS:
-                quantity_str = Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.deg, pad=True, sep=':')
-                return quantity_str
+                angle = Angle(f'{self.quantity} {self.parameter.astropy_unit}').signed_dms
+                retstr += f'{angle.d:.0f}:{angle.m:.0f}:'
+                quantity = Decimal(angle.s).quantize(precision)
+                if self.err:
+                    self.err *= 3600
+                if self.err_hi:
+                    self.err_hi *= 3600
+                if self.err_lo:
+                    self.err_lo *= 3600
             if self.angle_display == self.ANGLE_HHMMSS:
-                quantity_str = Angle(f'{self.quantity} {self.parameter.astropy_unit}').to_string(unit=u.hourangle, pad=True, sep=':')
-                return quantity_str
+                angle = Angle(f'{self.quantity} {self.parameter.astropy_unit}').hms
+                retstr += f'{angle.h:.0f}:{angle.m:.0f}:'
+                quantity = Decimal(angle.s).quantize(precision)
+                if self.err:
+                    self.err *= 240
+                if self.err_hi:
+                    self.err_hi *= 240
+                if self.err_lo:
+                    self.err_lo *= 240
 
         if self.error_is_range == True and self.err is not None:
             lower_limit = (quantity - self.err).quantize(precision)
@@ -515,7 +529,10 @@ class Measurement(models.Model):
     def formatted_quantity_with_units(self):
 
         if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
-            return f"{self.formatted_quantity}"
+            if self.angle_display == self.ANGLE_DDMMSS:
+                return f"{self.formatted_quantity}″"
+            if self.angle_display == self.ANGLE_HHMMSS:
+                return f"{self.formatted_quantity} s"
 
         if self.parameter.unicode_unit is not None:
             return f"{self.formatted_quantity} {self.parameter.unicode_unit}"
@@ -564,7 +581,7 @@ class Measurement(models.Model):
         return self.formatted_quantity_with_units
 
     class Meta:
-        ordering = ['ulp', 'parameter', 'article']
+        ordering = ['quantity', 'ulp', 'parameter', 'article']
 
 
 class ParameterSet(models.Model):
@@ -614,7 +631,7 @@ class Covariance(models.Model):
     )
 
     def __str__(self):
-        return f"{measurement1.parameter.name}, {measurement2.parameter.name}"
+        return f"{self.measurement1.parameter.name}, {self.measurement2.parameter.name}"
 
     class Meta:
         ordering = ['measurement1', 'measurement2']
