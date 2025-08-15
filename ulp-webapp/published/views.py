@@ -64,7 +64,7 @@ def parameter_set_table_view(request, pk):
     parameter_set = get_object_or_404(models.ParameterSet, pk=pk)
     measurements = get_accessible_measurements(request, parameter_set=parameter_set)
 
-    ulps = list({measurement.ulp for measurement in measurements})
+    ulps = sorted(list({measurement.ulp for measurement in measurements}), key=lambda ulp: ulp.name.lower())
     parameters = [parameter for parameter in parameter_set.parameters.all()]
 
     rows = {}
