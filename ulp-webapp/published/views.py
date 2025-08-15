@@ -194,7 +194,7 @@ def galactic_view(request):
     dm_dist_frac_err = float(request.GET.get('dm_dist_frac_err') or 0.3)
     include_gcrts = request.GET.get('include_gcrts') == "1" # This means: Include Ulp objects without known periods = _potential_ ULPs
 
-    parameter_set = get_object_or_404(models.ParameterSet, name="position")
+    parameter_set = get_object_or_404(models.ParameterSet, name="Position")
     measurements = get_accessible_measurements(request, parameter_set=parameter_set)
 
     if include_gcrts:
