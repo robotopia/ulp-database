@@ -146,3 +146,18 @@ h1, h2, h3, h4, h5 {
   pointer-events: none;
 }
 
+/* For simultaneous sub- and superscripts (asymmterical errors) */
+.supsub {
+  display: inline-block;
+}
+.supsub sup,
+.supsub sub {
+    position: relative;
+    display: block;
+    font-size: .5em;
+    line-height: 1.2;
+}
+
+.supsub sub {
+    top: .3em;
+}

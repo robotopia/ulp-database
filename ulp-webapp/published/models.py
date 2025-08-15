@@ -513,18 +513,20 @@ class Measurement(models.Model):
 
         else:
             quantity_str = f"{quantity}"
-            if err_hi:
-                quantity_str += f" (+{err_hi.quantize(precision)})"
-            if err_lo:
-                quantity_str += f" (-{err_lo.quantize(precision)})"
+            if err_hi or err_lo:
+                if err_hi == err_lo:
+                    quantity_str = f" ± {err_hi.quantize(precision)}" # Basically, same as just "err" above
+                else:
+                    # CSS class supsub is defined in published/static/published/published-style.css
+                    quantity_str += f"<span class='supsub'><sup>{err_hi.quantize(precision) if err_hi else '?'}</sup><sub>-{err_lo.quantize(precision) if err_lo else '?'}</sub></span>"
 
         if self.power_of_10 != 0:
             if err or err_hi or err_lo:
                 quantity_str = f"({quantity_str})"
             if quantity != Decimal('1'):
-                quantity_str += f" × 10^{self.power_of_10}"
+                quantity_str += f" × 10<sup>{self.power_of_10}</sup>"
             else:
-                quantity_str = f"10^{self.power_of_10}"
+                quantity_str = f"10<sup>{self.power_of_10}</sup>"
 
         retstr += f"{quantity_str}"
 
