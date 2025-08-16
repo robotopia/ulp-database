@@ -182,6 +182,18 @@ class Measurement(models.Model):
         on_delete=models.RESTRICT,
     )
 
+    body = models.CharField(
+        max_length=2,
+        null=True,
+        blank=True,
+        choices=[
+            ('1', 'Primary'),
+            ('2', 'Secondary'),
+            ('3', 'Tertiary'),
+        ],
+        help_text="If system contains more than one stellar body, which body this measurement pertains to.",
+    )
+
     ulp = models.ForeignKey(
         "Ulp",
         help_text="The ULP for to which this measurement applies",
