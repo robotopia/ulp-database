@@ -44,7 +44,7 @@ class ProgenitorAdmin(admin.ModelAdmin):
 @admin.register(ProgenitorClaim)
 class ProgenitorClaimAdmin(admin.ModelAdmin):
     list_display = ['pk', 'ulp', '__str__', 'article']
-    list_filter = ['ulp']
+    list_filter = ['ulp', 'progenitor']
 
 @admin.register(Ulp)
 class UlpAdmin(admin.ModelAdmin):
