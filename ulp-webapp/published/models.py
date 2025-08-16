@@ -179,6 +179,18 @@ class Measurement(models.Model):
     ACCESS_GROUP = 'G'
     ACCESS_PRIVATE = 'O'
 
+    BODY_TOTAL = 'T'
+    BODY_PRIMARY = '1'
+    BODY_SECONDARY = '2'
+    BODY_TERTIARY = '3'
+
+    BODY_CHOICES=[
+        ('T', 'Total'),
+        ('1', 'Primary'),
+        ('2', 'Secondary'),
+        ('3', 'Tertiary'),
+    ]
+
     parameter = models.ForeignKey(
         "Parameter",
         help_text="The parameter beaing measured",
@@ -190,12 +202,7 @@ class Measurement(models.Model):
         max_length=2,
         null=True,
         blank=True,
-        choices=[
-            ('T', 'Total'),
-            ('1', 'Primary'),
-            ('2', 'Secondary'),
-            ('3', 'Tertiary'),
-        ],
+        choices=BODY_CHOICES,
         help_text="If system contains more than one stellar body, which body or bodies this measurement pertains to.",
     )
 
