@@ -604,6 +604,31 @@ class Measurement(models.Model):
     def __str__(self):
         return self.formatted_quantity_with_units
 
+    def __mul__(self, other):
+        if instance(other, (int, float)):
+            parameter = Parameter(
+                astropy_unit=self.parameter.astropy_unit if self.parameter else None,
+            )
+            measurement = Measurement(
+                quantity=other*self.quantity,
+                parameter=parameter,
+                power_of_10=self.power_of_10,
+                err=(other*self.err) if self.err else None,
+                err_hi=(other*self.err_hi) if self.err_hi else None,
+                err_lo=(other*self.err_lo) if self.err_lo else None,
+                err_sigma_type=self.error_sigma_type,
+                lower_limit=self.lower_limit,
+                upper_limit=self.upper_limit,
+                error_is_range=self.error_is_range,
+                approximation=self.approximation,
+                special_display=self.special_display,
+            )
+            return measurement
+        else:
+            raise NotImplementedError
+
+    __rmul__ = __mul__
+
     class Meta:
         ordering = ['quantity', 'ulp', 'parameter', 'article']
 
