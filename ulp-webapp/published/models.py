@@ -163,7 +163,11 @@ class Parameter(models.Model):
         if u.Unit(self.astropy_unit) == u.dimensionless_unscaled:
             return None
 
-        return u.Unit(self.astropy_unit).to_string(format='unicode')
+        unicode_unit = u.Unit(self.astropy_unit).to_string(format='unicode')
+        if unicode_unit[-1] == '☉':
+            unicode_unit = f"{unicode_unit[:-1]}<sub>☉</sub>"
+
+        return unicode_unit
 
     class Meta:
         ordering = ['name']
@@ -187,11 +191,12 @@ class Measurement(models.Model):
         null=True,
         blank=True,
         choices=[
+            ('T', 'Total'),
             ('1', 'Primary'),
             ('2', 'Secondary'),
             ('3', 'Tertiary'),
         ],
-        help_text="If system contains more than one stellar body, which body this measurement pertains to.",
+        help_text="If system contains more than one stellar body, which body or bodies this measurement pertains to.",
     )
 
     ulp = models.ForeignKey(

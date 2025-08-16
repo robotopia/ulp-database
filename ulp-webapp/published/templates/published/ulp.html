@@ -68,7 +68,7 @@
     {% endfor %}
     {% for measurement in measurements.all %}
     <tr>
-        <td>{{ measurement.parameter }}</td>
+        <td>{{ measurement.parameter|safe }}{% if measurement.body %} ({{ measurement.get_body_display|default:''|lower }}){% endif %}</td>
         <td>{{ measurement.formatted_quantity_with_units|safe }}</td>
         <td>{{ measurement.confidence|default:'' }}</td>
         <td>{{ measurement.freq_band_display|default:'' }}</td>
