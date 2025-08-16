@@ -71,7 +71,8 @@ class WorkingEphemerisAdmin(admin.ModelAdmin):
 
 @admin.register(WorkingEphemerisCovariance)
 class WorkingEphemerisCovarianceAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'working_ephemeris__owner', 'working_ephemeris__ulp', 'pepoch_pepoch', 'p0_p0']
+    #list_display = ['pk', 'working_ephemeris__owner', 'working_ephemeris__ulp', 'pepoch_pepoch', 'p0_p0']
+    list_display = ['pk', 'pepoch_pepoch', 'p0_p0']
     list_filter = ['working_ephemeris__ulp', 'working_ephemeris__owner']
 
 @admin.register(Pulse)

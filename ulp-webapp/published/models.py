@@ -393,7 +393,7 @@ class Measurement(models.Model):
     ANGLE_HHMMSS = 'H'
     SPECTRAL_TYPE = 'S'
 
-    angle_display = models.CharField(
+    special_display = models.CharField(
         max_length=1,
         null=True,
         blank=True,
@@ -484,14 +484,14 @@ class Measurement(models.Model):
         # Now that the prefix is taken care of, consider the special case
         # of spectral type. Must be dimensionless
         if self.parameter.astropy_unit is None:
-            if self.angle_display == self.SPECTRAL_TYPE:
+            if self.special_display == self.SPECTRAL_TYPE:
                 spectral_class = "OBAFGKM"[int(self.quantity/10)]
                 spectral_subclass = self.quantity % 10
                 retstr += spectral_class
                 quantity = spectral_subclass.quantize(precision)
 
         if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
-            if self.angle_display == self.ANGLE_DDMMSS:
+            if self.special_display == self.ANGLE_DDMMSS:
                 angle = Angle(f'{self.quantity} {self.parameter.astropy_unit}').signed_dms
                 retstr += f'{angle.d:02.0f}:{angle.m:02.0f}:'
                 if round(angle.s) < 10: # zero padding for arcseconds
@@ -503,7 +503,7 @@ class Measurement(models.Model):
                     err_hi = (self.err_hi * 3600).quantize(precision)
                 if err_lo:
                     err_lo = (self.err_lo * 3600).quantize(precision)
-            if self.angle_display == self.ANGLE_HHMMSS:
+            if self.special_display == self.ANGLE_HHMMSS:
                 angle = Angle(f'{self.quantity} {self.parameter.astropy_unit}').hms
                 retstr += f'{angle.h:02.0f}:{angle.m:02.0f}:'
                 if round(angle.s) < 10: # zero padding for seconds
@@ -553,9 +553,9 @@ class Measurement(models.Model):
     def formatted_quantity_with_units(self):
 
         if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
-            if self.angle_display == self.ANGLE_DDMMSS:
+            if self.special_display == self.ANGLE_DDMMSS:
                 return f"{self.formatted_quantity}″"
-            if self.angle_display == self.ANGLE_HHMMSS:
+            if self.special_display == self.ANGLE_HHMMSS:
                 return f"{self.formatted_quantity} s"
 
         if self.parameter.unicode_unit is not None:

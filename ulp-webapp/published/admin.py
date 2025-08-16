@@ -25,7 +25,7 @@ class MeasurementAdmin(admin.ModelAdmin):
         ('Frequency', {'fields': ('freq_band', ('freq_lo', 'freq_ctr', 'freq_hi'), 'freq_astropy_units'), 'classes': ('collapse',)}),
         ('Polarisation', {'fields': ('stokes',), 'classes': ('collapse',)}),
         ('Publish', {'fields': ('owner', 'access', 'access_groups'), 'classes': ('collapse',)}),
-        ('Display options', {'fields': (('lower_limit', 'upper_limit'), 'error_is_range', 'approximation', 'angle_display',), 'classes': ('collapse',)}),
+        ('Display options', {'fields': (('lower_limit', 'upper_limit'), 'error_is_range', 'approximation', 'special_display',), 'classes': ('collapse',)}),
         ('Other', {'fields': ('notes',)}),
     )
 
