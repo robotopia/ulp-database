@@ -1,4 +1,6 @@
 from django import template
+from astropy.time import Time
+import astropy.units as u
 
 register = template.Library()
 
@@ -12,6 +14,13 @@ def get_item(dictionary, key):
 
 @register.filter
 def toa_format(obj, format):
-    if not obj.raw_mjd:
+    if not hasattr(obj, "raw_mjd"):
         return None
-    return Time(float(obj.raw_mjd), scale='utc', format='mjd').to_value(format)
+    t = Time(float(obj.raw_mjd), scale='utc', format='mjd')
+    #print(f'{t.to_value(format) = }')
+    return t.to_value(format)
+
+@register.filter
+def convert_unit(obj, arg_string):
+    from_unit, to_unit = arg_string.split(',')
+    return str((float(obj) * u.Unit(from_unit)).to(to_unit).value)

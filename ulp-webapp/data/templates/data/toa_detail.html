@@ -2,7 +2,7 @@
 
 {% load static %}
 
-{% load toa_format %}
+{% load custom_tags %}
 
 {% block body %}
 
@@ -11,11 +11,12 @@
 <div class="compact-form-item">
   <label for="raw-mjd">MJD</label>
   <input id="raw-mjd" name="raw_mjd" type="number" value="{{ toa.raw_mjd|default_if_none:'' }}"/>
-  <input id="raw-mjd" name="raw_mjd" type="number" value="{{ toa|toa_format:'iso'|default_if_none:'' }}"/>
+  <span>(ISO: {{ toa|toa_format:'iso'|default_if_none:'' }})</span>
 </div>
 <div class="compact-form-item">
   <label for="mjd-err">MJD error</label>
   <input id="mjd-err" name="mjd_err" type="number" value="{{ toa.mjd_err|default_if_none:'' }}"/>
+  <span>(= {{ toa.mjd_err|convert_unit:"d,s"|default_if_none:'' }} s)</span>
 </div>
 <div class="compact-form-item">
   <label for="telescope_name">Telescope</label>
