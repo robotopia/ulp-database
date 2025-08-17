@@ -45,7 +45,7 @@ sites = dict(zip(sites_reversed.values(), sites_reversed.keys()))
 # Add extra sites not in AstroPy's original list.
 # TODO -------------------  get better coordinates (these were just from map, e.g. Google)
 sites['Pushchino Observatory'] = EarthLocation.from_geodetic(37.619605*u.deg, 54.825089*u.deg)
-#sites['ATCA'] = EarthLocation.from_geodetic(-30.3132765*u.deg, 149.5623193*u.deg)
+sites['ATCA'] = EarthLocation.from_geodetic(149.5623193*u.deg, -30.3132765*u.deg)
 # END TODO ----------------
 
 site_names = sorted(sites.keys(), key=lambda x: x.lower())
