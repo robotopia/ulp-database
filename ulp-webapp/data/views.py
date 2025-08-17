@@ -37,7 +37,16 @@ import plotly.express as px
 #import plotly.graph_objects as go
 #from plotly.subplots import make_subplots
 
-site_names = sorted(EarthLocation.get_site_names(), key=str.casefold)
+# Curate list of supported telescope sites
+EarthLocation.__hash__ = lambda loc: hash((loc.x, loc.y, loc.y))
+sites_reversed = {EarthLocation.of_site(site_name): site_name for site_name in reversed(EarthLocation.get_site_names())}
+sites = dict(zip(sites_reversed.values(), sites_reversed.keys()))
+
+# Add extra sites not in AstroPy's original list.
+sites['Pushchino Observatory'] = EarthLocation.from_geodetic(37.619605*u.deg, 54.825089*u.deg)  # TODO: <--- get better coordinates (these were just from map)
+
+site_names = sorted(sites.keys(), key=lambda x: x.lower())
+
 
 # Defined at the database level
 toa_freq_units = "MHz"
@@ -226,8 +235,8 @@ def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, 
     predicted_topocentric_toas = predicted_barycentric_toas - bc_corr(coord, predicted_barycentric_toas)
     predicted_dispersed_toas = predicted_topocentric_toas + dmdelay
 
-    altaz = coord.transform_to(AltAz(obstime=predicted_dispersed_toas, location=EarthLocation.of_site(telescope)))
-    sun_altaz = [get_sun(predicted_dispersed_toas[i]).transform_to(AltAz(obstime=predicted_dispersed_toas[i], location=EarthLocation.of_site(telescope))) for i in range(len(predicted_barycentric_toas))]
+    altaz = coord.transform_to(AltAz(obstime=predicted_dispersed_toas, location=sites[telescope]))
+    sun_altaz = [get_sun(predicted_dispersed_toas[i]).transform_to(AltAz(obstime=predicted_dispersed_toas[i], location=sites[telescope])) for i in range(len(predicted_barycentric_toas))]
 
     # Set to the requested format
     predicted_barycentric_toas.format = output_toa_format
@@ -1142,14 +1151,14 @@ def folding_view(request, pk):
     for i in range(pulses.count()):
         pulse = pulses[i]
         lc    = pulse.lightcurve
-        pulse_times = barycentre(ulp, [pulse.mjd_start, pulse.mjd_end], EarthLocation.of_site(lc.telescope))
+        pulse_times = barycentre(ulp, [pulse.mjd_start, pulse.mjd_end], sites[lc.telescope])
         mjd_ctr = (pulse_times[1] + pulse_times[0])/2
         date  = Time(mjd_ctr, scale='utc', format='mjd').isot
 
         # The peak_value_MJD, however, is not guaranteed to exist,
         # so must be dealt with separately to catch errors
         try:
-            peak_value_MJD = barycentre(ulp, p.peak_value_MJD, EarthLocation.of_site(lc.telescope))
+            peak_value_MJD = barycentre(ulp, p.peak_value_MJD, sites[lc.telescope])
         except:
             peak_value_MJD = None
 
@@ -1485,7 +1494,7 @@ def download_toas(request, pk):
         telescope = lc.telescope
         freq = lc.freq
         # vvv Elaborate shenanigans to get BACK to topocentric ToAs
-        mjd = toa.toa_mjd + Decimal(lc.t0 - barycentre(ulp, [lc.t0], location=EarthLocation.of_site(lc.telescope))[0])
+        mjd = toa.toa_mjd + Decimal(lc.t0 - barycentre(ulp, [lc.t0], location=sites[lc.telescope])[0])
         mjd_err_us = toa.toa_err_s * 1e6
         backend = telescope
         ascii_content += f"\n{toa.pk} {freq:f} {mjd} {mjd_err_us} {backend}"

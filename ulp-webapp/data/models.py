@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from published import models as published_models
 import astropy.units as u
-from astropy.coordinates import SkyCoord, Angle, EarthLocation
+from astropy.coordinates import SkyCoord
 from astropy.time import Time
 import numpy as np
 from scipy.stats import vonmises, exponnorm
@@ -16,6 +16,7 @@ from decimal import Decimal
 from common.models import AbstractPermission
 from common.utils import barycentre, scale_to_frequency
 
+from .views import sites, site_names
 
 class Observation(AbstractPermission):
 
@@ -31,7 +32,7 @@ class Observation(AbstractPermission):
         max_length=255,
         null=True,
         blank=True,
-        help_text="The telescope that made this observation. Must match a string in AstroPy's EarthLocation.get_site_names().",
+        help_text="The telescope that made this observation.",
     )
 
     freq = models.FloatField(
@@ -94,8 +95,8 @@ class Observation(AbstractPermission):
 
     def clean(self):
         # Make sure the telescope is listed in Astropy
-        if self.telescope_name and self.telescope_name not in EarthLocation.get_site_names():
-            raise ValidationError(f"\"{self.telescope_name}\" is not found among AstroPy's EarthLocation's site names.")
+        if self.telescope_name and self.telescope_name not in site_names:
+            raise ValidationError(f"\"{self.telescope_name}\" is not found among supported site names.")
 
         # The following checks only apply to new observations
         if self.pk is None:
@@ -195,7 +196,7 @@ class TimeOfArrival(AbstractPermission):
         max_length=255,
         null=True,
         blank=True,
-        help_text="The telescope that made this detection. Must match a string in AstroPy's EarthLocation.get_site_names().",
+        help_text="The telescope that made this detection.",
     )
 
     freq = models.FloatField(
@@ -274,8 +275,8 @@ class TimeOfArrival(AbstractPermission):
         return f'{self.mjd} ({self.ulp})'
 
     def clean(self):
-        if self.telescope_name and self.telescope_name not in EarthLocation.get_site_names():
-            raise ValidationError(f"\"{self.telescope_name}\" is not found among AstroPy's EarthLocation's site names.")
+        if self.telescope_name and self.telescope_name not in site_names:
+            raise ValidationError(f"\"{self.telescope_name}\" is not found among supported sites.")
 
     class Meta:
         ordering = ['ulp', 'mjd']
@@ -468,7 +469,7 @@ class Lightcurve(AbstractPermission):
         max_length=255,
         null=True,
         blank=True,
-        help_text="The telescope that made this observation. Must match a string in AstroPy's EarthLocation.get_site_names().",
+        help_text="The telescope that made this observation.",
     )
 
     def dispersion_offset(self, dm):
@@ -518,7 +519,7 @@ class Lightcurve(AbstractPermission):
         times = barycentre(
             self.ulp,
             self.times(pol=pol, dm=dm),
-            EarthLocation.of_site(self.telescope),
+            sites[self.telescope],
         )
         return times
 
@@ -885,7 +886,7 @@ class Pulse(models.Model):
 
     def bary_start_end(self):
         # Converts the start and end times to barycentre
-        return barycentre(self.lightcurve.ulp, [self.mjd_start, self.mjd_end], EarthLocation.of_site(self.lightcurve.telescope))
+        return barycentre(self.lightcurve.ulp, [self.mjd_start, self.mjd_end], sites[self.lightcurve.telescope])
 
     def __str__(self) -> str:
         return f"Pulse ({self.mjd_start}-{self.mjd_end}) for {self.lightcurve}"
