@@ -603,7 +603,7 @@ class Measurement(models.Model):
         if self.freq_band:
             return f'{self.freq_band.symbol}'
         if self.freq_lo and self.freq_hi:
-            return f'{self.lo} - {self.hi} {self.freq_astropy_units}'
+            return f'{self.freq_lo} - {self.freq_hi} {self.freq_astropy_units}'
         if self.freq_ctr:
             return f'{self.freq_ctr} {self.freq_astropy_units}'
         return None
