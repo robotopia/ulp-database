@@ -73,28 +73,6 @@ def ephemeris_to_skycoord(ephemeris):
 
     return coord
 
-def bc_corr(coord, times, ephemeris_file='de430.bsp'):
-    '''
-    coord = SkyCoord object (from astropy) representing the location of the source
-    times = Time array of MJDs
-    ephemeris_file = e.g. de430.bsp
-    '''
-    try:
-        furnsh(ephemeris_file)
-    except:
-        raise Exception("Cannot load ephemeris file {}\n".format(ephemeris_file))
-    #jds = times.mjd + 2400000.5
-    ets = (times.jd - j2000())*spd()
-    r_earths = [spkezr("earth", et, "j2000", "NONE", "solar system barycenter")[0][:3] for et in ets]
-    r_src_normalised = [
-        np.cos(coord.ra.rad)*np.cos(coord.dec.rad),
-        np.sin(coord.ra.rad)*np.cos(coord.dec.rad),
-        np.sin(coord.dec.rad),
-    ]
-    delays = np.array([np.dot(r_earth, r_src_normalised) for r_earth in r_earths]) * u.km / c # (spkezr returns km)
-
-    return delays
-
 
 def calc_pulse_phase(time, ephemeris):
     '''
@@ -144,8 +122,8 @@ def toa_data(user, we):
     toas = permitted_to_view_filter(models.TimeOfArrival.objects.filter(ulp=we.ulp, raw_mjd__isnull=False, freq__isnull=False), user)
 
     # Barycentre
-    mjds = Time([float(toa.raw_mjd) for toa in toas], format='mjd')
-    bc_corrections = bc_corr(we.coord, mjds).to('day').value
+    mjds = Time([Time(float(toa.raw_mjd), scale='utc', format='mjd', location=EarthLocation.of_site(toa.telescope_name)) for toa in toas])
+    bc_corrections = mjds.light_travel_time(we.coord, ephemeris='jpl').to('day').value
 
     toas_data = [
         {
@@ -179,8 +157,8 @@ def obs_data(request, we_pk):
     obss = permitted_to_view_filter(models.Observation.objects.filter(ulps=we.ulp, freq__isnull=False), request.user)
 
     # Barycentre
-    mjds = Time([float(obs.start_mjd) for obs in obss], format='mjd') + ([obs.duration for obs in obss] * u.s)/2
-    bc_corrections = bc_corr(we.coord, mjds).to('day').value
+    mjds = Time([Time(float(obs.start_mjd), scale='utc', format='mjd', location=EarthLocation.of_site(obs.telescope_name)) + obs.duration*u.s/2 for obs in obss])
+    bc_corrections = mjds.light_travel_time(we.coord, ephemeris='jpl').to('day').value
 
     obss_json = [
         {
@@ -218,12 +196,14 @@ def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, 
     if start >= end:
         return []
 
+    location = sites[telescope]
+
     # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
     # so to get the right range, convert them to dedispersed, barycentric
-    time_range = Time([start, end])
+    time_range = Time([start, end], location=telescope)
     dmdelay = calc_dmdelay(dm, freq, np.inf*u.MHz)
     time_range -= dmdelay
-    time_range += bc_corr(coord, time_range)
+    time_range += time_range.light_travel_time(coord, ephemeris='jpl')
 
     ephemeris = {
         'ra': coord.ra.deg,
@@ -235,7 +215,7 @@ def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, 
     }
 
     predicted_barycentric_toas = generate_toas(time_range[0], time_range[1], ephemeris)
-    predicted_topocentric_toas = predicted_barycentric_toas - bc_corr(coord, predicted_barycentric_toas)
+    predicted_topocentric_toas = predicted_barycentric_toas - predicted_barycentric_toas.light_travel_time(coord, ephemeris='jpl')
     predicted_dispersed_toas = predicted_topocentric_toas + dmdelay
 
     altaz = coord.transform_to(AltAz(obstime=predicted_dispersed_toas, location=sites[telescope]))
@@ -397,6 +377,9 @@ def timing_residual_view(request, pk):
         'p0': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Period", article__isnull=False),
         'p1': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Period derivative", article__isnull=False),
         'dm': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Dispersion measure", article__isnull=False),
+        'p_aw': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Activity window: period", article__isnull=False),
+        't0_aw': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Activity window: reference epoch", article__isnull=False),
+        'duration_aw': published_models.Measurement.objects.filter(ulp=ulp, parameter__name="Activity window: duration", article__isnull=False),
     }
 
     # Construct a dictionary out of the ephemeris
@@ -407,6 +390,9 @@ def timing_residual_view(request, pk):
         'p0': selected_working_ephemeris.p0,
         'p1': selected_working_ephemeris.p1 or 0.0,
         'dm': selected_working_ephemeris.dm,
+        'p_aw': selected_working_ephemeris.p_aw or 0.0,
+        't0_aw': selected_working_ephemeris.t0_aw or 0.0,
+        'duration_aw': selected_working_ephemeris.duration_aw or 0.0,
     }
     coord = selected_working_ephemeris.coord
 
@@ -467,6 +453,9 @@ def timing_residual_view(request, pk):
         ephemeris['dm'] = dm
         ephemeris['ra'] = ra
         ephemeris['dec'] = dec
+        ephemeris['p_aw'] = p_aw
+        ephemeris['t0_aw'] = t0_aw
+        ephemeris['duration_aw'] = duration_aw
 
         # If they've also provided other form values, make a table of predicted values
         if mjd_start is not None and mjd_end is not None and mjd_dispersion_frequency is not None and pepoch is not None and p0 is not None and telescope is not None:
@@ -1284,7 +1273,7 @@ def update_selected_working_ephemeris(request):
 
         new_ephemeris_values = {} # This is for returning to the client so that webpage values can be updated
 
-        for field in ['ra', 'dec', 'pepoch', 'p0', 'p1', 'dm']:
+        for field in ['ra', 'dec', 'pepoch', 'p0', 'p1', 'dm', 'p_aw', 't0_aw', 'duration_aw']:
             try:
                 if data[f'select_{field}'] == False:
                     continue

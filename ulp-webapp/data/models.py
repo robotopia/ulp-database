@@ -650,6 +650,27 @@ class WorkingEphemeris(AbstractPermission):
         verbose_name="Orbital period",
     )
 
+    p_aw = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The activity window period (h)",
+        verbose_name="Activity window period",
+    )
+
+    t0_aw = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The activity window reference epoch (MJD)",
+        verbose_name="Activity window epoch",
+    )
+
+    duration_aw = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="The activity window duration (h)",
+        verbose_name="Activity window duration",
+    )
+
     dm = models.FloatField(
         null=True,
         blank=True,
