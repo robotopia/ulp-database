@@ -161,7 +161,7 @@
     </select>
   </div>
 
-  <input type="submit" class="btn btn-primary" value="Generate TOAs"/>
+  <input type="submit" class="btn btn-primary" value="Generate ToAs"/>
 </form>
 
 {% if predicted_toas %}
@@ -172,6 +172,7 @@
     <th>Topocentric TOA at {{ mjd_dispersion_frequency }} MHz<br>for DM = {{ ephemeris.dm }} pc/cm3 (<a class="col2 copy-col" href='#'>copy</a>)</th>
     <th>Source elevation (°)<br>(<a class="col3 copy-col" href='#'>copy</a>)</th>
     <th>Sun elevation (°)</th>
+    <th>Activity window phase</th>
   </tr>
   {% for predicted_toa in predicted_toas %}
   <tr>
@@ -180,6 +181,7 @@
     <td>{{ predicted_toa.topo_disp }}</td>
     <td>{{ predicted_toa.elevation }}</td>
     <td>{{ predicted_toa.sun_elevation }}</td>
+    <td>{{ predicted_toa.aw_phase }}</td>
   </tr>
   {% endfor %}
 </table>

@@ -191,7 +191,7 @@ def timing_choose_ulp_view(request):
     return render(request, 'data/timing_choose_ulp.html', context)
 
 
-def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, output_toa_format='mjd', min_el=0, max_sun_el=90):
+def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, output_toa_format='mjd', min_el=0, max_sun_el=90, p_aw=None, t0_aw=None, duration_aw=None):
 
     if start >= end:
         return []
@@ -200,10 +200,10 @@ def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, 
 
     # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
     # so to get the right range, convert them to dedispersed, barycentric
-    time_range = Time([start, end], location=telescope)
+    time_range = Time([start, end])
     dmdelay = calc_dmdelay(dm, freq, np.inf*u.MHz)
     time_range -= dmdelay
-    time_range += time_range.light_travel_time(coord, ephemeris='jpl')
+    time_range += time_range.light_travel_time(coord, ephemeris='jpl', location=sites[telescope])
 
     ephemeris = {
         'ra': coord.ra.deg,
@@ -215,11 +215,27 @@ def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, 
     }
 
     predicted_barycentric_toas = generate_toas(time_range[0], time_range[1], ephemeris)
-    predicted_topocentric_toas = predicted_barycentric_toas - predicted_barycentric_toas.light_travel_time(coord, ephemeris='jpl')
+    predicted_topocentric_toas = predicted_barycentric_toas - predicted_barycentric_toas.light_travel_time(coord, ephemeris='jpl', location=sites[telescope])
     predicted_dispersed_toas = predicted_topocentric_toas + dmdelay
 
     altaz = coord.transform_to(AltAz(obstime=predicted_dispersed_toas, location=sites[telescope]))
     sun_altaz = [get_sun(predicted_dispersed_toas[i]).transform_to(AltAz(obstime=predicted_dispersed_toas[i], location=sites[telescope])) for i in range(len(predicted_barycentric_toas))]
+
+    # If all necessary activity window values are provided, only choose toas
+    # within the activity window
+    if p_aw and t0_aw and duration_aw:
+        # Apply units
+        p_aw *= u.h
+        t0_aw = Time(t0_aw, scale='utc', format='mjd')
+        duration_aw *= u.h
+
+        aw_number, aw_phase = np.divmod(((predicted_barycentric_toas - t0_aw)/p_aw).decompose() + 0.5, 1)
+        aw_phase -= 0.5
+        aw_phase_max = (0.5*duration_aw/p_aw).decompose()
+        aw_phase_min = -aw_phase_max
+    else:
+        aw_phase = np.zeros(predicted_barycentric_toas.shape)
+        aw_phase_min, aw_phase_max = -0.5, 0.5
 
     # Set to the requested format
     predicted_barycentric_toas.format = output_toa_format
@@ -233,7 +249,12 @@ def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, 
             'topo_disp': predicted_dispersed_toas[i],
             'elevation': int(np.round(altaz[i].alt.value)),
             'sun_elevation': int(np.round(sun_altaz[i].alt.value)),
-        } for i in range(len(predicted_barycentric_toas)) if altaz[i].alt.value >= min_el and sun_altaz[i].alt.value < max_sun_el
+            'aw_phase': aw_phase[i],
+        } for i in range(len(predicted_barycentric_toas)) if (
+            altaz[i].alt.value >= min_el and
+            sun_altaz[i].alt.value < max_sun_el and
+            aw_phase[i] >= aw_phase_min and
+            aw_phase[i] <= aw_phase_max)
     ]
 
     return predicted_toas
@@ -421,6 +442,9 @@ def timing_residual_view(request, pk):
         dm = float(request.POST.get('dm', '0.0'))
         ra = request.POST.get('ra', '00:00:00')
         dec = request.POST.get('dec', '00:00:00')
+        p_aw = float(request.POST.get('p_aw', '0.0'))
+        t0_aw = float(request.POST.get('t0_aw', '0.0'))
+        duration_aw = float(request.POST.get('duration_aw', '0.0'))
 
         mjd_start_format = request.POST.get('mjd-start-format')
         mjd_end_format = request.POST.get('mjd-end-format')
@@ -470,8 +494,11 @@ def timing_residual_view(request, pk):
                 telescope,                           # Telescope string
                 coord,                               # Target source coordinates
                 output_toa_format=output_toa_format, # Desired output ToA format
-                min_el=min_el,
-                max_sun_el=max_sun_el,
+                min_el=min_el,                       # Minimum source elevation
+                max_sun_el=max_sun_el,               # Maximum Sun elevation
+                p_aw=p_aw,                           # Activity window period (hours)
+                t0_aw=t0_aw,                         # Activity window reference epoch (MJD)
+                duration_aw=duration_aw,             # Activity window duration (hours)
             )
 
         context['mjd_dispersion_frequency'] = mjd_dispersion_frequency
