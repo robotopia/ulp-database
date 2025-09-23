@@ -236,13 +236,17 @@ function set_residual_plot_dimensions(plot, xlim, ylim, margins, ephemeris) {
   plot.zero_residual_path.attr("d", "M 0," + plot.y(0) + " l " + plot.width + ",0");
 }
 
-function add_residual_data(plot, json_url, appearance, ephemeris, barycentre, label) {
+function add_residual_data(plot, json_url, appearance, ephemeris, barycentre, label, loader_element) {
   // plot should be an object returned by create_residual_plot_elements()
   // json_url should return a JSON object of the form:
   //     [{mjd: 60001.0, mjd_err: 1e-4, bc_correction: 0.001, freq_MHz: 200.0}, ... ]
   // appearance should be ... TODO
   // ephemeris should be an object of the form:
   //     {p0: 1000.0, pepoch: 60000.0, dm: 100.0, p1: 1e-12}
+
+  if (typeof loader_element !== "undefined") {
+    loader_element.style.display = "block";
+  }
 
   d3.json(json_url, function(data) {
 
@@ -272,7 +276,12 @@ function add_residual_data(plot, json_url, appearance, ephemeris, barycentre, la
     plot[label].appearance = appearance;
 
     position_residual_data(plot, ephemeris, barycentre, label);
+
+    if (typeof loader_element !== "undefined") {
+      loader_element.style.display = "none";
+    }
   });
+
 }
 
 function add_covariance_err_data(plot, ephemeris, covariance) {

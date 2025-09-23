@@ -39,13 +39,13 @@ import plotly.express as px
 
 # Curate list of supported telescope sites
 EarthLocation.__hash__ = lambda loc: hash((loc.x, loc.y, loc.y))
-sites_reversed = {EarthLocation.of_site(site_name): site_name for site_name in reversed(EarthLocation.get_site_names())}
+sites_reversed = {EarthLocation.of_site(site_name): site_name.lower() for site_name in reversed(EarthLocation.get_site_names())}
 sites = dict(zip(sites_reversed.values(), sites_reversed.keys()))
 
 # Add extra sites not in AstroPy's original list.
 # TODO -------------------  get better coordinates (these were just from map, e.g. Google)
-sites['Pushchino Observatory'] = EarthLocation.from_geodetic(37.619605*u.deg, 54.825089*u.deg)
-sites['ATCA'] = EarthLocation.from_geodetic(149.5623193*u.deg, -30.3132765*u.deg)
+sites['pushchino observatory'] = EarthLocation.from_geodetic(37.619605*u.deg, 54.825089*u.deg)
+sites['atca'] = EarthLocation.from_geodetic(149.5623193*u.deg, -30.3132765*u.deg)
 # END TODO ----------------
 
 site_names = sorted(sites.keys(), key=lambda x: x.lower())
@@ -156,22 +156,27 @@ def obs_data(request, we_pk):
     # Get the ToAs that this user is allowed to view
     obss = permitted_to_view_filter(models.Observation.objects.filter(ulps=we.ulp, freq__isnull=False), request.user)
 
-    # Barycentre
-    mjds = Time([Time(float(obs.start_mjd), scale='utc', format='mjd', location=EarthLocation.of_site(obs.telescope_name)) + obs.duration*u.s/2 for obs in obss])
-    bc_corrections = mjds.light_travel_time(we.coord, ephemeris='jpl').to('day').value
+    if obss.exists():
 
-    obss_json = [
-        {
-            'obsid': obss[i].obsid,
-            'mjd': float(mjds[i].mjd),
-            'mjd_err': obss[i].duration/86400/2,
-            'freq_MHz': float(obss[i].freq),
-            'bc_correction': bc_corrections[i],
-            'detail_link': obss[i].obsid,  # TODO: Change me!
-        } for i in range(len(obss))
-    ]
+        # Barycentre
+        mjds = Time([Time(float(obs.start_mjd), scale='utc', format='mjd') + obs.duration*u.s/2 for obs in obss])
+        bc_corrections = [mjds[i].light_travel_time(we.coord, ephemeris='jpl', location=sites[obss[i].telescope_name.lower()]).to('day').value for i in range(len(mjds))]
 
-    return JsonResponse(obss_json, safe=False)
+        obss_json = [
+            {
+                'obsid': obss[i].obsid,
+                'mjd': float(mjds[i].mjd),
+                'mjd_err': obss[i].duration/86400/2,
+                'freq_MHz': float(obss[i].freq),
+                'bc_correction': bc_corrections[i],
+                'detail_link': obss[i].obsid,  # TODO: Change me!
+            } for i in range(len(obss))
+        ]
+
+        return JsonResponse(obss_json, safe=False)
+
+    # If reach here, no observations for this object
+    return JsonResponse([], safe=False)
 
 
 @login_required
@@ -196,14 +201,14 @@ def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, 
     if start >= end:
         return []
 
-    location = sites[telescope]
+    location = sites[telescope.lower()]
 
     # First, assume the given mjd_start and mjd_end are in fact topocentric dispersed MJDs,
     # so to get the right range, convert them to dedispersed, barycentric
     time_range = Time([start, end])
     dmdelay = calc_dmdelay(dm, freq, np.inf*u.MHz)
     time_range -= dmdelay
-    time_range += time_range.light_travel_time(coord, ephemeris='jpl', location=sites[telescope])
+    time_range += time_range.light_travel_time(coord, ephemeris='jpl', location=sites[telescope.lower()])
 
     ephemeris = {
         'ra': coord.ra.deg,
@@ -215,11 +220,11 @@ def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, 
     }
 
     predicted_barycentric_toas = generate_toas(time_range[0], time_range[1], ephemeris)
-    predicted_topocentric_toas = predicted_barycentric_toas - predicted_barycentric_toas.light_travel_time(coord, ephemeris='jpl', location=sites[telescope])
+    predicted_topocentric_toas = predicted_barycentric_toas - predicted_barycentric_toas.light_travel_time(coord, ephemeris='jpl', location=sites[telescope.lower()])
     predicted_dispersed_toas = predicted_topocentric_toas + dmdelay
 
-    altaz = coord.transform_to(AltAz(obstime=predicted_dispersed_toas, location=sites[telescope]))
-    sun_altaz = [get_sun(predicted_dispersed_toas[i]).transform_to(AltAz(obstime=predicted_dispersed_toas[i], location=sites[telescope])) for i in range(len(predicted_barycentric_toas))]
+    altaz = coord.transform_to(AltAz(obstime=predicted_dispersed_toas, location=sites[telescope.lower()]))
+    sun_altaz = [get_sun(predicted_dispersed_toas[i]).transform_to(AltAz(obstime=predicted_dispersed_toas[i], location=sites[telescope.lower()])) for i in range(len(predicted_barycentric_toas))]
 
     # If all necessary activity window values are provided, only choose toas
     # within the activity window
@@ -1170,14 +1175,14 @@ def folding_view(request, pk):
     for i in range(pulses.count()):
         pulse = pulses[i]
         lc    = pulse.lightcurve
-        pulse_times = barycentre(ulp, [pulse.mjd_start, pulse.mjd_end], sites[lc.telescope])
+        pulse_times = barycentre(ulp, [pulse.mjd_start, pulse.mjd_end], sites[lc.telescope.lower()])
         mjd_ctr = (pulse_times[1] + pulse_times[0])/2
         date  = Time(mjd_ctr, scale='utc', format='mjd').isot
 
         # The peak_value_MJD, however, is not guaranteed to exist,
         # so must be dealt with separately to catch errors
         try:
-            peak_value_MJD = barycentre(ulp, p.peak_value_MJD, sites[lc.telescope])
+            peak_value_MJD = barycentre(ulp, p.peak_value_MJD, sites[lc.telescope.lower()])
         except:
             peak_value_MJD = None
 
@@ -1513,7 +1518,7 @@ def download_toas(request, pk):
         telescope = lc.telescope
         freq = lc.freq
         # vvv Elaborate shenanigans to get BACK to topocentric ToAs
-        mjd = toa.toa_mjd + Decimal(lc.t0 - barycentre(ulp, [lc.t0], location=sites[lc.telescope])[0])
+        mjd = toa.toa_mjd + Decimal(lc.t0 - barycentre(ulp, [lc.t0], location=sites[lc.telescope.lower()])[0])
         mjd_err_us = toa.toa_err_s * 1e6
         backend = telescope
         ascii_content += f"\n{toa.pk} {freq:f} {mjd} {mjd_err_us} {backend}"

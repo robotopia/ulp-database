@@ -19,7 +19,9 @@
   </div>
 </nav>
 
-<div id="residual-plot" style="height: 500px;" class="{% if request.user.setting %}{{ request.user.setting.get_site_theme_display|lower|default_if_none:'dark' }}{% else %}dark{% endif %}"></div>
+<div id="residual-plot" style="position: relative; height: 500px;" class="{% if request.user.setting %}{{ request.user.setting.get_site_theme_display|lower|default_if_none:'dark' }}{% else %}dark{% endif %}">
+  <div id="plot-loader" class="loader" style="display: none;"></div>
+</div>
 
 <fieldset id="plot_settings">
   <legend>Plot settings</legend>
@@ -385,7 +387,8 @@
     },
     ephemeris,
     barycentre_element.checked,
-    "ToAs"
+    "ToAs",
+    document.getElementById("plot-loader")
   );
   add_residual_data(plot,
     "{% url 'obs_data' we_pk=selected_working_ephemeris.pk %}",
@@ -397,8 +400,10 @@
     },
     ephemeris,
     barycentre_element.checked,
-    "Observations"
+    "Observations",
+    document.getElementById("plot-loader")
   );
+  console.log("Just exited add_residual_data(): ", plot["Observations"]);
   add_covariance_err_data(plot, ephemeris, covariance.matrix);
   position_covariance_err(plot);
 
@@ -543,5 +548,31 @@
   }, true);
 
 </script>
+
+<style>
+.loader {
+  position: absolute;
+  top: calc(50% - 30px);
+  left: calc(50% - 30px);
+  border: 8px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 8px solid #3498db;
+  width: 60px;
+  height: 60px;
+  -webkit-animation: spin 2s linear infinite; /* Safari */
+  animation: spin 2s linear infinite;
+}
+
+/* Safari */
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
 
 {% endblock %}
