@@ -122,7 +122,7 @@ def toa_data(user, we):
     toas = permitted_to_view_filter(models.TimeOfArrival.objects.filter(ulp=we.ulp, raw_mjd__isnull=False, freq__isnull=False), user)
 
     # Barycentre
-    mjds = Time([Time(float(toa.raw_mjd), scale='utc', format='mjd', location=EarthLocation.of_site(toa.telescope_name)) for toa in toas])
+    mjds = Time([Time(float(toa.raw_mjd), scale='utc', format='mjd', location=sites[toa.telescope_name.lower()]) for toa in toas])
     bc_corrections = mjds.light_travel_time(we.coord, ephemeris='jpl').to('day').value
 
     toas_data = [
