@@ -39,8 +39,7 @@ import plotly.express as px
 
 # Curate list of supported telescope sites
 EarthLocation.__hash__ = lambda loc: hash((loc.x, loc.y, loc.y))
-sites_reversed = {EarthLocation.of_site(site_name): site_name.lower() for site_name in reversed(EarthLocation.get_site_names())}
-sites = dict(zip(sites_reversed.values(), sites_reversed.keys()))
+sites = {site_name.lower(): EarthLocation.of_site(site_name) for site_name in EarthLocation.get_site_names()}
 
 # Add extra sites not in AstroPy's original list.
 # TODO -------------------  get better coordinates (these were just from map, e.g. Google)
