@@ -298,7 +298,7 @@ def get_toa_predictions_json(request):
         return JsonResponse({'message': f"Must provide a telescope"}, status=400)
     telescope = telescope.lower()
     if telescope not in site_names:
-        return JsonResponse({'message': f"{telescope} not in list of 'site names':\n\t'{'\', \''.join(sorted(sites))}\'"}, status=400)
+        return JsonResponse({'message': f"{telescope} not in list of 'site names':\n\t'{', '.join(sorted(sites))}'"}, status=400)
 
     try:
         min_el = float(request.GET.get("min_el", 0))
