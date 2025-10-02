@@ -253,7 +253,7 @@ def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, 
             'topo_disp': predicted_dispersed_toas[i],
             'elevation': int(np.round(altaz[i].alt.value)),
             'sun_elevation': int(np.round(sun_altaz[i].alt.value)),
-            'aw_phase': aw_phase[i],
+            'aw_phase': aw_phase[i].value,
         } for i in range(len(predicted_barycentric_toas)) if (
             altaz[i].alt.value >= min_el and
             sun_altaz[i].alt.value < max_sun_el and
@@ -278,9 +278,12 @@ def get_toa_predictions_json(request):
 
     input_date_format = request.GET.get('input_date_format', default_date_format)
     if input_date_format not in Time.FORMATS.keys():
-        return JsonResponse({'message': f"{input_date_format} is not a valid AstroPy date format. Please select one of the following (default='{default_date_format}'):\n{', '.join(list(Time.FORMATS.keys()))}"}, status=400)
+        return JsonResponse({'message': f"{input_date_format} is not a valid AstroPy date format. Please select one of the following (default='{default_date_format}'):\n\t{', '.join(list(Time.FORMATS.keys()))}"}, status=400)
 
     output_toa_format = request.GET.get('output_toa_format', default_date_format)
+    if output_toa_format not in Time.FORMATS.keys():
+        return JsonResponse({'message': f"{output_toa_format} is not a valid AstroPy date format. Please select one of the following (default='{default_date_format}'):\n\t{', '.join(list(Time.FORMATS.keys()))}"}, status=400)
+
 
     start = Time(request.GET.get("start"), scale='utc', format=input_date_format)
     end = Time(request.GET.get("end"), scale='utc', format=input_date_format)
@@ -293,8 +296,9 @@ def get_toa_predictions_json(request):
     telescope = request.GET.get("telescope")
     if telescope is None:
         return JsonResponse({'message': f"Must provide a telescope"}, status=400)
+    telescope = telescope.lower()
     if telescope not in site_names:
-        return JsonResponse({'message': f"{telescope} not in AstroPy's list of 'site names'"}, status=400)
+        return JsonResponse({'message': f"{telescope} not in list of 'site names':\n\t'{'\', \''.join(sorted(sites))}\'"}, status=400)
 
     try:
         min_el = float(request.GET.get("min_el", 0))
@@ -317,6 +321,9 @@ def get_toa_predictions_json(request):
     p0 = working_ephemeris.p0
     p1 = working_ephemeris.p1 or 0.0
     dm = working_ephemeris.dm * u.pc / u.cm**3
+    p_aw = working_ephemeris.p_aw
+    t0_aw = working_ephemeris.t0_aw
+    duration_aw = working_ephemeris.duration_aw
 
     predictions = get_toa_predictions(
         start,
@@ -331,6 +338,9 @@ def get_toa_predictions_json(request):
         output_toa_format=output_toa_format,
         min_el=min_el,
         max_sun_el=max_sun_el,
+        p_aw=p_aw,                           # Activity window period (hours)
+        t0_aw=t0_aw,                         # Activity window reference epoch (MJD)
+        duration_aw=duration_aw,             # Activity window duration (hours)
     )
     
     for prediction in predictions:
