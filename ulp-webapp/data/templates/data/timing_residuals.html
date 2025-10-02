@@ -394,9 +394,10 @@
     "{% url 'obs_data' we_pk=selected_working_ephemeris.pk %}",
     {
       color: observation_color_element.value,
-      display_points: false,
+      display_points: display_obs_element.checked,
       display_err: display_obs_element.checked,
       stroke_width: "2",
+      circle_radius: 2,
     },
     ephemeris,
     barycentre_element.checked,
