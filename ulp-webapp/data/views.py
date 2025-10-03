@@ -238,7 +238,7 @@ def get_toa_predictions(start, end, freq, pepoch, p0, p1, dm, telescope, coord, 
         aw_phase_max = (0.5*duration_aw/p_aw).decompose()
         aw_phase_min = -aw_phase_max
     else:
-        aw_phase = np.zeros(predicted_barycentric_toas.shape)
+        aw_phase = u.Quantity(np.zeros(predicted_barycentric_toas.shape))
         aw_phase_min, aw_phase_max = -0.5, 0.5
 
     # Set to the requested format
