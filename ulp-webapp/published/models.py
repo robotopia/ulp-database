@@ -107,7 +107,9 @@ class Article(models.Model):
 
     @property
     def doi_url(self):
-        return "https://doi.org/" + self.doi
+        if self.doi:
+            return "https://doi.org/" + self.doi
+        return ''
 
     def __str__(self):
         return self.citet_text

@@ -8,7 +8,7 @@
 
 <ul>
   {% for article in articles %}
-  <li id="ref_{{ article.pk }}"><b>{{ article.citet_text }}</b>, <i>{{ article.title }}</i>, doi:<a href="{{ article.doi_url }}">{{ article.doi }}</a></li>
+  <li id="ref_{{ article.pk }}"><b>{{ article.citet_text }}</b>, <i>{{ article.title }}</i>, doi:<a href="{{ article.doi_url|default:'' }}">{{ article.doi|default:'' }}</a></li>
   {% endfor %}
 </ul>
 
