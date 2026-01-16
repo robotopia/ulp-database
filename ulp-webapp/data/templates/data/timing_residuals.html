@@ -308,6 +308,7 @@
 
   function update_observation_color() {
     plot["Observations"].appearance.color = observation_color_element.value;
+    plot["Observations"].points.style("fill", observation_color_element.value);
     plot["Observations"].err.style("stroke", observation_color_element.value);
     localStorage.setItem("observation_color", observation_color_element.value);
   }
