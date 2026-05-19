@@ -17,6 +17,7 @@ LPT Documentation
         <li><a href="#supported-toa-file-formats">Supported ToA file formats</a></li>
       </ul>
       <li><a href="#generate-toas">Generating ToA predictions from the command line</a></li>
+      <li><a href="#uploading-observations">Uploading Observations from the command line</a></li>
     </ul>
   </div>
 
@@ -152,6 +153,67 @@ if response.status_code != 200:
 
 toas = response.json()
 print(toas)</code></pre>
+    </details>
+
+    <hr>
+
+    <h1 id="uploading-observations">Uploading Observations from the command line</h1>
+
+    <p> Here is the csv file you need to prepare for the upload:</p>
+    <details style="border: 1px solid black; padding: 3px;">
+      <summary>Example csv file for uploading observations</summary>
+      <pre style="border: 1px solid black; padding: 3px;"><code>telescope,obsid,freq,bw,start_mjd,duration
+mwa,SB12345,900,288,50000.0,100
+mwa,SB12346,900,288,50001.0,100</code></pre>
+    </details>
+    
+    <p>Here is an example Python script for uploading observations to the website:</p>
+
+    <details style="border: 1px solid black; padding: 3px;">
+      <summary>Example script for uploading observations</summary>
+      <pre style="border: 1px solid black; padding: 3px;"><code>import argparse
+import requests
+
+url = "https://lpt.mwa-image-plane.cloud.edu.au/data/api/write_observations"
+
+def main():
+    parser = argparse.ArgumentParser(description="Upload Observations to the LPT website")
+    parser.add_argument('-s', '--LPT', help="The LPT to associate these Observations with. Must be the exact name as given on the website.")
+    parser.add_argument('-f', '--Observations_file', help="The file of Observations to upload")
+    parser.add_argument('-t', '--token', help="The user's token for the website (go to Settings)")
+    parser.add_argument('-g', '--group', help="View Group for this observation", default=None)
+    
+    args = parser.parse_args()
+
+    headers = {
+        "Authorization": f"Token {args.token}",
+        "Accept": "application/json",
+    }
+
+    data = {
+        'lpt': args.LPT,
+        # 'group': args.group,
+    }
+
+    if args.group is not None:
+        data['group'] = args.group
+
+    with open(args.Observations_file, 'rb') as f:
+        files = {'obsfile': (args.Observations_file, f)}
+        try:
+            response = requests.post(url, headers=headers, data=data, files=files, stream=True)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            try:
+                error = response.json()
+                print("Error:", error.get("detail", error))
+            except ValueError:
+                print("Non-JSON error:", response.text)
+            raise
+
+
+if __name__ == '__main__':
+    main()</code></pre>
     </details>
 
   </div>
