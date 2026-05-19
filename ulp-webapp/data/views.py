@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.db.models import Q, Value, BooleanField
 from django.urls import reverse
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import User, Group
 from . import models
 from . import serializers
 from common.utils import *
@@ -1913,3 +1914,67 @@ def write_toas(request):
             toa.save()
 
     return JsonResponse('Success', safe=False, status=200)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def write_observations(request):
+    """
+    data format what you need is
+    telescope name, obsid, frequency, bandwidth, start mjd, duration
+    """
+    if "obsfile" not in request.FILES:
+        raise rest_exceptions.ParseError("No file uploaded")
+
+    obsfile = request.FILES["obsfile"]
+    
+    ### get group info
+    viewgroup = Group.objects.filter(name=request.data.get('group')).first() if request.data.get('group') else None
+
+    ### currently assume format is csv...
+    ulp = published_models.Ulp.objects.filter(name=request.data.get('lpt')).first()
+    if ulp is None:
+        raise rest_exceptions.ParseError(f"Unrecognised LPT: '{request.data.get('lpt')}'")
+
+    data = pd.read_csv(obsfile)
+    required_columns = ['telescope', 'obsid', 'freq', 'bw', 'start_mjd', 'duration']
+    # note - start_gps will be calculated automatically...
+    for required_column in required_columns:
+        if required_column not in data.columns:
+            raise rest_exceptions.ParseError(f"Missing required column '{required_column}'")
+
+    observations = [
+        models.Observation(
+            owner=request.user,
+            telescope_name=row['telescope'],
+            obsid=row['obsid'],
+            freq=row['freq'], # in MHz
+            bw=row['bw'], # in MHz
+            start_mjd=row['start_mjd'],
+            duration=row['duration'],
+        ) for index, row in data.iterrows()
+    ]
+
+    success = 0
+    for obs in observations:
+        # check if there is already an observation with the same obsid and telescope for this ulp
+        matching_obs = permitted_to_edit_filter(models.Observation.objects.filter(
+            telescope_name=obs.telescope_name,
+            obsid=obs.obsid,
+        ), request.user).first()
+
+        if matching_obs is not None:
+            # obs.save()
+            matching_obs.ulps.add(ulp)
+            if viewgroup is not None:
+                matching_obs.can_view_groups.add(viewgroup)
+            # raise rest_exceptions.ParseError(f"Observation with obsid {obs.obsid} and telescope {obs.telescope_name} already exists for this ULP")
+        
+        else:
+            obs.save()
+            obs.ulps.set([ulp])
+            if viewgroup is not None:
+                obs.can_view_groups.set([viewgroup])
+            success += 1
+
+    return JsonResponse(f'{success}/{len(observations)} Success', safe=False, status=200)

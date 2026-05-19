@@ -38,4 +38,5 @@ urlpatterns = [
     re_path(r'^api/update_selected_working_ephemeris$', views.update_selected_working_ephemeris, name="update_selected_working_ephemeris"),
     re_path(r'^api/fit_ephemeris/(?P<ulp_pk>[0-9]+)$', views.fit_ephemeris, name="fit_ephemeris"),
     re_path(r'^api/write_toas$', views.write_toas, name="write_toas"),
+    re_path(r'^api.write_observations$', views.write_observations, name="write_observations"),
 ]
