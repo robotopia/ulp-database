@@ -502,6 +502,9 @@ class Measurement(models.Model):
         if self.parameter.astropy_unit and u.Unit(self.parameter.astropy_unit).is_equivalent('deg'):
             if self.special_display == self.ANGLE_DDMMSS:
                 angle = Angle(f'{self.quantity} {self.parameter.astropy_unit}').signed_dms
+                ### previous did not take sign into account...
+                if angle.sign < 0: retstr += "-"
+                else: retstr += "+"
                 retstr += f'{angle.d:02.0f}:{angle.m:02.0f}:'
                 if round(angle.s) < 10: # zero padding for arcseconds
                     retstr += "0"
