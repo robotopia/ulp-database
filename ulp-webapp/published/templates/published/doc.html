@@ -41,6 +41,7 @@ def main():
     parser.add_argument('token', help="The user's token for the website (go to Settings)")
     parser.add_argument('--mode', choices=['overwrite', 'add', 'ignore'], default='ignore', help="How to handle ToAs for the same pulse at the same telescope and frequency (default=ignore)")
     parser.add_argument('--format', choices=['astropy_qtable', 'tim_format_1'], default='astropy_qtable', help="The format of the file containing the ToAs. Default = 'astropy_qtable'")
+    parser.add_argument('--group', help="View Group to associate these ToAs with (default=None)", default=None) 
 
     args = parser.parse_args()
 
@@ -54,6 +55,9 @@ def main():
         'format': args.format,
         'lpt': args.LPT,
     }
+
+    if args.group is not None:
+        data['group'] = args.group
 
     with open(args.ToAs_file, 'rb') as f:
         files = {'toa_file': (args.ToAs_file, f)}
