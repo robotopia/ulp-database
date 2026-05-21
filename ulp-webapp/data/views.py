@@ -1808,6 +1808,9 @@ def write_toas(request):
 
     fmt = request.data.get('format', 'tim_format_1')
 
+    ### get group info
+    viewgroup = Group.objects.filter(name=request.data.get('group')).first() if request.data.get('group') else None
+
     # Get overwrite/add/ignore mode
     mode = request.data.get('mode')
     supported_modes = ['overwrite', 'add', 'ignore']
@@ -1912,6 +1915,9 @@ def write_toas(request):
                 raise rest_exceptions.ParseError(f"Mode {mode} not supported. Must be one of {supported_modes}.")
         else:
             toa.save()
+
+            if viewgroup is not None:
+                toa.can_view_groups.add(viewgroup)
 
     return JsonResponse('Success', safe=False, status=200)
 
