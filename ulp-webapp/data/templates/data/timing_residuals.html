@@ -23,33 +23,37 @@
   <div id="plot-loader" class="loader" style="display: none;"></div>
 </div>
 
-<fieldset id="plot_settings">
-  <legend>Plot settings</legend>
-  <div>
-    <input id="barycentre" type="checkbox" onchange="replot();"/>
-    <label for="barycentre">Barycentre ToAs?</label>
+<fieldset id="plot_settings" style="margin-left: 30px;">
+  <!-- <legend>Plot settings</legend> -->
+  <div style="margin-bottom: 10px;">
+    <span style="margin-right: 20px;">
+      <input id="barycentre" type="checkbox" onchange="replot();"/>
+      <label for="barycentre">Barycentre ToAs?</label>
+    </span>
+    <span style="margin-right: 20px;">
+      <input id="display_obs" type="checkbox" onchange="replot();"/>
+      <label for="display_obs">Display observations?</label>
+    </span>
+
+    <span style="margin-right: 20px;">
+      <label for="toa_color">ToA color:</label>
+      <input type="color" id="toa_color" onchange="update_toa_color();">
+    </span>
+    <span style="margin-right: 20px;">
+      <label for="observation_color">Observation color:</label>
+      <input type="color" id="observation_color" onchange="update_observation_color();">
+    </span>
   </div>
-  <div>
-    <input id="display_obs" type="checkbox" onchange="replot();"/>
-    <label for="display_obs">Display observations?</label>
-  </div>
-  <div>
-    <label for="toa_color">ToA color:</label>
-    <input type="color" id="toa_color" onchange="update_toa_color();">
-  </div>
-  <div>
-    <label for="observation_color">Observation color:</label>
-    <input type="color" id="observation_color" onchange="update_observation_color();">
-  </div>
-  <div>
-    <button type="button" class="btn btn-primary" onclick="set_default_plot_settings();">Reset to defaults</button>
-    <button type="button" class="btn btn-primary" onclick="reset_zoom_xaxis();">Reset x-axis</button>
-    <button type="button" class="btn btn-primary" onclick="reset_zoom_yaxis();">Reset y-axis</button>
+  <div  style="margin-bottom: 10px;">
+    <button type="button" class="btn btn-primary" onclick="set_default_plot_settings();" style="margin-right: 20px;">Reset to defaults</button>
+    <button type="button" class="btn btn-primary" onclick="reset_zoom_xaxis();" style="margin-right: 20px;">Reset x-axis</button>
+    <button type="button" class="btn btn-primary" onclick="reset_zoom_yaxis();" style="margin-right: 20px;">Reset y-axis</button>
   </div>
 </fieldset>
 
-<h2>Ephemeris</h2>
+<h2 style="margin-top: 10px;">Ephemeris</h2>
 
+<div style="margin-left: 20px; margin-top: 10px;">
 <div>
   <label for="working_ephemeris_select">Owner:</label>
   <select id="working_ephemeris_select" name="working_ephemeris_pk" onchange="select_working_ephemeris();">
@@ -59,7 +63,7 @@
   </select>
 </div>
 
-<div class="compact-form-item">
+<div class="compact-form-item" style="margin-top: 10px;">
   <span style="width: 40px;"></span>
   <span><b>Parameter</b></span>
   <span><b>Value</b></span>
@@ -92,15 +96,26 @@
 </div>
 
 <div>
-  <button type="button" class="btn btn-primary" onclick="reset_ephemeris_fields();">Reset all</button>
-  <button type="button" class="btn btn-primary" onclick="update_selected_working_ephemeris();">Save selected</button>
-  <button type="button" class="btn btn-primary" onclick="fit_to_toas();">Fit selected to ToAs</button>
-  <button type="button" class="btn btn-primary" onclick="update_covariance_err();">Update (3σ) error region</button>
+  <span style="margin-right: 5%;">
+    <button type="button" class="btn btn-primary" onclick="reset_ephemeris_fields();">Reset all</button>
+    <button type="button" class="btn btn-primary" onclick="update_selected_working_ephemeris();">Save selected</button>
+    <button type="button" class="btn btn-primary" onclick="fit_to_toas();">Fit selected to ToAs</button>
+    <button type="button" class="btn btn-primary" onclick="update_covariance_err();">Update (3σ) error region</button>
+  </span>
+  <span>
+    <!-- tickbox for whether use uniform errors or not -->
+    <input id="select_uniform_errors" name="select_uniform_errors" type="checkbox" onchange="localStorage[this.id] = this.checked"/>
+    <label for="select_uniform_errors">Uniform errors for all ToAs?</label>
+    <input id="uniform_error_value" form="prediction_form" name="uniform_error_value" value="0" step="any" style="width: 40px; margin-left: 10px;" required/>
+    second(s)
+  </span>
 </div>
 
-<h2>Predictions</h2>
+</div>
 
-<form id="prediction_form" method="post" action="#prediction-table">
+<h2 style="margin-top: 20px;">Predictions</h2>
+
+<form id="prediction_form" method="post" action="#prediction-table" style="margin-left: 20px;">
   {% csrf_token %}
 
   <div class="compact-form-item">
@@ -163,7 +178,7 @@
     </select>
   </div>
 
-  <input type="submit" class="btn btn-primary" value="Generate ToAs"/>
+  <input style="margin-top: 10px;" type="submit" class="btn btn-primary" value="Generate ToAs"/>
 </form>
 
 {% if predicted_toas %}
@@ -489,6 +504,10 @@
     data.select_{{ param }} = select_{{ param }}_element.checked;
     data.{{ param }} = {{ param }}_element.value;
     {% endfor %}
+
+    // add whether set uniform errors or not in the data
+    data.select_uniform_errors = document.getElementById("select_uniform_errors").checked;
+    data.uniform_error_value = document.getElementById("uniform_error_value").value;
 
 
     xhr.onload = () => {

@@ -1702,6 +1702,15 @@ def fit_ephemeris(request, ulp_pk):
 
     toas_data = toa_data(request.user, we)
 
+    # change sigma if uniform error is applied
+    if data.get('select_uniform_errors'):
+        error_value = float(data.get('uniform_error_value'))
+        if error_value < 0.001: sigma = None
+        else:
+            sigma = [error_value / 86400.0] * len(toas_data) # need to convert unit from seconds to days
+    else:
+        sigma = [toa['mjd_err'] for toa in toas_data]
+
     bounds_dict = {
         'ra': [0.0, 360.0],
         'dec': [-90.0, 90.0],
@@ -1732,7 +1741,7 @@ def fit_ephemeris(request, ulp_pk):
             return predicted_mjds - init_pepoch.mjd
 
         x = [toa['mjd'] - calc_dmdelay(we.dm*u.pc/u.cm**3, toa['freq_MHz']*u.MHz, np.inf*u.MHz).to('d').value + toa['bc_correction'] - init_pepoch.mjd for toa in toas_data]
-        sigma = [toa['mjd_err'] for toa in toas_data]
+        # sigma = [toa['mjd_err'] for toa in toas_data]
         p0 = [0.0, data['p0']]
         bounds = [
             (bounds_dict['pepoch'][0], bounds_dict['p0'][0]),
@@ -1763,7 +1772,7 @@ def fit_ephemeris(request, ulp_pk):
             return predicted_mjds
 
         x = [toa['mjd'] - calc_dmdelay(we.dm*u.pc/u.cm**3, toa['freq_MHz']*u.MHz, np.inf*u.MHz).to('d').value + toa['bc_correction'] for toa in toas_data]
-        sigma = [toa['mjd_err'] for toa in toas_data]
+        # sigma = [toa['mjd_err'] for toa in toas_data]
         p0 = [data['pepoch'], data['p0'], u.Quantity(data['p1'])*p1_scale]
         bounds = [
             (bounds_dict['pepoch'][0], bounds_dict['p0'][0], bounds_dict['p1'][0]),
