@@ -1322,10 +1322,38 @@ def update_selected_working_ephemeris(request):
 
     # Get the relevant WorkingEphemeris object
     working_ephemeris = models.WorkingEphemeris.objects.get(pk=data['pk'])
+    working_ephemeris_ulp = working_ephemeris.ulp
     if working_ephemeris is None:
         return JsonResponse({'message': f"No working ephemeris found with pk = {data['pk']}"}, status=400)
 
     # If this is a POST request, save the provided values, also making sure the user is allowed to edit it
+    if request.method == "PUT" and working_ephemeris.can_edit(request.user) and data["reset"] == True:
+        we = models.WorkingEphemeris.objects.filter(owner__isnull=True, ulp=working_ephemeris_ulp).first()
+        if we is None: 
+            return JsonResponse({'message': f"No default working ephemeris found for this ULP"}, status=400)
+        new_ephemeris_values = {
+            'ra': we.ra,
+            'dec': we.dec,
+            'pepoch': we.pepoch,
+            'p0': we.p0,
+            'p1': we.p1,
+            'dm': we.dm,
+            'p_aw': we.p_aw,
+            't0_aw': we.t0_aw,
+            'duration_aw': we.duration_aw,
+        }
+
+        for field, value in new_ephemeris_values.items():
+            try:
+                setattr(working_ephemeris, field, value)
+            except:
+                pass
+        working_ephemeris.save()
+
+        new_ephemeris_values['pk'] = data['pk']
+
+        return JsonResponse(new_ephemeris_values, status=200)
+
     if request.method == "PUT" and working_ephemeris.can_edit(request.user):
 
         new_ephemeris_values = {} # This is for returning to the client so that webpage values can be updated

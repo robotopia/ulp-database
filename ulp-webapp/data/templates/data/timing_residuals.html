@@ -55,13 +55,21 @@
 
 <div style="margin-left: 20px; margin-top: 10px;">
 <div>
-  <label for="working_ephemeris_select">Owner:</label>
-  <select id="working_ephemeris_select" name="working_ephemeris_pk" onchange="select_working_ephemeris();">
-    {% for we in working_ephemerides %}
-    <option value="{{ we.pk }}" {% if selected_working_ephemeris.pk == we.pk %}selected{% endif %}>{{ we.owner }}</option>
-    {% endfor %}
-  </select>
+  <span style="margin-right: 10%;">
+    <label for="working_ephemeris_select">Owner:</label>
+    <select id="working_ephemeris_select" name="working_ephemeris_pk" onchange="select_working_ephemeris();">
+      {% for we in working_ephemerides %}
+      <option value="{{ we.pk }}" {% if selected_working_ephemeris.pk == we.pk %}selected{% endif %}>{{ we.owner }}</option>
+      {% endfor %}
+    </select>
+  </span>
+  <span>
+    <button type="button" class="btn btn-primary" onclick="reset_working_ephmeris();">Reset Ephemeris to Default</button>
+    <p style="font-size: 15px; margin-top: 5px"> note: some default ephemeris can be wrong. you can then use "set to published values" to get reaonable values.</p>
+  </span>
 </div>
+
+<!-- reset_working_ephmeris -->
 
 <div class="compact-form-item" style="margin-top: 10px;">
   <span style="width: 40px;"></span>
@@ -451,6 +459,42 @@
     update_ephemeris_field(target_element, field_name);
   }
 
+  // For updating the ephemeris values to the default values
+  function reset_working_ephmeris() {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', "{% url 'update_selected_working_ephemeris' %}");
+    xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+    xhr.setRequestHeader("Content-type", "application/json");
+
+    const data = {
+      pk: document.getElementById('working_ephemeris_select').value,
+    };
+    data.reset = true;
+
+    xhr.onload = () => {
+      if (xhr.status != 200) {
+        alert(JSON.parse(xhr.responseText).message);
+        // return;
+      }
+
+      updated_data = JSON.parse(xhr.responseText);
+
+      // Update the current selected working ephemeris
+      // Also update the corresponding ephemeris in the list of all ephemerides
+      // loaded on the page
+      {% for param in ephemeris.keys %} {
+        selected_working_ephemeris.{{ param }} = updated_data.{{ param }};
+        working_ephemerides[updated_data.pk].{{ param }} = updated_data.{{ param }};
+        {{ param }}_element.style.backgroundColor = "field";
+      }
+      {% endfor %}
+
+      window.location.href=window.location.href;
+    }
+
+    xhr.send(JSON.stringify(data));
+  }
+
   // For updating the ephemeris values and saving them to the database
   function update_selected_working_ephemeris() {
 
@@ -462,6 +506,7 @@
     const data = {
       pk: document.getElementById('working_ephemeris_select').value,
     }
+    data.reset = false;
     {% for param in ephemeris.keys %}
     data.select_{{ param }} = select_{{ param }}_element.checked;
     data.{{ param }} = {{ param }}_element.value;
@@ -486,6 +531,8 @@
         {{ param }}_element.style.backgroundColor = "field";
       }
       {% endfor %}
+
+      window.location.href=window.location.href;
     }
 
     xhr.send(JSON.stringify(data));
