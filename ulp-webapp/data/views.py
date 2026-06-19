@@ -1299,6 +1299,21 @@ def update_working_ephemeris(request, pk):
     return HttpResponseRedirect(next)
 
 
+def _parse_coordinate(coord, field):
+    assert field in ["ra", "dec"], f"parse coordinate only, field need to be either 'ra' or 'dec', not {field}"
+
+    if ":" in coord: # Assume it's in sexagesimal format
+        return coord # will keep it and do nothing
+    try: value = float(coord)
+    except: raise ValueError(f"Could not parse {field} value \"{coord}\" as either a float or sexagesimal string")
+
+    if field == "ra":
+        angle = Angle(value, unit=u.degree)
+        return angle.to_string(unit=u.hourangle, sep=":", precision=3, pad=True)
+    else:
+        angle = Angle(value, unit=u.deg)
+        return angle.to_string(unit=u.deg, sep=":", precision=3, alwayssign=True, pad=True)
+
 @login_required
 def update_selected_working_ephemeris(request):
 
@@ -1322,10 +1337,13 @@ def update_selected_working_ephemeris(request):
             except:
                 continue
 
+            fielddata = data[field]
+            if field in ['ra', 'dec']:
+                fielddata = _parse_coordinate(fielddata, field)
             try:
-                value = float(data[field])
+                value = float(fielddata)
             except:
-                value = data[field]
+                value = fielddata
 
             new_ephemeris_values[field] = value
             # This ^^^ makes sure the page gets populated with the original value,
